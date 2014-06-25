@@ -5,9 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Chess_Engine {
+    
     class Program {
+        
         static void Main(string[] args) {
-            Console.WriteLine("Hello, world");
+
+            Engine chessEngine = new Engine();
+            chessEngine.run();
         }
     }
 }
