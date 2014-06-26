@@ -13,45 +13,46 @@ namespace Chess_Engine {
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
 
         //12 bitboards (one for each piece type)
-        internal long wPawn;
-        internal long wKnight;
-        internal long wBishop;
-        internal long wRook;
-        internal long wQueen;
-        internal long wKing;
-        internal long bPawn;
-        internal long bKnight;
-        internal long bBishop;
-        internal long bRook;
-        internal long bQueen;
-        internal long bKing;
+        internal ulong wPawn = 0L;
+        internal ulong wKnight = 0L;
+        internal ulong wBishop = 0L;
+        internal ulong wRook = 0L;
+        internal ulong wQueen = 0L;
+        internal ulong wKing = 0L;
+        internal ulong bPawn = 0L;
+        internal ulong bKnight = 0L;
+        internal ulong bBishop = 0L;
+        internal ulong bRook = 0L;
+        internal ulong bQueen = 0L;
+        internal ulong bKing = 0L;
 
-        internal int sideToMove;
+        internal int sideToMove = 0;
 
-        internal Move lastMove;
+        internal Move lastMove = null;
 
-        internal Boolean blackInCheck;
-        internal Boolean blackInCheckmate;
-        internal Boolean whiteInCheck;
-        internal Boolean whiteInCheckmate;
-        internal Boolean stalemate;
+        internal Boolean blackInCheck = false;
+        internal Boolean blackInCheckmate = false;
+        internal Boolean whiteInCheck = false;
+        internal Boolean whiteInCheckmate = false;
+        internal Boolean stalemate = false;
 
-        internal Boolean whiteShortCastleRights;
-        internal Boolean whiteLongCastleRights;
-        internal Boolean blackShortCastleRights;
-        internal Boolean blackLongCastleRights;
+        internal Boolean whiteShortCastleRights = false;
+        internal Boolean whiteLongCastleRights = false;
+        internal Boolean blackShortCastleRights = false;
+        internal Boolean blackLongCastleRights = false;
 
-        internal int enPessantColour;
-        internal int enPessantPosition;
+        internal int enPassantColour = 0;
+        internal int enPassantSquare = 0;
 
-        internal int movesSincePawnMoveOrCapture;
-        internal int repitionOfPosition;
+        internal int moveNumber = 0;
+        internal int HalfMovesSincePawnMoveOrCapture = 0;
+        internal int repetionOfPosition = 0;
 
-        internal Boolean endGame;
+        internal Boolean endGame = false;
 
-        internal int evaluationFunctionValue;
+        internal int evaluationFunctionValue = 0;
 
-        internal long zobristKey;
+        internal ulong zobristKey = 0UL;
 
         //CONSTRUCTOR------------------------------------------------------------------------------------
         
@@ -62,91 +63,191 @@ namespace Chess_Engine {
 
         //Constructor that takes in a FEN string and generates the appropriate board position
         public Board(string FEN) {
-
-        }
-
-        //Constructor that takes in an array and generates the appropriate bitboards (for testing purposes)
-        public Board(string[] inputBoardArray) {
-            arrayToBitboards(inputBoardArray);
+            FENToBoard(FEN);
         }
 
         //OTHER METHODS----------------------------------------------------------------------------------------
 
-        //takes in array and generates 12 bitboards
+        //takes in a FEN string and sets all the instance variables based on it
+        public void FENToBoard(string FEN) {
+           
+            //Splits the FEN string into 6 fields
+            string[] FENfields = FEN.Split(' ');
 
-        //gets the white pawn
-        private void arrayToBitboards(string[] inputBoardArray) {
+            //Splits the piece placement field into rows
+            string[] pieceLocation = FENfields[0].Split('/');
 
-            String binary;
 
-            for (int i = 0; i < 64; i++) {
-                binary = "0000000000000000000000000000000000000000000000000000000000000000";
-                binary = binary.Substring(i+1) + "1" + binary.Substring(0, i);
-                switch (inputBoardArray[i]) {
-                    case "P": wPawn |= Convert.ToInt64(binary, 2); break;
-                    case "N": wKnight |= Convert.ToInt64(binary, 2); break;
-                    case "B": wBishop |= Convert.ToInt64(binary, 2); break;
-                    case "R": wRook |= Convert.ToInt64(binary, 2); break;
-                    case "Q": wQueen |= Convert.ToInt64(binary, 2); break;
-                    case "K": wKing |= Convert.ToInt64(binary, 2); break;
-                    case "p": bPawn |= Convert.ToInt64(binary, 2); break;
-                    case "n": bKnight |= Convert.ToInt64(binary, 2); break;
-                    case "b": bBishop |= Convert.ToInt64(binary, 2); break;
-                    case "r": bRook |= Convert.ToInt64(binary, 2); break;
-                    case "q": bQueen |= Convert.ToInt64(binary, 2); break;
-                    case "k": bKing |= Convert.ToInt64(binary, 2); break;
+            //Initializes the instance variables based on the contents of the field
+            
+            //sets the bitboards
+            //loops through each of the 8 strings representing the rows, from the bottom row to the top
+            for (int i = 0; i < 8; i++) {
+                String row = pieceLocation[7 - i];
+
+                //index for position in each row string
+                int index = 0;
+
+                //for each character in the row string, checks to see if there is a piece there
+                //If there is, then it adds it to the appropriate bitboard
+                //If there is a number, then it advances the index by that number
+                foreach (char c in row) {
+                    String binary = "00000000";
+                    binary = binary.Substring(0, index) + "1" + binary.Substring(index + 1);
+                    switch (c) {
+                        case 'P': wPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'N': wKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'B': wBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'R': wRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'Q': wQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'K': wKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'p': bPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'n': bKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'b': bBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'r': bRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'q': bQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'k': bKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case '1': index += 1; break;
+                        case '2': index += 2; break;
+                        case '3': index += 3; break;
+                        case '4': index += 4; break;
+                        case '5': index += 5; break;
+                        case '6': index += 6; break;
+                        case '7': index += 7; break;
+                        case '8': index += 8; break;
+                    }
                 }
             }
+                
+            //Sets the side to move variable
+            foreach (char c in FENfields[1]) {
+                if (c == 'w') {
+                    sideToMove = Constants.WHITE;
+                } else if (c == 'b') {
+                    sideToMove = Constants.BLACK;
+                }
+            }
+            
+            //Sets the castling availability variables
+            if (FENfields[2] == "-") {
+                whiteShortCastleRights = false;
+                whiteLongCastleRights = false;
+                blackShortCastleRights = false;
+                blackLongCastleRights = false;
+            } else if (FENfields[2] != "-") {
+                foreach (char c in FENfields[2]) {
+                    if (c == 'K') {
+                        whiteShortCastleRights = true;
+                    } else if (c == 'Q') {
+                        whiteLongCastleRights = true;
+                    } else if (c == 'k') {
+                        blackShortCastleRights = true;
+                    } else if (c == 'q') {
+                        blackLongCastleRights = true;
+                    }
+                }
+            }
+            
+            //Sets the en Passant square variable
+            if (FENfields[3] != "-") {
+
+                int baseOfEPSquare = -1;
+                int factorOfEPSquare = -1;
+
+                foreach (char c in FENfields[3]) 
+                if (char.IsLower(c) == true) {
+                    baseOfEPSquare = 'h' - c;
+                } else if (char.IsDigit(c) == true) {
+                    factorOfEPSquare = ((int)Char.GetNumericValue(c) - 1);
+                    if (c == '3') {
+                        enPassantColour = Constants.WHITE;
+                    } else if (c == '6') {
+                        enPassantColour = Constants.BLACK;
+                    }
+                }
+                enPassantSquare = baseOfEPSquare + factorOfEPSquare * 8;
+            }
+            
+            //Checks to see if there is a halfmove clock or move number in the FEN string
+            if (FENfields.Length >= 5) {
+                //sets the halfmove clock since last capture or pawn move
+                foreach (char c in FENfields[4]) {
+                    HalfMovesSincePawnMoveOrCapture = (int)Char.GetNumericValue(c);
+                }
+
+                //sets the move number
+                foreach (char c in FENfields[5]) {
+                    moveNumber = (int)Char.GetNumericValue(c);
+                }
+            }
+
         }
 
         //GET METHODS----------------------------------------------------------------------------------------
 
-        public long getWhitePawn() {
-            return wPawn;
+        //gets the piece bitboards (returns an array of 12 bitboards)
+        //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
+        //element 6 = black pawn, 7 = black knight, 8 = black bishop, 9 = black rook, 10 = black queen, 11 = black king
+
+        public ulong[] getPieceBitboards() {
+            ulong[] pieceBitboards = new ulong[12];
+            
+            pieceBitboards[0] = wPawn;
+            pieceBitboards[1] = wKnight;
+            pieceBitboards[2] = wBishop;
+            pieceBitboards[3] = wRook;
+            pieceBitboards[4] = wQueen;
+            pieceBitboards[5] = wKing;
+            pieceBitboards[6] = bPawn;
+            pieceBitboards[7] = bKnight;
+            pieceBitboards[8] = bBishop;
+            pieceBitboards[9] = bRook;
+            pieceBitboards[10] = bQueen;
+            pieceBitboards[11] = bKing;
+
+            return pieceBitboards;
         }
-        //gets the white knight
-        public long getWhiteKnight() {
-            return wKnight;
+
+        //gets the side to move
+        public int getSideToMove() {
+            return sideToMove;
         }
-        //gets the white bishop
-        public long getWhiteBishop() {
-            return wBishop;
+
+        //gets the castling rights (returns an array of 4 bools)
+        //element 0 = white short castle rights, 1 = white long castle rights
+        //2 = black short castle rights, 3 = black long castle rights
+        public bool[] getCastleRights() {
+            bool[] castleRights = new bool[4];
+
+            castleRights[0] = whiteShortCastleRights;
+            castleRights[1] = whiteLongCastleRights;
+            castleRights[2] = blackShortCastleRights;
+            castleRights[3] = blackLongCastleRights;
+
+            return castleRights;
         }
-        //gets the white rook
-        public long getWhiteRook() {
-            return wRook;
+
+        //gets the En Passant colour and square
+        //element 0 = en passant colour, and element 1 = en passant square
+        public int[] getEnPassant() {
+            int[] enPassant = new int[2];
+
+            enPassant[0] = enPassantColour;
+            enPassant[1] = enPassantSquare;
+
+            return enPassant;
         }
-        //gets the white queen
-        public long getWhiteQueen() {
-            return wQueen;
-        }
-        //gets the white king
-        public long getWhiteKing() {
-            return wKing;
-        }
-        //gets the black pawn
-        public long getBlackPawn() {
-            return bPawn;
-        }
-        //gets the black knight
-        public long getBlackKnight() {
-            return bKnight;
-        }
-        //gets the black bishop
-        public long getBlackBishop() {
-            return bBishop;
-        }
-        //gets the black rook
-        public long getBlackRook() {
-            return bRook;
-        }
-        //gets the black queen
-        public long getBlackQueen() {
-            return bQueen;
-        }
-        //gets the black king
-        public long getBlackKing() {
-            return bKing;
+
+        //gets the move data
+        //element 0 = move number, 1 = half moves since pawn move or capture, 2 = repetition of position
+        public int[] getMoveData() {
+            int[] moveData = new int[3];
+
+            moveData[0] = moveNumber;
+            moveData[1] = HalfMovesSincePawnMoveOrCapture;
+            moveData[2] = repetionOfPosition;
+
+            return moveData;
         }
 
         //SET METHODS-----------------------------------------------------------------------------------------

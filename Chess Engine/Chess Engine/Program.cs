@@ -9,7 +9,8 @@ namespace Chess_Engine {
     class Program {
         
         static void Main(string[] args) {
-
+  
+            //Creates a new engine object and calls its run method
             Engine chessEngine = new Engine();
             chessEngine.run();
         }

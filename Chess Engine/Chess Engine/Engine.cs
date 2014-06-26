@@ -9,8 +9,7 @@ namespace Chess_Engine {
     class Engine {
         
         public void run() {
-            InputOutput.getFENString();
-            Board gameBoard = new Board(Constants.BOARD_ARRAY);
+            Board gameBoard = new Board(Constants.FEN_START);
             InputOutput.drawBoard(gameBoard);    
         }
     }
