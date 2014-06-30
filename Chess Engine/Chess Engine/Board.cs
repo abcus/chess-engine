@@ -26,6 +26,9 @@ namespace Chess_Engine {
         internal ulong bQueen = 0L;
         internal ulong bKing = 0L;
 
+        internal ulong whitePieces = 0L;
+        internal ulong blackPieces = 0L;
+
         internal int sideToMove = 0;
 
         internal Move lastMove = null;
@@ -119,6 +122,10 @@ namespace Chess_Engine {
                 }
             }
                 
+            //Computes the white pieces and black pieces bitboard by using "or" on all the individual pieces
+            whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
+            blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
+
             //Sets the side to move variable
             foreach (char c in FENfields[1]) {
                 if (c == 'w') {

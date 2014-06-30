@@ -8,7 +8,9 @@ namespace Chess_Engine {
 
     class LegalMoveGenerator {
 
-      
+        
+
+       
 
     }
 }

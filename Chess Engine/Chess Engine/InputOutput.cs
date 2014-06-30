@@ -48,7 +48,7 @@ namespace Chess_Engine {
             //creates a new 8x8 array of String and sets it all to spaces
             string[,] chessBoard = new string[8, 8];
             for (int i = 0; i < 64; i++) {
-                chessBoard[i / 8, i % 8] = ".";
+                chessBoard[i / 8, i % 8] = " ";
             }
 
             //Goes through each of the bitboards; if they have a "1" then it sets the appropriate element in the array to the appropriate piece
@@ -82,11 +82,19 @@ namespace Chess_Engine {
 
             //Goes through the 8x8 array and prints its contents
             for (int i = 0; i < 8; i++) {
+
+                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                Console.Write((i - i) + " ");
+                
                 for (int j = 0; j < 8; j++) {
-                    Console.Write(chessBoard[i, j] + " ");
+                    Console.Write("| " + chessBoard[i, j] + " ");
                 }
-                Console.WriteLine("");
+                Console.WriteLine("|"); 
             }
+            Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+            Console.WriteLine("    A   B   C   D   E   F   G   H");
+            Console.WriteLine("");
+            Console.WriteLine("");
             Console.WriteLine("");
 
             //Prints out the side to move, castling rights, en-pessant square, halfmoves since capture/pawn advance, and fullmove number
