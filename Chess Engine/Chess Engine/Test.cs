@@ -313,8 +313,7 @@ namespace Chess_Engine {
             }
         }
 
-        
-
+       
         //Prints out board showing moves from start square to end square for king and knight
         public static void printArray(int startSquare, int endSquare, String piece) {
             ulong temp = 0;
@@ -367,17 +366,22 @@ namespace Chess_Engine {
         }
 
         //Prints out all occupancy variations for a particular square
-        public static void printBishopOccupancyVariation(int square, String range) {
+        public static void printOccupancyVariation(int square, String range, String piece) {
 
             int startPoint = 0;
             int endPoint = 0;
 
             if (range == "First50") {
-                startPoint = 0;
-                endPoint = 50;
+                    startPoint = 0;
+                    endPoint = 50;
             } else if (range == "Last50") {
-                startPoint = Constants.bishopOccupancyVariations[square].Length - 50;
-                endPoint = Constants.bishopOccupancyVariations[square].Length;
+                if (piece == "Bishop") {
+                    startPoint = Constants.bishopOccupancyVariations[square].Length - 50;
+                    endPoint = Constants.bishopOccupancyVariations[square].Length;
+                } else if (piece == "Rook") {
+                    startPoint = Constants.rookOccupancyVariations[square].Length - 50;
+                    endPoint = Constants.rookOccupancyVariations[square].Length;
+                }
             }
 
             for (int i = startPoint; i < endPoint; i++) {
@@ -386,9 +390,19 @@ namespace Chess_Engine {
                 for (int j = 0; j < 64; j++) {
                     chessBoard[j / 8, j % 8] = " ";
                 }
-                for (int j = 0; j < 64; j++) {
-                    if (((Constants.bishopOccupancyVariations[square][i] >> j) & 1L) == 1) {
-                        chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                chessBoard[7 -square/ 8, 7 - square % 8] = "*";
+
+                if (piece == "Bishop") {
+                    for (int j = 0; j < 64; j++) {
+                        if (((Constants.bishopOccupancyVariations[square][i] >> j) & 1L) == 1) {
+                            chessBoard[7 - (j/8), 7 - (j%8)] = "X";
+                        }
+                    }
+                } else if (piece == "Rook") {
+                    for (int j = 0; j < 64; j++) {
+                        if (((Constants.rookOccupancyVariations[square][i] >> j) & 1L) == 1) {
+                            chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                        }
                     }
                 }
 
@@ -409,9 +423,10 @@ namespace Chess_Engine {
                 Console.WriteLine("");
             }
         }
+
 
         //Prints out all occupancy variations for a particular square
-        public static void printRookOccupancyVariation(int square, String range) {
+        public static void printMoves(int square, String range, String piece) {
 
             int startPoint = 0;
             int endPoint = 0;
@@ -420,8 +435,13 @@ namespace Chess_Engine {
                 startPoint = 0;
                 endPoint = 50;
             } else if (range == "Last50") {
-                startPoint = Constants.rookOccupancyVariations[square].Length - 50;
-                endPoint = Constants.rookOccupancyVariations[square].Length;
+                if (piece == "Bishop") {
+                    startPoint = Constants.bishopMoves[square].Length - 50;
+                    endPoint = Constants.bishopMoves[square].Length;
+                } else if (piece == "Rook") {
+                    startPoint = Constants.rookMoves[square].Length - 50;
+                    endPoint = Constants.rookMoves[square].Length;
+                }
             }
 
             for (int i = startPoint; i < endPoint; i++) {
@@ -430,11 +450,22 @@ namespace Chess_Engine {
                 for (int j = 0; j < 64; j++) {
                     chessBoard[j / 8, j % 8] = " ";
                 }
-                for (int j = 0; j < 64; j++) {
-                    if (((Constants.rookOccupancyVariations[square][i] >> j) & 1L) == 1) {
-                        chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                chessBoard[7 - square / 8, 7 - square % 8] = "*";
+
+                if (piece == "Bishop") {
+                    for (int j = 0; j < 64; j++) {
+                        if (((Constants.bishopMoves[square][i] >> j) & 1L) == 1) {
+                            chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                        }
+                    }
+                } else if (piece == "Rook") {
+                    for (int j = 0; j < 64; j++) {
+                        if (((Constants.rookMoves[square][i] >> j) & 1L) == 1) {
+                            chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                        }
                     }
                 }
+
 
                 for (int j = 0; j < 8; j++) {
 
@@ -453,11 +484,5 @@ namespace Chess_Engine {
                 Console.WriteLine("");
             }
         }
-                
-
-
-
-
- 
     }
 }

@@ -341,15 +341,25 @@ namespace Chess_Engine {
         //Starts at H1 and goes to A8
         public static ulong[][] bishopOccupancyVariations = new ulong[64][];
 
-        
+        //Rook move array for all occupancy variations for all squares (does not use magic indexing)
+        //Starts at H1 and goes to A8
+        public static ulong[][] rookMoves = new ulong[64][];
+
+        //Bishop move array for all occupancy variations for all squares (does not use magic indexing)
+        //Starts at H1 and goes to A8
+        public static ulong[][] bishopMoves = new ulong[64][];
 
 
-        //STATIC METHODS-------------------------------------------------------------------------------------
+        //METHODS-------------------------------------------------------------------------------------
 
-        //Populates the 
+        //INITIALIZATION METHODS-----------------------------------------------------------------------
+
+        //Populates the occupancy variation arrays and piece move arrays
         public static void initializeConstants() {
             populateRookOccupancyVariation(rookOccupancyVariations);
             populateBishopOccupancyVariation(bishopOccupancyVariations);
+            populateRookMove(rookMoves);
+            populateBishopMove(bishopMoves);
         }
 
         //Populates the rook occupancy variation array for every square (not using magic indexing)
@@ -386,7 +396,127 @@ namespace Chess_Engine {
             }
         }
 
+        //Populates the rook move array for every square (not using magic indexing)
+        public static void populateRookMove(ulong[][] rookMovesArray) {
 
+            //loops over every square in the rook occupancy variation array
+            for (int i = 0; i <= 63; i++) {
+
+                rookMovesArray[i] = new ulong[rookOccupancyVariations[i].Length];
+
+                for (int j = 0; j < rookOccupancyVariations[i].Length; j++) {
+
+                    ulong rookMove = 0x0UL;
+                    ulong square = 0x1UL << i;
+
+                    //If (index/8 <= 6), shift up 7 - (index)/8 times (if in 7th rank or lower, shift up 8-rank times)
+                    //If a "1" is encountered in the occupancy variation, break
+                    if (i/8 <= 6) {
+                        for (int k = 0; k <= 7 - i/8; k++) {
+                           
+                            rookMove |= square << (8 * k);
+                            
+                            //If a "1" is encountered in the corresponding occupancy variation, then break
+                            if ((rookOccupancyVariations[i][j] & square << (8 * k)) == square << (8 * k)) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index/8 >= 1) shift down 0 + (index/8) times (if in 2nd rank or higher, shift down rank - 1 times)
+                    //If a "1" is encountered in the occupancy variation, break
+                    if (i/8 >= 1) {
+                        for (int k = 0; k <= i/8; k++) {
+                            rookMove |= square >> (8*k);
+                            if ((rookOccupancyVariations[i][j] & square >> (8 * k)) == square >> (8 * k)) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index %8 <= 6) shift left 7 - (index % 8) times (if in B file or higher, shift left file - 1 times)
+                    //If a "1" is encountered in the occupancy variation, break
+                    if (i%8 <= 6) {
+                        for (int k = 0; k <= 7 - (i%8); k++) {
+                            rookMove |= square << k;
+                            if ((rookOccupancyVariations[i][j] & square << k) == square << k) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index % 8 >= 1) shift right (index % 8) times
+                    if (i%8 >= 1) {
+                        for (int k = 0; k <= (i%8); k++) {
+                            rookMove |= square >> k;
+                            if ((rookOccupancyVariations[i][j] & square >> k) == square >> k) {
+                                break;
+                            }
+                        }
+                    }
+                    rookMove &= ~square;
+                    rookMovesArray[i][j] = rookMove;
+                }
+            }
+        }
+
+         //Populates the rook move array for every square (not using magic indexing)
+        public static void populateBishopMove(ulong[][] bishopMovesArray) {
+
+            //loops over every square in the rook occupancy variation array
+            for (int i = 0; i <= 63; i++) {
+
+                bishopMovesArray[i] = new ulong[bishopOccupancyVariations[i].Length];
+
+                for (int j = 0; j < bishopOccupancyVariations[i].Length; j++) {
+
+                    ulong bishopMove = 0x0UL;
+                    ulong square = 0x1UL << i;
+
+                    //If (index/8 <= 6) && (index % 8 <= 6), shift up-left 7-(index)/8 && 7 - (index % 8) times (min of the two)
+                    if (i / 8 <= 6 && i % 8 <= 6) {
+                        for (int k = 0; (k <= 7 - i / 8 && k <= 7 - (i % 8)); k++) {
+                            bishopMove |= square << (9 * k);
+
+                            //If a "1" is encountered in the corresponding occupancy variation, then break
+                            if ((bishopOccupancyVariations[i][j] & square << (9 * k)) == square << (9 * k)) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index/8 >= 1) && (index % 8 <= 6), shift down-right 0 + (index/8) &&  (index % 8) times (min of the two)
+                    if (i / 8 >= 1 && i % 8 >= 1) {
+                        for (int k = 0; (k <= (i / 8)  && k <= (i % 8)); k++) {
+                            bishopMove |= square >> (9 * k);
+                            if ((bishopOccupancyVariations[i][j] & square >> (9 * k)) == square >> (9 * k)) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index % 8 <= 6) and (index / 8 >= 1). shift down-left 7 - (index % 8) && (index/8) times (min of the two)
+                    if (i / 8 >= 1 && i % 8 <= 6) {
+                        for (int k = 0; (k <= (i / 8)  && k <= 7 - (i % 8)); k++) {
+                            bishopMove |= square >> (7 * k);
+                            if ((bishopOccupancyVariations[i][j] & square >> (7 * k)) == square >> (7 * k)) {
+                                break;
+                            }
+                        }
+                    }
+                    //If (index % 8 >= 1) and (index / 8 <= 6), shift up-right (index % 8) && (7-(index)/8) times (min ov the two)
+                    if (i / 8 <= 6 && i % 8 >= 1) {
+                        for (int k = 0; (k <= 7 - (i / 8) && k <= i % 8); k++) {
+                            bishopMove |= square << (7 * k);
+                            if ((bishopOccupancyVariations[i][j] & square << (7 * k)) == square << (7 * k)) {
+                                break;
+                            }
+                        }
+                    }
+
+                    bishopMove &= ~square;
+                    bishopMovesArray[i][j] = bishopMove;
+
+                }
+            }
+        }
+
+        //BIT MANIPULATION METHODS----------------------------------------------------------------------------
 
         //gets first set (index of least significant bit)
         private static int findFirstSet(ulong bitboard) {
@@ -405,7 +535,7 @@ namespace Chess_Engine {
             return indices;
         }
 
-        
+      
         //Finds the popcount (number of 1s in the bit)
         //This method was copied directly from stockfish
         public static int popcount(ulong bitboard) {
