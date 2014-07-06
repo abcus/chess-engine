@@ -13,21 +13,23 @@ namespace Chess_Engine {
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
 
         //12 bitboards (one for each piece type)
-        internal ulong wPawn = 0L;
-        internal ulong wKnight = 0L;
-        internal ulong wBishop = 0L;
-        internal ulong wRook = 0L;
-        internal ulong wQueen = 0L;
-        internal ulong wKing = 0L;
-        internal ulong bPawn = 0L;
-        internal ulong bKnight = 0L;
-        internal ulong bBishop = 0L;
-        internal ulong bRook = 0L;
-        internal ulong bQueen = 0L;
-        internal ulong bKing = 0L;
+        internal ulong wPawn = 0x0UL;
+        internal ulong wKnight = 0x0UL;
+        internal ulong wBishop = 0x0UL;
+        internal ulong wRook = 0x0UL;
+        internal ulong wQueen = 0x0UL;
+        internal ulong wKing = 0x0UL;
+        internal ulong bPawn = 0x0UL;
+        internal ulong bKnight = 0x0UL;
+        internal ulong bBishop = 0x0UL;
+        internal ulong bRook = 0x0UL;
+        internal ulong bQueen = 0x0UL;
+        internal ulong bKing = 0x0UL;
 
-        internal ulong whitePieces = 0L;
-        internal ulong blackPieces = 0L;
+        internal int[] pieceArray = new int[64];
+
+        internal ulong whitePieces = 0x0UL;
+        internal ulong blackPieces = 0x0UL;
 
         internal int sideToMove = 0;
 
@@ -45,7 +47,7 @@ namespace Chess_Engine {
         internal Boolean blackLongCastleRights = false;
 
         internal int enPassantColour = 0;
-        internal int enPassantSquare = 0;
+        internal ulong enPassantSquare = 0x0UL;
 
         internal int moveNumber = 0;
         internal int HalfMovesSincePawnMoveOrCapture = 0;
@@ -55,7 +57,7 @@ namespace Chess_Engine {
 
         internal int evaluationFunctionValue = 0;
 
-        internal ulong zobristKey = 0UL;
+        internal ulong zobristKey = 0x0UL;
 
         //CONSTRUCTOR------------------------------------------------------------------------------------
         
@@ -172,7 +174,7 @@ namespace Chess_Engine {
                         enPassantColour = Constants.BLACK;
                     }
                 }
-                enPassantSquare = baseOfEPSquare + factorOfEPSquare * 8;
+                enPassantSquare = 0x1UL << (baseOfEPSquare + factorOfEPSquare * 8);
             }
             
             //Checks to see if there is a halfmove clock or move number in the FEN string
@@ -236,10 +238,10 @@ namespace Chess_Engine {
 
         //gets the En Passant colour and square
         //element 0 = en passant colour, and element 1 = en passant square
-        public int[] getEnPassant() {
-            int[] enPassant = new int[2];
+        public ulong[] getEnPassant() {
+            ulong[] enPassant = new ulong[2];
 
-            enPassant[0] = enPassantColour;
+            enPassant[0] = (ulong) enPassantColour;
             enPassant[1] = enPassantSquare;
 
             return enPassant;

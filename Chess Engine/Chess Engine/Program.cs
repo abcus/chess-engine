@@ -15,13 +15,10 @@ namespace Chess_Engine {
             Console.BufferHeight = 2000 ;
             Constants.initializeConstants();
 
-            /*for (int i = 0; i < Constants.rookMoves.Length; i++) {
-                Console.WriteLine(Constants.rookMoves[i].Length);
-            }*/
 
-
+            Test.printOccupancyVariationAndMove(Constants.D4, "Last50", "Bishop");
             //Test.printOccupancyVariation(Constants.D4, "Last50", "Bishop");
-            Test.printMoves(Constants.D4, "Last50", "Bishop");
+            //Test.printMoves(Constants.D4, "Last50", "Bishop");
 
 
             //Creates a new engine object and calls its run method

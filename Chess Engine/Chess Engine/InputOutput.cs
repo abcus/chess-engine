@@ -52,6 +52,7 @@ namespace Chess_Engine {
             }
 
             //Goes through each of the bitboards; if they have a "1" then it sets the appropriate element in the array to the appropriate piece
+            //Note that the array goes from A8 to H1
             for (int i = 0; i < 64; i++) {
                 if (((wPawn >> i) & 1L) == 1) {
                     chessBoard[7 - (i / 8), 7 - (i % 8)] = "P";
@@ -112,7 +113,7 @@ namespace Chess_Engine {
             Console.WriteLine("Black Long Castle Rights: " + castleRights[3]);
 
             //en passant square
-            int[] enPassantData = inputBoard.getEnPassant();
+            ulong[] enPassantData = inputBoard.getEnPassant();
             if (enPassantData[0] != 0) {
                 colour = (enPassantData[0] == 1) ? "WHITE" : "BLACK";
                 Console.WriteLine("En Passant Colour: " + colour);
@@ -121,7 +122,7 @@ namespace Chess_Engine {
             }
             
             if (enPassantData[1] != 0) {
-                string firstChar = char.ConvertFromUtf32('h' - (enPassantData[1] % 8)).ToString();
+                string firstChar = char.ConvertFromUtf32((int) ('h' - (enPassantData[1] % 8))).ToString();
                 string secondChar = ((enPassantData[1] / 8) + 1).ToString();
                 Console.WriteLine("En Passant Square: " + firstChar + secondChar);
             } else if (enPassantData[1] == 0) {

@@ -76,9 +76,9 @@ namespace Chess_Engine {
 
         //Enumerated type for squares
         public const int 
-            H1 = 0, G1 = 1, F1 = 2, E1 = 3, D1 = 4, C1 = 5, B1 = 6, A1 = 7, 
-            H2 = 8, G2 = 9, F2 = 10, E2 = 11, D2 = 12, C2 = 13, B2 = 14, A2 = 15, 
-            H3 = 16,G3 = 17, F3 = 18, E3 = 19, D3 = 20, C3 = 21, B3 = 22, A3 = 23, 
+            H1 = 00, G1 = 01, F1 = 02, E1 = 03, D1 = 04, C1 = 05, B1 = 06, A1 = 07, 
+            H2 = 08, G2 = 09, F2 = 10, E2 = 11, D2 = 12, C2 = 13, B2 = 14, A2 = 15, 
+            H3 = 16, G3 = 17, F3 = 18, E3 = 19, D3 = 20, C3 = 21, B3 = 22, A3 = 23, 
             H4 = 24, G4 = 25, F4 = 26, E4 = 27, D4 = 28, C4 = 29, B4 = 30, A4 = 31, 
             H5 = 32, G5 = 33, F5 = 34, E5 = 35, D5 = 36, C5 = 37, B5 = 38, A5 = 39, 
             H6 = 40, G6 = 41, F6 = 42, E6 = 43, D6 = 44, C6 = 45, B6 = 46, A6 = 47, 
@@ -341,13 +341,15 @@ namespace Chess_Engine {
         //Starts at H1 and goes to A8
         public static ulong[][] bishopOccupancyVariations = new ulong[64][];
 
-        //Rook move array for all occupancy variations for all squares (does not use magic indexing)
+        //Rook move array for all occupancy variations for all squares 
         //Starts at H1 and goes to A8
         public static ulong[][] rookMoves = new ulong[64][];
 
-        //Bishop move array for all occupancy variations for all squares (does not use magic indexing)
+        //Bishop move array for all occupancy variations for all squares
         //Starts at H1 and goes to A8
         public static ulong[][] bishopMoves = new ulong[64][];
+
+        
 
 
         //METHODS-------------------------------------------------------------------------------------
@@ -362,7 +364,9 @@ namespace Chess_Engine {
             populateBishopMove(bishopMoves);
         }
 
-        //Populates the rook occupancy variation array for every square (not using magic indexing)
+
+
+        //Populates the rook occupancy variation array for every square
         public static void populateRookOccupancyVariation(ulong[][] rookOccupancyVariation) {
 
             //loops over every square
@@ -380,7 +384,7 @@ namespace Chess_Engine {
             }
         }
 
-        //Populates the bishop occupancy variation array for every square (not using magic indexing)
+        //Populates the bishop occupancy variation array for every square
         public static void populateBishopOccupancyVariation(ulong[][] bishopOccupancyVariation) {
 
             for (int i = 0; i <= 63; i++) {
@@ -396,7 +400,7 @@ namespace Chess_Engine {
             }
         }
 
-        //Populates the rook move array for every square (not using magic indexing)
+        //Populates the rook move array for every square 
         public static void populateRookMove(ulong[][] rookMovesArray) {
 
             //loops over every square in the rook occupancy variation array
@@ -452,15 +456,20 @@ namespace Chess_Engine {
                         }
                     }
                     rookMove &= ~square;
-                    rookMovesArray[i][j] = rookMove;
+
+                    //Hash function that calculates the array index from the table of magic numbers and table of shifts
+                    int arrayIndex = (int) ((rookOccupancyVariations[i][j] * rookMagicNumbers[i]) >>
+                                     (rookMagicShiftNumber[i]));
+
+                    rookMovesArray[i][arrayIndex] = rookMove;
                 }
             }
         }
 
-         //Populates the rook move array for every square (not using magic indexing)
+         //Populates the bishop move array for every square 
         public static void populateBishopMove(ulong[][] bishopMovesArray) {
 
-            //loops over every square in the rook occupancy variation array
+            //loops over every square in the bishop occupancy variation array
             for (int i = 0; i <= 63; i++) {
 
                 bishopMovesArray[i] = new ulong[bishopOccupancyVariations[i].Length];
@@ -510,7 +519,12 @@ namespace Chess_Engine {
                     }
 
                     bishopMove &= ~square;
-                    bishopMovesArray[i][j] = bishopMove;
+
+                    //Hash function that calculates the array index from the table of magic numbers and table of shifts
+                    int arrayIndex = (int)((bishopOccupancyVariations[i][j] * bishopMagicNumbers[i]) >>
+                                     (bishopMagicShiftNumber[i]));
+
+                    bishopMovesArray[i][arrayIndex] = bishopMove;
 
                 }
             }

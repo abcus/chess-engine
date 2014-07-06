@@ -316,7 +316,7 @@ namespace Chess_Engine {
        
         //Prints out board showing moves from start square to end square for king and knight
         public static void printArray(int startSquare, int endSquare, String piece) {
-            ulong temp = 0;
+            ulong temp = 0UL;
 
             for (int a = startSquare; a <= endSquare; a++) {
                 if (piece == "King") {
@@ -336,7 +336,8 @@ namespace Chess_Engine {
                 } else if (piece == "BishopOccupancyMask") {
                     temp = Constants.bishopOccupancyMask[a];
                 }
-                
+
+                //Note that the array goes from A8 to H1
                 string[,] chessBoard = new string[8, 8];
                 for (int i = 0; i < 64; i++) {
                     chessBoard[i / 8, i % 8] = " ";
@@ -365,15 +366,15 @@ namespace Chess_Engine {
             }
         }
 
-        //Prints out all occupancy variations for a particular square
-        public static void printOccupancyVariation(int square, String range, String piece) {
+        //Prints out all occupancy variations and associated moves for a particular square
+        public static void printOccupancyVariationAndMove(int square, String range, String piece) {
 
             int startPoint = 0;
             int endPoint = 0;
 
             if (range == "First50") {
-                    startPoint = 0;
-                    endPoint = 50;
+                startPoint = 0;
+                endPoint = 50;
             } else if (range == "Last50") {
                 if (piece == "Bishop") {
                     startPoint = Constants.bishopOccupancyVariations[square].Length - 50;
@@ -385,104 +386,72 @@ namespace Chess_Engine {
             }
 
             for (int i = startPoint; i < endPoint; i++) {
-                
-                string[,] chessBoard = new string[8, 8];
-                for (int j = 0; j < 64; j++) {
-                    chessBoard[j / 8, j % 8] = " ";
-                }
-                chessBoard[7 -square/ 8, 7 - square % 8] = "*";
 
-                if (piece == "Bishop") {
-                    for (int j = 0; j < 64; j++) {
-                        if (((Constants.bishopOccupancyVariations[square][i] >> j) & 1L) == 1) {
-                            chessBoard[7 - (j/8), 7 - (j%8)] = "X";
-                        }
-                    }
-                } else if (piece == "Rook") {
-                    for (int j = 0; j < 64; j++) {
-                        if (((Constants.rookOccupancyVariations[square][i] >> j) & 1L) == 1) {
-                            chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
-                        }
-                    }
-                }
-
-                for (int j = 0; j < 8; j++) {
-
-                    Console.WriteLine("  +---+---+---+---+---+---+---+---+");
-                    Console.Write((8 - j) + " ");
-
-                    for (int k = 0; k < 8; k++) {
-                        Console.Write("| " + chessBoard[j, k] + " ");
-                    }
-                    Console.WriteLine("|");
-                }
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
-                Console.WriteLine("    A   B   C   D   E   F   G   H");
-                Console.WriteLine("");
-                Console.WriteLine("");
-                Console.WriteLine("");
-            }
-        }
-
-
-        //Prints out all occupancy variations for a particular square
-        public static void printMoves(int square, String range, String piece) {
-
-            int startPoint = 0;
-            int endPoint = 0;
-
-            if (range == "First50") {
-                startPoint = 0;
-                endPoint = 50;
-            } else if (range == "Last50") {
-                if (piece == "Bishop") {
-                    startPoint = Constants.bishopMoves[square].Length - 50;
-                    endPoint = Constants.bishopMoves[square].Length;
-                } else if (piece == "Rook") {
-                    startPoint = Constants.rookMoves[square].Length - 50;
-                    endPoint = Constants.rookMoves[square].Length;
-                }
-            }
-
-            for (int i = startPoint; i < endPoint; i++) {
-
+                //array to hold the occupancy variation
+                //Note that the array goes from A8 to H1
                 string[,] chessBoard = new string[8, 8];
                 for (int j = 0; j < 64; j++) {
                     chessBoard[j / 8, j % 8] = " ";
                 }
                 chessBoard[7 - square / 8, 7 - square % 8] = "*";
 
+                //array to hold the move
+                //Note that the array goes from A8 to H1
+                string[,] moves = new string[8, 8];
+                for (int j = 0; j < 64; j++) {
+                    moves[j/8, j%8] = " ";
+                }
+                moves[7 - square/8, 7 - square%8] = "*";
+
                 if (piece == "Bishop") {
+
+                    int index = (int)((Constants.bishopOccupancyVariations[square][i]* Constants.bishopMagicNumbers[square]) >> Constants.bishopMagicShiftNumber[square]);
+                    
                     for (int j = 0; j < 64; j++) {
-                        if (((Constants.bishopMoves[square][i] >> j) & 1L) == 1) {
+                        if (((Constants.bishopOccupancyVariations[square][i] >> j) & 1L) == 1) {
                             chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                        }
+                        if (((Constants.bishopMoves[square][index] >> j) & 1L) == 1) {
+                            moves[7 - (j/8), 7 - (j%8)] = "X";
                         }
                     }
                 } else if (piece == "Rook") {
+
+                    int index = (int)((Constants.rookOccupancyVariations[square][i] * Constants.rookMagicNumbers[square]) >> Constants.rookMagicShiftNumber[square]);
+
                     for (int j = 0; j < 64; j++) {
-                        if (((Constants.rookMoves[square][i] >> j) & 1L) == 1) {
+                        if (((Constants.rookOccupancyVariations[square][i] >> j) & 1L) == 1) {
                             chessBoard[7 - (j / 8), 7 - (j % 8)] = "X";
+                        }
+                        if (((Constants.rookMoves[square][index] >> j) & 1L) == 1) {
+                            moves[7 - (j / 8), 7 - (j % 8)] = "X";
                         }
                     }
                 }
 
 
-                for (int j = 0; j < 8; j++) {
+                Console.WriteLine("  Occupancy Variation:\t\t\t  Moveset:");
 
-                    Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                for (int j = 0; j < 8; j++) {
+                    
+                    Console.WriteLine("  +---+---+---+---+---+---+---+---+\t  +---+---+---+---+---+---+---+---+");
                     Console.Write((8 - j) + " ");
 
                     for (int k = 0; k < 8; k++) {
                         Console.Write("| " + chessBoard[j, k] + " ");
                     }
+                    Console.Write("| \t" + (8-j) + " ");
+
+                    for (int k = 0; k < 8; k++) {
+                        Console.Write("| " + moves[j, k] + " ");
+                    }
                     Console.WriteLine("|");
                 }
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
-                Console.WriteLine("    A   B   C   D   E   F   G   H");
-                Console.WriteLine("");
-                Console.WriteLine("");
+                Console.WriteLine("  +---+---+---+---+---+---+---+---+\t  +---+---+---+---+---+---+---+---+");
+                Console.WriteLine("    A   B   C   D   E   F   G   H\t    A   B   C   D   E   F   G   H");
                 Console.WriteLine("");
             }
         }
     }
+
 }
