@@ -13,18 +13,10 @@ namespace Chess_Engine {
         static void Main(string[] args) {
 
             Console.BufferHeight = 2000 ;
-            Constants.initializeConstants();
-
-
-            Test.printOccupancyVariationAndMove(Constants.D4, "Last50", "Bishop");
-            //Test.printOccupancyVariation(Constants.D4, "Last50", "Bishop");
-            //Test.printMoves(Constants.D4, "Last50", "Bishop");
-
 
             //Creates a new engine object and calls its run method
-
-            //Engine chessEngine = new Engine();
-            //chessEngine.run(); 
+            Engine chessEngine = new Engine();
+            chessEngine.run(); 
         }
 
     }

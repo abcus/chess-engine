@@ -10,8 +10,10 @@ namespace Chess_Engine {
         
         public void run() {
             Constants.initializeConstants();
+
             Board gameBoard = new Board(Constants.FEN_START);
-            InputOutput.drawBoard(gameBoard);    
+            InputOutput.drawBoard(gameBoard);
+
         }
     }
 }

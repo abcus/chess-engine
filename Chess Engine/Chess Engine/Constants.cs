@@ -37,7 +37,10 @@ namespace Chess_Engine {
         //To convert from unsigned long to signed, subtract 18446744073709551616 if the unsigned long is bigger than 9223372036854775807
 
         //FEN for starting position
-        public const string FEN_START = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+        public const string FEN_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+        //FEN for a random position
+        public const string FEN_RANDOM = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
         
         //Enumerated type for types of moves
         public const int 
@@ -72,7 +75,7 @@ namespace Chess_Engine {
                BLACK_KING = 13;
 
         //Enumerated type for side to move
-        public const int WHITE = 1, BLACK = -1;
+        public const int WHITE = 1, BLACK = 2;
 
         //Enumerated type for squares
         public const int 

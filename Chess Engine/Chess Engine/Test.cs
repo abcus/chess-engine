@@ -312,13 +312,58 @@ namespace Chess_Engine {
                 }
             }
         }
+        //Prints out the piece array
+        public static void printPieceArray(int [] pieceArray) {
 
-       
+            //creates a new 8x8 array of String and sets it all to spaces
+            string[,] chessBoard = new string[8, 8];
+            for (int i = 0; i < 64; i++) {
+                chessBoard[i / 8, i % 8] = " ";
+            }
+
+            //Goes through the piece array and sees if there is a piece (int != 0)
+            //If so, it sets the corresponding element chessBoard array to the appropriate letter
+            for (int i = 0; i <= 63; i++) {
+                switch (pieceArray[i]) {
+                    case Constants.WHITE_PAWN: chessBoard[7 - (i/8), 7 - (i%8)] = "P"; break;
+                    case Constants.WHITE_KNIGHT: chessBoard[7 - (i/8), 7 - (i%8)] = "N"; break;
+                    case Constants.WHITE_BISHOP: chessBoard[7 - (i/8), 7 - (i%8)] = "B"; break;
+                    case Constants.WHITE_ROOK: chessBoard[7 - (i/8), 7 - (i%8)] = "R"; break;
+                    case Constants.WHITE_QUEEN: chessBoard[7 - (i/8), 7 - (i%8)] = "Q"; break;
+                    case Constants.WHITE_KING: chessBoard[7 - (i/8), 7 - (i%8)] = "K"; break;
+                    case Constants.BLACK_PAWN: chessBoard[7 - (i/8), 7 - (i%8)] = "p"; break;
+                    case Constants.BLACK_KNIGHT: chessBoard[7 - (i/8), 7 - (i%8)] = "n"; break;
+                    case Constants.BLACK_BISHOP: chessBoard[7 - (i/8), 7 - (i%8)] = "b"; break;
+                    case Constants.BLACK_ROOK: chessBoard[7 - (i/8), 7 - (i%8)] = "r"; break;
+                    case Constants.BLACK_QUEEN: chessBoard[7 - (i/8), 7 - (i%8)] = "q"; break;
+                    case Constants.BLACK_KING: chessBoard[7 - (i/8), 7 - (i%8)] = "k"; break;
+                    case 0:break;
+                }
+            }
+
+
+            for (int i = 0; i < 8; i++) {
+
+                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                Console.Write((i - i) + " ");
+
+                for (int j = 0; j < 8; j++) {
+                    Console.Write("| " + chessBoard[i,j] + " ");
+                }
+                Console.WriteLine("|");
+            }
+            Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+            Console.WriteLine("    A   B   C   D   E   F   G   H");
+            Console.WriteLine("");
+            Console.WriteLine("");
+            Console.WriteLine("");
+        }
+
         //Prints out board showing moves from start square to end square for king and knight
-        public static void printArray(int startSquare, int endSquare, String piece) {
+        public static void printArray(String piece) {
             ulong temp = 0UL;
 
-            for (int a = startSquare; a <= endSquare; a++) {
+            for (int a = 0; a <= 63; a++) {
                 if (piece == "King") {
                     temp = Constants.kingMoves[a];
                 } else if (piece == "Knight") {
@@ -372,15 +417,15 @@ namespace Chess_Engine {
             int startPoint = 0;
             int endPoint = 0;
 
-            if (range == "First50") {
+            if (range == "First20") {
                 startPoint = 0;
-                endPoint = 50;
-            } else if (range == "Last50") {
+                endPoint = 20;
+            } else if (range == "Last20") {
                 if (piece == "Bishop") {
-                    startPoint = Constants.bishopOccupancyVariations[square].Length - 50;
+                    startPoint = Constants.bishopOccupancyVariations[square].Length - 20;
                     endPoint = Constants.bishopOccupancyVariations[square].Length;
                 } else if (piece == "Rook") {
-                    startPoint = Constants.rookOccupancyVariations[square].Length - 50;
+                    startPoint = Constants.rookOccupancyVariations[square].Length - 20;
                     endPoint = Constants.rookOccupancyVariations[square].Length;
                 }
             }
@@ -451,6 +496,12 @@ namespace Chess_Engine {
                 Console.WriteLine("    A   B   C   D   E   F   G   H\t    A   B   C   D   E   F   G   H");
                 Console.WriteLine("");
             }
+        }
+
+        //creates and prints a move object
+        public static void createAndPrintMove() {
+            uint move = Move.moveEncoder(Constants.BLACK_ROOK, Constants.A1, Constants.A8, Constants.QUIET_MOVE, 0);
+            Console.WriteLine(Convert.ToString(move, 2).PadLeft(24, '0'));
         }
     }
 

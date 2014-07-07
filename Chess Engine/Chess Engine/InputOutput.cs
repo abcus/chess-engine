@@ -106,7 +106,7 @@ namespace Chess_Engine {
             Console.WriteLine("Side to move: " + colour);
             
             //castle rights
-            bool[] castleRights = inputBoard.getCastleRights();
+            int[] castleRights = inputBoard.getCastleRights();
             Console.WriteLine("White Short Castle Rights: " + castleRights[0]);
             Console.WriteLine("White Long Castle Rights: " + castleRights[1]);
             Console.WriteLine("Black Short Castle Rights: " + castleRights[2]);
@@ -131,9 +131,20 @@ namespace Chess_Engine {
             
 
             //move number
+            //If no move number data or halfmove clock data, then prints N/A
             int[] moveData = inputBoard.getMoveData();
-            Console.WriteLine("Fullmove number: " + moveData[0]);
-            Console.WriteLine("Half moves since last pawn push/capture: " + moveData[1]);
+            if (moveData[0] != -1) {
+                Console.WriteLine("Fullmove number: " + moveData[0]);
+            } else {
+                Console.WriteLine("Fullmove number: N/A");
+            }
+
+            if (moveData[1] != -1) {
+                Console.WriteLine("Half moves since last pawn push/capture: " + moveData[1]);
+            } else {
+              Console.WriteLine("Half moves since last pawn push/capture: N/A");  
+            }
+            
         }
 
 

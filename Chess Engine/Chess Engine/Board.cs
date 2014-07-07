@@ -12,7 +12,7 @@ namespace Chess_Engine {
 
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
 
-        //12 bitboards (one for each piece type)
+        //Variables that uniquely describe a board state
         internal ulong wPawn = 0x0UL;
         internal ulong wKnight = 0x0UL;
         internal ulong wBishop = 0x0UL;
@@ -28,23 +28,12 @@ namespace Chess_Engine {
 
         internal int[] pieceArray = new int[64];
 
-        internal ulong whitePieces = 0x0UL;
-        internal ulong blackPieces = 0x0UL;
-
         internal int sideToMove = 0;
 
-        internal Move lastMove = null;
-
-        internal Boolean blackInCheck = false;
-        internal Boolean blackInCheckmate = false;
-        internal Boolean whiteInCheck = false;
-        internal Boolean whiteInCheckmate = false;
-        internal Boolean stalemate = false;
-
-        internal Boolean whiteShortCastleRights = false;
-        internal Boolean whiteLongCastleRights = false;
-        internal Boolean blackShortCastleRights = false;
-        internal Boolean blackLongCastleRights = false;
+        internal int whiteShortCastleRights = 0;
+        internal int whiteLongCastleRights = 0;
+        internal int blackShortCastleRights = 0;
+        internal int blackLongCastleRights = 0;
 
         internal int enPassantColour = 0;
         internal ulong enPassantSquare = 0x0UL;
@@ -53,7 +42,23 @@ namespace Chess_Engine {
         internal int HalfMovesSincePawnMoveOrCapture = 0;
         internal int repetionOfPosition = 0;
 
+        //Variables that can be calculated
+        internal int blackInCheck = 0;
+        internal int blackInCheckmate = 0;
+        internal int whiteInCheck = 0;
+        internal int whiteInCheckmate = 0;
+        internal int stalemate = 0;
+
+        internal ulong whitePieces = 0x0UL;
+        internal ulong blackPieces = 0x0UL;
+        internal ulong allPieces = 0x0UL;
+
+        internal ulong whiteAttackMap = 0x0UL;
+        internal ulong blackAttackMap = 0x0UL;
+
         internal Boolean endGame = false;
+
+        internal uint lastMove = 0x0;
 
         internal int evaluationFunctionValue = 0;
 
@@ -123,10 +128,43 @@ namespace Chess_Engine {
                     }
                 }
             }
-                
-            //Computes the white pieces and black pieces bitboard by using "or" on all the individual pieces
-            whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
-            blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
+
+            //sets the piece array
+             //loops through each of the 8 strings representing the rows, from the bottom row to the top
+            for (int i = 0; i < 8; i++) {
+                String row = pieceLocation[7 - i];
+
+                //index for position in each row string
+                int index = 0;
+
+                //for each character in the row string, checks to see if there is a piece there
+                //If there is, then it adds it to the piece array
+                //If there is a number, then it advances the index by that number
+                foreach (char c in row) {
+                    switch (c) {
+                        case 'P': pieceArray[7 + 8 * i - index] = Constants.WHITE_PAWN; index++; break;
+                        case 'N': pieceArray[7 + 8 * i - index] = Constants.WHITE_KNIGHT; index++; break;
+                        case 'B': pieceArray[7 + 8 * i - index] = Constants.WHITE_BISHOP; index++; break;
+                        case 'R': pieceArray[7 + 8 * i - index] = Constants.WHITE_ROOK; index++; break;
+                        case 'Q': pieceArray[7 + 8 * i - index] = Constants.WHITE_QUEEN; index++; break;
+                        case 'K': pieceArray[7 + 8 * i - index] = Constants.WHITE_KING; index++; break;
+                        case 'p': pieceArray[7 + 8 * i - index] = Constants.BLACK_PAWN; index++; break;
+                        case 'n': pieceArray[7 + 8 * i - index] = Constants.BLACK_KNIGHT; index++; break;
+                        case 'b': pieceArray[7 + 8 * i - index] = Constants.BLACK_BISHOP; index++; break;
+                        case 'r': pieceArray[7 + 8 * i - index] = Constants.BLACK_ROOK; index++; break;
+                        case 'q': pieceArray[7 + 8 * i - index] = Constants.BLACK_QUEEN; index++; break;
+                        case 'k': pieceArray[7 + 8 * i - index] = Constants.BLACK_KING; index++; break;
+                        case '1': index += 1; break;
+                        case '2': index += 2; break;
+                        case '3': index += 3; break;
+                        case '4': index += 4; break;
+                        case '5': index += 5; break;
+                        case '6': index += 6; break;
+                        case '7': index += 7; break;
+                        case '8': index += 8; break;
+                    }
+                }
+            }
 
             //Sets the side to move variable
             foreach (char c in FENfields[1]) {
@@ -139,20 +177,20 @@ namespace Chess_Engine {
             
             //Sets the castling availability variables
             if (FENfields[2] == "-") {
-                whiteShortCastleRights = false;
-                whiteLongCastleRights = false;
-                blackShortCastleRights = false;
-                blackLongCastleRights = false;
+                whiteShortCastleRights = 0;
+                whiteLongCastleRights = 0;
+                blackShortCastleRights = 0;
+                blackLongCastleRights = 0;
             } else if (FENfields[2] != "-") {
                 foreach (char c in FENfields[2]) {
                     if (c == 'K') {
-                        whiteShortCastleRights = true;
+                        whiteShortCastleRights = 1;
                     } else if (c == 'Q') {
-                        whiteLongCastleRights = true;
+                        whiteLongCastleRights = 1;
                     } else if (c == 'k') {
-                        blackShortCastleRights = true;
+                        blackShortCastleRights = 1;
                     } else if (c == 'q') {
-                        blackLongCastleRights = true;
+                        blackLongCastleRights = 1;
                     }
                 }
             }
@@ -178,17 +216,26 @@ namespace Chess_Engine {
             }
             
             //Checks to see if there is a halfmove clock or move number in the FEN string
+            //If there isn't, then it sets the halfmove number clock and move number to 999;
             if (FENfields.Length >= 5) {
                 //sets the halfmove clock since last capture or pawn move
                 foreach (char c in FENfields[4]) {
-                    HalfMovesSincePawnMoveOrCapture = (int)Char.GetNumericValue(c);
+                    HalfMovesSincePawnMoveOrCapture = (int) Char.GetNumericValue(c);
                 }
 
                 //sets the move number
                 foreach (char c in FENfields[5]) {
-                    moveNumber = (int)Char.GetNumericValue(c);
+                    moveNumber = (int) Char.GetNumericValue(c);
                 }
+            } else {
+                HalfMovesSincePawnMoveOrCapture = -1;
+                moveNumber = -1;
             }
+
+            //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
+            whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
+            blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
+            allPieces = whitePieces | blackPieces;
 
         }
 
@@ -217,6 +264,10 @@ namespace Chess_Engine {
             return pieceBitboards;
         }
 
+        public int[] getPieceArray() {
+            return pieceArray;
+        }
+
         //gets the side to move
         public int getSideToMove() {
             return sideToMove;
@@ -225,8 +276,8 @@ namespace Chess_Engine {
         //gets the castling rights (returns an array of 4 bools)
         //element 0 = white short castle rights, 1 = white long castle rights
         //2 = black short castle rights, 3 = black long castle rights
-        public bool[] getCastleRights() {
-            bool[] castleRights = new bool[4];
+        public int[] getCastleRights() {
+            int[] castleRights = new int[4];
 
             castleRights[0] = whiteShortCastleRights;
             castleRights[1] = whiteLongCastleRights;
