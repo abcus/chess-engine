@@ -41,18 +41,20 @@ namespace Chess_Engine {
 
         //FEN for a random position
         public const string FEN_RANDOM = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+
+        
         
         //Enumerated type for types of moves
         public const int 
             QUIET_MOVE = 0,
             DOUBLE_PAWN_PUSH = 1,
-            KINGSIDE_CASTLE = 2,
-            QUEENSIDE_CASTLE = 3,
+            SHORT_CASTLE = 2,
+            LONG_CASTLE = 3,
             CAPTURE = 4,
             EN_PASSANT_CAPTURE = 5,
             KNIGHT_PROMOTION = 6,
-            BISHOP_PROMITION = 7,
-            ROOK_PROMITION = 8,
+            BISHOP_PROMOTION = 7,
+            ROOK_PROMOTION = 8,
             QUEEN_PROMOTION = 9,
             KNIGHT_PROMOTION_CAPTURE = 10,
             BISHOP_PROMOTION_CAPTURE = 11,
@@ -60,19 +62,20 @@ namespace Chess_Engine {
             QUEEN_PROMOTION_CAPTURE = 13;
         
         //Enumerated types for pieces
-           public const int
-               WHITE_PAWN   =  2,
-               BLACK_PAWN   =  3,
-               WHITE_KNIGHT =  4,
-               BLACK_KNIGHT =  5,
-               WHITE_ROOK   =  6,
-               BLACK_ROOK   =  7,
-               WHITE_BISHOP =  8,
-               BLACK_BISHOP =  9,
-               WHITE_QUEEN  = 10,
-               BLACK_QUEEN  = 11,
-               WHITE_KING   = 12,
-               BLACK_KING = 13;
+        public const int
+               EMPTY = 0,
+               WHITE_PAWN = 1,
+               WHITE_KNIGHT = 2,
+               WHITE_BISHOP = 3,
+               WHITE_ROOK = 4,
+               WHITE_QUEEN = 5,
+               WHITE_KING = 6,
+               BLACK_PAWN = 7,
+               BLACK_KNIGHT = 8,
+               BLACK_BISHOP = 9,
+               BLACK_ROOK = 10,
+               BLACK_QUEEN = 11,
+               BLACK_KING = 12;
 
         //Enumerated type for side to move
         public const int WHITE = 1, BLACK = 2;
@@ -87,6 +90,7 @@ namespace Chess_Engine {
             H6 = 40, G6 = 41, F6 = 42, E6 = 43, D6 = 44, C6 = 45, B6 = 46, A6 = 47, 
             H7 = 48, G7 = 49, F7 = 50, E7 = 51, D7 = 52, C7 = 53, B7 = 54, A7 = 55, 
             H8 = 56, G8 = 57, F8 = 58, E8 = 59, D8 = 60, C8 = 61, B8 = 62, A8 = 63;
+        
 
         //De Brujin tables
         public static readonly int[] index64 = {

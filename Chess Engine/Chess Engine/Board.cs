@@ -13,6 +13,9 @@ namespace Chess_Engine {
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
 
         //Variables that uniquely describe a board state
+
+        //bitboards and array to hold bitboards
+        internal ulong[] arrayOfBitboards = new ulong[12];
         internal ulong wPawn = 0x0UL;
         internal ulong wKnight = 0x0UL;
         internal ulong wBishop = 0x0UL;
@@ -26,18 +29,23 @@ namespace Chess_Engine {
         internal ulong bQueen = 0x0UL;
         internal ulong bKing = 0x0UL;
 
+        //piece array that stores the pieces as integers in a 64-element array
+        //Index 0 is H1, and element 63 is A8
         internal int[] pieceArray = new int[64];
 
+        //side to move
         internal int sideToMove = 0;
 
+        //castling rights
         internal int whiteShortCastleRights = 0;
         internal int whiteLongCastleRights = 0;
         internal int blackShortCastleRights = 0;
         internal int blackLongCastleRights = 0;
 
-        internal int enPassantColour = 0;
+        //en passant state
         internal ulong enPassantSquare = 0x0UL;
-
+        
+        //move data
         internal int moveNumber = 0;
         internal int HalfMovesSincePawnMoveOrCapture = 0;
         internal int repetionOfPosition = 0;
@@ -52,9 +60,6 @@ namespace Chess_Engine {
         internal ulong whitePieces = 0x0UL;
         internal ulong blackPieces = 0x0UL;
         internal ulong allPieces = 0x0UL;
-
-        internal ulong whiteAttackMap = 0x0UL;
-        internal ulong blackAttackMap = 0x0UL;
 
         internal Boolean endGame = false;
 
@@ -128,6 +133,20 @@ namespace Chess_Engine {
                     }
                 }
             }
+
+            //stores the bitboards in the array
+            arrayOfBitboards[0] = wPawn;
+            arrayOfBitboards[1] = wKnight;
+            arrayOfBitboards[2] = wBishop;
+            arrayOfBitboards[3] = wRook;
+            arrayOfBitboards[4] = wQueen;
+            arrayOfBitboards[5] = wKing;
+            arrayOfBitboards[6] = bPawn;
+            arrayOfBitboards[7] = bKnight;
+            arrayOfBitboards[8] = bBishop;
+            arrayOfBitboards[9] = bRook;
+            arrayOfBitboards[10] = bQueen;
+            arrayOfBitboards[11] = bKing;
 
             //sets the piece array
              //loops through each of the 8 strings representing the rows, from the bottom row to the top
@@ -206,11 +225,6 @@ namespace Chess_Engine {
                     baseOfEPSquare = 'h' - c;
                 } else if (char.IsDigit(c) == true) {
                     factorOfEPSquare = ((int)Char.GetNumericValue(c) - 1);
-                    if (c == '3') {
-                        enPassantColour = Constants.WHITE;
-                    } else if (c == '6') {
-                        enPassantColour = Constants.BLACK;
-                    }
                 }
                 enPassantSquare = 0x1UL << (baseOfEPSquare + factorOfEPSquare * 8);
             }
@@ -232,6 +246,9 @@ namespace Chess_Engine {
                 moveNumber = -1;
             }
 
+            //Sets the repetition number variable
+            repetionOfPosition = 0;
+
             //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
             whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
             blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
@@ -241,29 +258,14 @@ namespace Chess_Engine {
 
         //GET METHODS----------------------------------------------------------------------------------------
 
-        //gets the piece bitboards (returns an array of 12 bitboards)
+        //gets the array of piece bitboards (returns an array of 12 bitboards)
         //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
         //element 6 = black pawn, 7 = black knight, 8 = black bishop, 9 = black rook, 10 = black queen, 11 = black king
-
         public ulong[] getPieceBitboards() {
-            ulong[] pieceBitboards = new ulong[12];
-            
-            pieceBitboards[0] = wPawn;
-            pieceBitboards[1] = wKnight;
-            pieceBitboards[2] = wBishop;
-            pieceBitboards[3] = wRook;
-            pieceBitboards[4] = wQueen;
-            pieceBitboards[5] = wKing;
-            pieceBitboards[6] = bPawn;
-            pieceBitboards[7] = bKnight;
-            pieceBitboards[8] = bBishop;
-            pieceBitboards[9] = bRook;
-            pieceBitboards[10] = bQueen;
-            pieceBitboards[11] = bKing;
-
-            return pieceBitboards;
+            return arrayOfBitboards;
         }
 
+        //gets the array of pieces
         public int[] getPieceArray() {
             return pieceArray;
         }
@@ -289,13 +291,8 @@ namespace Chess_Engine {
 
         //gets the En Passant colour and square
         //element 0 = en passant colour, and element 1 = en passant square
-        public ulong[] getEnPassant() {
-            ulong[] enPassant = new ulong[2];
-
-            enPassant[0] = (ulong) enPassantColour;
-            enPassant[1] = enPassantSquare;
-
-            return enPassant;
+        public ulong getEnPassant() {
+            return enPassantSquare;
         }
 
         //gets the move data
@@ -313,5 +310,57 @@ namespace Chess_Engine {
         //SET METHODS-----------------------------------------------------------------------------------------
 
 
+        //sets the appropriate bitboard and updates the piecearray
+        public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput, int[] pieceArrayInput) {
+            arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+            pieceArray = pieceArrayInput;
+        }
+
+        //Sets the appropriate bitboard (overridden method)
+        public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput) {
+            arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+        }
+
+        //sets the side to move
+        public void setSideToMove(int sideToMoveInput) {
+            sideToMove = sideToMoveInput;
+        }
+
+        //sets white short castling rights
+        public void setWhiteShortCastle(int whiteShortCastleRightsInput) {
+            whiteShortCastleRights = whiteShortCastleRightsInput;
+        }
+        //sets white short castling rights
+        public void setWhiteLongCastle(int whiteLongCastleRightsInput) {
+            whiteLongCastleRights = whiteLongCastleRightsInput;
+        }
+        //sets white short castling rights
+        public void setBlackShortCastle(int blackShortCastleRightsInput) {
+            blackShortCastleRights = blackShortCastleRightsInput;
+        }
+        //sets white short castling rights
+        public void setBlackLongCastle(int blackLongCastleRightsInput) {
+            blackLongCastleRights = blackLongCastleRightsInput;
+        }
+
+        //sets en passant square and color
+        public void setEnPassantSquare(ulong enPassantSquareInput) {
+            enPassantSquare = enPassantSquareInput;
+        }
+
+        //sets the move number
+        public void setMoveNumber(int moveNumberInput) {
+            moveNumber = moveNumberInput;
+        }
+
+        //sets the halfmove clock (since pawn pushes or captures)
+        public void setHalfMoveClock(int halfMoveClockInput) {
+            HalfMovesSincePawnMoveOrCapture = halfMoveClockInput;
+        }
+
+        //sets the number of repetitions
+        public void setRepetitionNumber(int repetitionNumberInput) {
+            repetionOfPosition = repetitionNumberInput;
+        }
     }
 }
