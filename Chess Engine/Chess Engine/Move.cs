@@ -221,7 +221,7 @@ namespace Chess_Engine {
             int pieceCaptured = getPieceCaptured(moveRepresentationInput);
 
             //Gets the array of bitboards and piece array
-            ulong[] arrayOfBitboards = inputBoard.getPieceBitboards();
+            ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
             int[] pieceArray = inputBoard.getPieceArray();
 
             //Calculates bitboards for removing piece from start square and adding piece to destionation square
@@ -529,7 +529,7 @@ namespace Chess_Engine {
         }
 
         //static method that unmakes a move by restoring the board object's instance variables
-        public static void unmakeMove(uint uvmoveRepresentationInput, Board inputBoard, uint boardRestoreDataRepresentation) {
+        public static void unmakeMove(uint unmoveRepresentationInput, Board inputBoard, uint boardRestoreDataRepresentation) {
 
             //extracts the individual fields of the board restore data from the 32-bit unsigned integer
             int sideToMove = getsideToMove(boardRestoreDataRepresentation);
@@ -564,14 +564,14 @@ namespace Chess_Engine {
             inputBoard.setRepetitionNumber(repetitionNumber);
 
             //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-            int pieceMoved = getPieceMoved(uvmoveRepresentationInput);
-            int startSquare = getStartSquare(uvmoveRepresentationInput);
-            int destinationSquare = getDestinationSquare(uvmoveRepresentationInput);
-            int flag = getFlag(uvmoveRepresentationInput);
-            int pieceCaptured = getPieceCaptured(uvmoveRepresentationInput);
+            int pieceMoved = getPieceMoved(unmoveRepresentationInput);
+            int startSquare = getStartSquare(unmoveRepresentationInput);
+            int destinationSquare = getDestinationSquare(unmoveRepresentationInput);
+            int flag = getFlag(unmoveRepresentationInput);
+            int pieceCaptured = getPieceCaptured(unmoveRepresentationInput);
 
             //Gets the array of bitboards and piece array
-            ulong[] arrayOfBitboards = inputBoard.getPieceBitboards();
+            ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
             int[] pieceArray = inputBoard.getPieceArray();
 
             //Calculates bitboards for removing piece from start square and adding piece to destionation square

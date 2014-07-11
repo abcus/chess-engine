@@ -29,6 +29,12 @@ namespace Chess_Engine {
         internal ulong bQueen = 0x0UL;
         internal ulong bKing = 0x0UL;
 
+        //aggregate bitboards and array to hold aggregate bitboards
+        internal ulong[] arrayOfAggregateBitboards = new ulong[3];
+        internal ulong whitePieces = 0x0UL;
+        internal ulong blackPieces = 0x0UL;
+        internal ulong allPieces = 0x0UL;
+
         //piece array that stores the pieces as integers in a 64-element array
         //Index 0 is H1, and element 63 is A8
         internal int[] pieceArray = new int[64];
@@ -56,10 +62,6 @@ namespace Chess_Engine {
         internal int whiteInCheck = 0;
         internal int whiteInCheckmate = 0;
         internal int stalemate = 0;
-
-        internal ulong whitePieces = 0x0UL;
-        internal ulong blackPieces = 0x0UL;
-        internal ulong allPieces = 0x0UL;
 
         internal Boolean endGame = false;
 
@@ -254,6 +256,10 @@ namespace Chess_Engine {
             blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
             allPieces = whitePieces | blackPieces;
 
+            arrayOfAggregateBitboards[0] = whitePieces;
+            arrayOfAggregateBitboards[1] = blackPieces;
+            arrayOfAggregateBitboards[2] = allPieces;
+
         }
 
         //GET METHODS----------------------------------------------------------------------------------------
@@ -261,8 +267,14 @@ namespace Chess_Engine {
         //gets the array of piece bitboards (returns an array of 12 bitboards)
         //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
         //element 6 = black pawn, 7 = black knight, 8 = black bishop, 9 = black rook, 10 = black queen, 11 = black king
-        public ulong[] getPieceBitboards() {
+        public ulong[] getArrayOfPieceBitboards() {
             return arrayOfBitboards;
+        }
+
+        //gets the array of aggregate piece bitboards (returns an array of 3 bitboards)
+        //element 0 = white pieces, element 1 = black pieces, element 2 = all pieces
+        public ulong[] getArrayOfAggregatePieceBitboards() {
+            return arrayOfAggregateBitboards;
         }
 
         //gets the array of pieces
@@ -307,18 +319,56 @@ namespace Chess_Engine {
             return moveData;
         }
 
+
         //SET METHODS-----------------------------------------------------------------------------------------
 
 
         //sets the appropriate bitboard and updates the piecearray
+        //Updates the white pieces bitboard (index 0), black pieces bitboard (index 1), and occupied bitboard (index 2)
         public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput, int[] pieceArrayInput) {
-            arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+
+            ulong oldPieceBitboard = arrayOfBitboards[(pieceTypeInput - 1)];
+            
+            if (pieceTypeInput == Constants.WHITE_PAWN || pieceTypeInput == Constants.WHITE_KNIGHT ||
+                pieceTypeInput == Constants.WHITE_BISHOP || pieceTypeInput == Constants.WHITE_ROOK ||
+                pieceTypeInput == Constants.WHITE_QUEEN || pieceTypeInput == Constants.WHITE_KING) {
+                arrayOfAggregateBitboards[0] &= (~oldPieceBitboard);
+                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+                arrayOfAggregateBitboards[0] |= bitboardInput;
+            } else if (pieceTypeInput == Constants.BLACK_PAWN || pieceTypeInput == Constants.BLACK_KNIGHT ||
+                pieceTypeInput == Constants.BLACK_BISHOP || pieceTypeInput == Constants.BLACK_ROOK ||
+                pieceTypeInput == Constants.BLACK_QUEEN || pieceTypeInput == Constants.BLACK_KING) {
+                arrayOfAggregateBitboards[1] &= (~oldPieceBitboard);
+                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+                arrayOfAggregateBitboards[1] |= bitboardInput;
+            }
+            arrayOfAggregateBitboards[2] = arrayOfAggregateBitboards[0] | arrayOfAggregateBitboards[1];
+            
+            //sets the piece array to the input
             pieceArray = pieceArrayInput;
+
+            
         }
 
         //Sets the appropriate bitboard (overridden method)
+        //Updates the white pieces bitboard, black pieces bitboard, and occupied bitboard
         public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput) {
-            arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+            ulong oldPieceBitboard = arrayOfBitboards[(pieceTypeInput - 1)];
+
+            if (pieceTypeInput == Constants.WHITE_PAWN || pieceTypeInput == Constants.WHITE_KNIGHT ||
+                pieceTypeInput == Constants.WHITE_BISHOP || pieceTypeInput == Constants.WHITE_ROOK ||
+                pieceTypeInput == Constants.WHITE_QUEEN || pieceTypeInput == Constants.WHITE_KING) {
+                arrayOfAggregateBitboards[0] &= (~oldPieceBitboard);
+                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+                arrayOfAggregateBitboards[0] |= bitboardInput;
+            } else if (pieceTypeInput == Constants.BLACK_PAWN || pieceTypeInput == Constants.BLACK_KNIGHT ||
+                pieceTypeInput == Constants.BLACK_BISHOP || pieceTypeInput == Constants.BLACK_ROOK ||
+                pieceTypeInput == Constants.BLACK_QUEEN || pieceTypeInput == Constants.BLACK_KING) {
+                arrayOfAggregateBitboards[1] &= (~oldPieceBitboard);
+                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
+                arrayOfAggregateBitboards[1] |= bitboardInput;
+            }
+            arrayOfAggregateBitboards[2] = arrayOfAggregateBitboards[0] | arrayOfAggregateBitboards[1];
         }
 
         //sets the side to move

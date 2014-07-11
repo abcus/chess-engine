@@ -118,18 +118,18 @@ namespace Chess_Engine {
         public static void generateWhitePawnCaptures() {
 
             for (int i = 0; i <= 63; i++) {
-                ulong whitePawnG2Captures = 0x0000000000050000UL;
+                ulong whitePawnG1Captures = 0x0000000000000500UL;
                 ulong temp = 0x0UL;
 
-                if (i >= 0 && i <= 7 || i >= 56) {
+                if (i >= 56) {
 
-                } else if (i == 8) {
-                    temp = ((whitePawnG2Captures >> 1) & (~Constants.FILE_A));
-                } else if (i >= 9 && i < 56 ) {
-                    temp = whitePawnG2Captures << (i - 9);
-                    if ((i-9) % 8 == 6) {
+                } else if (i == 0) {
+                    temp = ((whitePawnG1Captures >> 1) & (~Constants.FILE_A));
+                } else if (i >= 1 && i < 56 ) {
+                    temp = whitePawnG1Captures << (i - 1);
+                    if ((i-1) % 8 == 6) {
                         temp &= ~Constants.FILE_H;
-                    } else if ((i-9) % 8 == 7) {
+                    } else if ((i-1) % 8 == 7) {
                         temp &= ~Constants.FILE_A;
                     }
                 }
@@ -146,11 +146,11 @@ namespace Chess_Engine {
                 ulong blackPawnG2Captures = 0x0000000000000005UL;
                 ulong temp = 0x0UL;
 
-                if (i >= 0 && i <= 7 || i >= 56) {
+                if (i >= 0 && i <= 7) {
 
                 } else if (i == 8) {
                     temp = ((blackPawnG2Captures >> 1) & (~Constants.FILE_A));
-                } else if (i >= 9 && i < 56) {
+                } else if (i >= 9 && i < 64) {
                     temp = blackPawnG2Captures << (i - 9);
                     if ((i - 9) % 8 == 6) {
                         temp &= ~Constants.FILE_H;
@@ -519,6 +519,11 @@ namespace Chess_Engine {
             InputOutput.drawBoard(inputBoard);
         }
 
+        //Checks if the king is in check and prints out the result
+        public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
+            Boolean inCheck = LegalMoveGenerator.kingInCheck(inputBoard, colourOfKingToCheck);
+            Console.WriteLine("King in check: " + inCheck);
+        }
         
     }
 

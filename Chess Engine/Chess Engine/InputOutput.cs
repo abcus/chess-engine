@@ -29,7 +29,7 @@ namespace Chess_Engine {
         public static void drawBoard(Board inputBoard) {
 
             //gets the bitboards from the board object
-            ulong[] arrayOfBitboards = inputBoard.getPieceBitboards();
+            ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
 
             ulong wPawn = arrayOfBitboards[0];
             ulong wKnight = arrayOfBitboards[1];
@@ -102,7 +102,7 @@ namespace Chess_Engine {
             
             //side to move
             int sideToMove = inputBoard.getSideToMove();
-            String colour = (sideToMove == 1) ? "WHITE" : "BLACK";
+            String colour = (sideToMove == Constants.WHITE) ? "WHITE" : "BLACK";
             Console.WriteLine("Side to move: " + colour);
             
             //castle rights

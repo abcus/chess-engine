@@ -11,9 +11,13 @@ namespace Chess_Engine {
         public void run() {
             Constants.initializeConstants();
 
-            Board gameBoard = new Board(Constants.FEN_START);
+            string test = "8/P7/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+            Board gameBoard = new Board(test);
             InputOutput.drawBoard(gameBoard);
 
+            List<uint> temp = LegalMoveGenerator.generateListOfLegalMoves(gameBoard);
+            Console.WriteLine(temp.Count);
         }
     }
 }
