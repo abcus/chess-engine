@@ -284,34 +284,6 @@ namespace Chess_Engine {
             }
         }
 
-        //Generates all permutations for the "1 bits" of a binary number 
-        public static void generateBinaryPermutations(ulong inputBinaryNumber, List<int> remainingIndices, List<ulong> permutations) {
-            
-            //If there are no more indices left to be swapped, it prints out the number
-            if (remainingIndices.Count == 0) {
-                permutations.Add(inputBinaryNumber);
-                //Console.WriteLine(Convert.ToString((long) inputBinaryNumber, 2));
-            } else {
-                string[] onOff = {"0", "1"};
-
-                //Sets the first "1" bit to either 0 or 1
-                foreach (string bit in onOff) {
-                    if (bit == "0") {
-                        inputBinaryNumber &= ~(0x1UL << remainingIndices[0]);
-                    }
-                    //removes the index of the first "1" bit and makes a recursive call to set the next "1" bit to either 0 or 1
-                    int temp = remainingIndices[0];
-                    remainingIndices.RemoveAt(0);
-                    generateBinaryPermutations(inputBinaryNumber, remainingIndices, permutations);
-                    
-                    //Unmakes move by re-inserting the index of the first "1" bit, and resetting the input binary number
-                    remainingIndices.Insert(0, temp);
-                    if (bit == "0") {
-                        inputBinaryNumber |= (0x1UL << remainingIndices[0]);
-                    }
-                }
-            }
-        }
         //Prints out the piece array
         public static void printPieceArray(int [] pieceArray) {
 
@@ -521,10 +493,13 @@ namespace Chess_Engine {
 
         //Checks if the king is in check and prints out the result
         public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
-            Boolean inCheck = LegalMoveGenerator.kingInCheck(inputBoard, colourOfKingToCheck);
-            Console.WriteLine("King in check: " + inCheck);
-        }
-        
-    }
+            int checkStatus = LegalMoveGenerator.kingInCheck(inputBoard, colourOfKingToCheck);
 
+            switch (checkStatus) {
+                case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
+                case Constants.CHECK: Console.WriteLine("King is in check"); break;
+                case Constants.DOUBLE_CHECK: Console.WriteLine("King is in double check"); break;
+            }
+        }
+    }
 }

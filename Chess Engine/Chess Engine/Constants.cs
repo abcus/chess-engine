@@ -34,6 +34,12 @@ namespace Chess_Engine {
         public const ulong LIGHT_SQUARES = 0xAA55AA55AA55AA55UL;
         public const ulong DARK_SQUARES = 0x55AA55AA55AA55AAUL;
 
+        //Castling squares
+        public const ulong WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES = 0x0000000000000006UL;
+        public const ulong WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES = 0x0000000000000070UL;
+        public const ulong BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES = 0x0600000000000000UL;
+        public const ulong BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES = 0x7000000000000000UL;
+
         //To convert from unsigned long to signed, subtract 18446744073709551616 if the unsigned long is bigger than 9223372036854775807
 
         //FEN for starting position
@@ -79,6 +85,12 @@ namespace Chess_Engine {
 
         //Enumerated type for side to move
         public const int WHITE = 0, BLACK = 1;
+
+        //Enumberated type for checks
+        public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2;
+
+        //Enumerated type for castling rights
+        public const int CANNOT_CASTLE = 0, CAN_CASTLE = 1;
 
         //Enumerated type for squares
         public const int 
@@ -373,7 +385,41 @@ namespace Chess_Engine {
             populateBishopMove(bishopMoves);
         }
 
+        //Generates all permutations for the "1 bits" of a binary number 
+        private static void generateBinaryPermutations(ulong inputBinaryNumber, List<int> remainingIndices, List<ulong> permutations)
+        {
 
+            //If there are no more indices left to be swapped, it prints out the number
+            if (remainingIndices.Count == 0)
+            {
+                permutations.Add(inputBinaryNumber);
+                //Console.WriteLine(Convert.ToString((long) inputBinaryNumber, 2));
+            }
+            else
+            {
+                string[] onOff = { "0", "1" };
+
+                //Sets the first "1" bit to either 0 or 1
+                foreach (string bit in onOff)
+                {
+                    if (bit == "0")
+                    {
+                        inputBinaryNumber &= ~(0x1UL << remainingIndices[0]);
+                    }
+                    //removes the index of the first "1" bit and makes a recursive call to set the next "1" bit to either 0 or 1
+                    int temp = remainingIndices[0];
+                    remainingIndices.RemoveAt(0);
+                    generateBinaryPermutations(inputBinaryNumber, remainingIndices, permutations);
+
+                    //Unmakes move by re-inserting the index of the first "1" bit, and resetting the input binary number
+                    remainingIndices.Insert(0, temp);
+                    if (bit == "0")
+                    {
+                        inputBinaryNumber |= (0x1UL << remainingIndices[0]);
+                    }
+                }
+            }
+        }
 
         //Populates the rook occupancy variation array for every square
         public static void populateRookOccupancyVariation(ulong[][] rookOccupancyVariation) {
@@ -384,7 +430,7 @@ namespace Chess_Engine {
                 List<ulong> permutationsForParticularSquare = new List<ulong>();
 
                 //Takes in the rook occupancy mask for that particular square and generates all permutations/variations of the "1" bits, and stores it in array list
-                Test.generateBinaryPermutations(rookOccupancyMask[i], bitScan(rookOccupancyMask[i]), permutationsForParticularSquare);
+                generateBinaryPermutations(rookOccupancyMask[i], bitScan(rookOccupancyMask[i]), permutationsForParticularSquare);
 
                 //Sorts the array list of permutations/variations, converts it to an array, and puts in the rook occupancy variations array
                 permutationsForParticularSquare.Sort();
@@ -400,7 +446,7 @@ namespace Chess_Engine {
                 
                 List<ulong> permutationsForParticularSquare = new List<ulong>();
 
-                Test.generateBinaryPermutations(bishopOccupancyMask[i], bitScan(bishopOccupancyMask[i]), permutationsForParticularSquare);
+                generateBinaryPermutations(bishopOccupancyMask[i], bitScan(bishopOccupancyMask[i]), permutationsForParticularSquare);
 
                 permutationsForParticularSquare.Sort();
                 ulong[] permutationsForParticularSquareArray = permutationsForParticularSquare.ToArray();

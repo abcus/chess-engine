@@ -205,13 +205,13 @@ namespace Chess_Engine {
             } else if (FENfields[2] != "-") {
                 foreach (char c in FENfields[2]) {
                     if (c == 'K') {
-                        whiteShortCastleRights = 1;
+                        whiteShortCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'Q') {
-                        whiteLongCastleRights = 1;
+                        whiteLongCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'k') {
-                        blackShortCastleRights = 1;
+                        blackShortCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'q') {
-                        blackLongCastleRights = 1;
+                        blackLongCastleRights = Constants.CAN_CASTLE;
                     }
                 }
             }
