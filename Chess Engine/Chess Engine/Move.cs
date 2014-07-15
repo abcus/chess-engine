@@ -33,156 +33,7 @@ namespace Chess_Engine {
             return (uint)moveRepresentation;
         }
 
-        //Takes information on side to move, castling rights, en-passant square, en-passant color, move number, half-move clock
-        //Creates a 32-bit unsigned integer representing this information
-        //Have to convert the bitboard for en-passant into an index
-        public static uint boardRestoreDataEncoder(int sideToMove, int whiteShortCastle, int whiteLongCastle,
-            int blackShortCastle, int blackLongCastle, int enPassantSquare, int halfMoveClock,
-            int moveNumber, int repetitionNumber) {
-            int boardRestoreDataRepresentation = 0x0;
-
-            //encodes castling rights
-            boardRestoreDataRepresentation |= sideToMove << 0;
-            boardRestoreDataRepresentation |= whiteShortCastle << 2;
-            boardRestoreDataRepresentation |= whiteLongCastle << 3;
-            boardRestoreDataRepresentation |= blackShortCastle << 4;
-            boardRestoreDataRepresentation |= blackLongCastle << 5;
-            
-            //Encodes en passant square
-            //If there is no en-passant square, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
-            if (enPassantSquare == 0) {
-                boardRestoreDataRepresentation |= 63 << 6;
-            } else if (enPassantSquare != 0) {
-                boardRestoreDataRepresentation |= enPassantSquare << 6;
-            }
-
-            //encodes repetition number
-            boardRestoreDataRepresentation |= repetitionNumber << 12;
-            
-            //encodes half-move clock
-            //If there is no half-move clock, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
-            if (halfMoveClock == -1) {
-                boardRestoreDataRepresentation |= 63 << 14;
-            } else if (halfMoveClock != -1) {
-                boardRestoreDataRepresentation |= halfMoveClock << 14;
-            }
-            
-            //encodes move number
-            //If there is no move number, then we set the bits corresponding to that variable to 4095 (the maximum value for 12 bits)
-            if (moveNumber == -1) {
-                boardRestoreDataRepresentation |= 4095 << 20;
-            } else if (moveNumber != -1) {
-                boardRestoreDataRepresentation |= moveNumber << 20;
-            }
-
-            //returns the encoded board restore data
-            return (uint) boardRestoreDataRepresentation;
-        }
-
-
-        //METHODS THAT DECODE U32-INT REPRESENTING MOVES AND BOARD INSTANCE VARIABLES----------------------------
-
-        //Extracts the piece moved from the integer that encodes the move
-        public static int getPieceMoved(uint moveRepresentation) {
-            int pieceMoved = (int)((moveRepresentation & 0xF) >> 0);
-            return pieceMoved;
-        }
-        //Extracts the start square from the integer that encodes the move
-        public static int getStartSquare(uint moveRepresentation) {
-            int startSquare = (int)((moveRepresentation & 0x3F0) >> 4);
-            return startSquare;
-        }
-        //Extracts the destination square from the integer that encodes the move
-        public static int getDestinationSquare(uint moveRepresentation) {
-            int destinationSquare = (int)((moveRepresentation & 0xFC00) >> 10);
-            return destinationSquare;
-        }
-        //Extracts the flag from the integer that encodes the move
-        public static int getFlag(uint moveRepresentation) {
-            int flag = (int)((moveRepresentation & 0xF0000) >> 16);
-            return flag;
-        }
-        //Extracts the piece captured from the integer that encodes the move
-        //If we extract 15, then we know that there was no piece captured and return 0
-        public static int getPieceCaptured(uint moveRepresentation) {
-            int pieceCaptured = (int)((moveRepresentation & 0xF00000) >> 20);
-
-            if (pieceCaptured == 15) {
-                return 0;
-            } else {
-                return pieceCaptured;
-            }
-        }
-
-
-        //Extracts the side to move from the integer encoding the restore board data
-        private static int getsideToMove(uint boardRestoreDataRepresentation) {
-            int sideToMove = (int)((boardRestoreDataRepresentation & 0x3) >> 0);
-            return sideToMove;
-        }
-        //Extracts the white short castle rights from the integer encoding the restore board data
-        private static int getWhiteShortCastleRights(uint boardRestoreDataRepresentation) {
-            int whiteShortCastleRights = (int)((boardRestoreDataRepresentation & 0x4) >> 2);
-            return whiteShortCastleRights;
-        }
-        //Extracts the white long castle rights from the integer encoding the restore board data
-        private static int getWhiteLongCastleRights(uint boardRestoreDataRepresentation) {
-            int whiteLongCastleRights = (int)((boardRestoreDataRepresentation & 0x8) >> 3);
-            return whiteLongCastleRights;
-        }
-        //Extracts the black short castle rights from the integer encoding the restore board data
-        private static int getBlackShortCastleRights(uint boardRestoreDataRepresentation) {
-            int blackShortCastleRights = (int)((boardRestoreDataRepresentation & 0x10) >> 4);
-            return blackShortCastleRights;
-        }
-        //Extracts the black long castle rights from the integer encoding the restore board data
-        private static int getBlackLongCastleRights(uint boardRestoreDataRepresentation) {
-            int blackLongCastleRights = (int)((boardRestoreDataRepresentation & 0x20) >> 5);
-            return blackLongCastleRights;
-        }
-        //Extracts the en passant square from the integer encoding the restore board data
-        //If we extract 63, then we know that there was no en passant square and return 0 (so that the instance variable for EQ square can be set to 0x0UL)
-        private static int getEnPassantSquare(uint boardRestoreDataRepresentation) {
-            int enPassantSquare = (int)((boardRestoreDataRepresentation & 0xFC0) >> 6);
-
-            if (enPassantSquare == 63) {
-                return 0;
-            } else {
-                return enPassantSquare;
-            }
-        }
-        //Extracts the repetition number from the integer encoding the restore board data
-        private static int getRepetitionNumber(uint boardRestoreDataRepresentation) {
-            int repetitionNumber = (int)((boardRestoreDataRepresentation & 0x3000) >> 12);
-            return repetitionNumber;
-        }
-        
-        //Extracts the half move clock (since last pawn push/capture) from the integer encoding the restore board data
-        //If we extract 63, then we know that there was no half-move clock and return -1 (original value of instance variable)
-        private static int getHalfMoveClock(uint boardRestoreDataRepresentation) {
-            int halfMoveClock = (int)((boardRestoreDataRepresentation & 0xFC000) >> 14);
-
-            if (halfMoveClock == 63) {
-                return -1;
-            } else {
-                return halfMoveClock;
-            } 
-        }
-        //Extracts the move number from the integer encoding the restore board data
-        //If we extract 4095, then we know that there was no move number and return -1 (original value of instance variable)
-        private static int getMoveNumber(uint boardRestoreDataRepresentation) {
-            int moveNumber = (int)((boardRestoreDataRepresentation & 0xFFF00000) >> 20);
-
-            if (moveNumber == 4095) {
-                return -1;
-            } else {
-                return moveNumber;  
-            }
-        }
-        
-
-
-        //MAKE AND UNMAKE MOVE METHODS-----------------------------------------------------------------------
+        //MAKE MOVE METHODS-----------------------------------------------------------------------
 
         //Static method that makes a move by updating the board object's instance variables
         public static uint makeMove(uint moveRepresentationInput, Board inputBoard) {
@@ -209,16 +60,62 @@ namespace Chess_Engine {
             int halfMoveClock = inputBoard.getMoveData()[1];
             int repetitionNumber = inputBoard.getMoveData()[2];
 
-            boardRestoreData = boardRestoreDataEncoder(sideToMove, whiteShortCastleRights, whiteLongCastleRights,
-                blackShortCastleRights, blackLongCastleRights, enPassantSquareNumber, halfMoveClock, moveNumber,
-                repetitionNumber);
 
+
+			//Takes information on side to move, castling rights, en-passant square, en-passant color, move number, half-move clock
+			//Creates a 32-bit unsigned integer representing this information
+			//Have to convert the bitboard for en-passant into an index
+
+	        int tempBoardRestoreData = 0x0;
+
+            //encodes castling rights
+            tempBoardRestoreData |= sideToMove << 0;
+            tempBoardRestoreData |= whiteShortCastleRights << 2;
+            tempBoardRestoreData |= whiteLongCastleRights << 3;
+            tempBoardRestoreData |= blackShortCastleRights << 4;
+            tempBoardRestoreData |= blackLongCastleRights << 5;
+            
+            //Encodes en passant square
+            //If there is no en-passant square, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
+            if (enPassantSquareNumber == 0) {
+                  tempBoardRestoreData |= 63 << 6;
+            } else {
+                 tempBoardRestoreData |= enPassantSquareNumber << 6;
+            }
+
+            //encodes repetition number
+            tempBoardRestoreData |= repetitionNumber << 12;
+            
+            //encodes half-move clock
+            //If there is no half-move clock, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
+            if (halfMoveClock == -1) {
+                 tempBoardRestoreData|= 63 << 14;
+            } else {
+                 tempBoardRestoreData|= halfMoveClock << 14;
+            }
+            
+            //encodes move number
+            //If there is no move number, then we set the bits corresponding to that variable to 4095 (the maximum value for 12 bits)
+            if (moveNumber == -1) {
+                 tempBoardRestoreData|= 4095 << 20;
+            } else {
+                 tempBoardRestoreData|= moveNumber << 20;
+            }
+
+            //returns the encoded board restore data
+	        boardRestoreData = (uint) (tempBoardRestoreData);
+        
             //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-            int pieceMoved = getPieceMoved(moveRepresentationInput);
-            int startSquare = getStartSquare(moveRepresentationInput);
-            int destinationSquare = getDestinationSquare(moveRepresentationInput);
-            int flag = getFlag(moveRepresentationInput);
-            int pieceCaptured = getPieceCaptured(moveRepresentationInput);
+			int pieceMoved = (int)((moveRepresentationInput & 0xF) >> 0);
+			int startSquare = (int)((moveRepresentationInput & 0x3F0) >> 4);
+			int destinationSquare = (int)((moveRepresentationInput & 0xFC00) >> 10);
+			int flag = (int)((moveRepresentationInput & 0xF0000) >> 16);
+            int pieceCaptured;
+	        if (((moveRepresentationInput & 0xF00000) >> 20) == 15) {
+		        pieceCaptured = 0;
+	        } else {
+		        pieceCaptured = (int) ((moveRepresentationInput & 0xF00000) >> 20);
+	        }
 
             //Gets the array of bitboards and piece array
             ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
@@ -512,7 +409,6 @@ namespace Chess_Engine {
                 }
             }
 
-
             //sets the side to move to the other player
             if (sideToMove == Constants.WHITE) {
                 inputBoard.setSideToMove(Constants.BLACK);
@@ -528,30 +424,64 @@ namespace Chess_Engine {
             return boardRestoreData;
         }
 
+		//UNMAKE MOVE METHODS--------------------------------------------------------------------------------------------------------------------------------------------------
+
         //static method that unmakes a move by restoring the board object's instance variables
         public static void unmakeMove(uint unmoveRepresentationInput, Board inputBoard, uint boardRestoreDataRepresentation) {
 
-            //extracts the individual fields of the board restore data from the 32-bit unsigned integer
-            int sideToMove = getsideToMove(boardRestoreDataRepresentation);
-            int whiteShortCastleRights = getWhiteShortCastleRights(boardRestoreDataRepresentation);
-            int whiteLongCastleRights = getWhiteLongCastleRights(boardRestoreDataRepresentation);
-            int blackShortCastleRights = getBlackShortCastleRights(boardRestoreDataRepresentation);
-            int blackLongCastleRights = getBlackLongCastleRights(boardRestoreDataRepresentation);
-            int enPassantSquare = getEnPassantSquare(boardRestoreDataRepresentation);
+			//Extracts the side to move from the integer encoding the restore board data
+			int sideToMove = (int)((boardRestoreDataRepresentation & 0x3) >> 0);
 
-            //Creates the en passant bitboard from the en passant square (if any)
+			//Extracts the white short castle rights from the integer encoding the restore board data
+	        int whiteShortCastleRights = (int) ((boardRestoreDataRepresentation & 0x4) >> 2);
+
+			//Extracts the white long castle rights from the integer encoding the restore board data
+			int whiteLongCastleRights = (int)((boardRestoreDataRepresentation & 0x8) >> 3);
+
+			//Extracts the black short castle rights from the integer encoding the restore board data
+			int blackShortCastleRights = (int)((boardRestoreDataRepresentation & 0x10) >> 4);
+
+			//Extracts the black long castle rights from the integer encoding the restore board data
+			int blackLongCastleRights = (int)((boardRestoreDataRepresentation & 0x20) >> 5);
+
+			//Extracts the en passant square from the integer encoding the restore board data
+			//If we extract 63, then we know that there was no en passant square and return 0 (so that the instance variable for EQ square can be set to 0x0UL)
+	        int enPassantSquare;
+			if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 63) {
+		        enPassantSquare = 0;
+	        } else {
+				enPassantSquare = (int)((boardRestoreDataRepresentation & 0xFC0) >> 6); ;
+	        }
+			
+			//Creates the en passant bitboard from the en passant square (if any)
             ulong enPassantBitboard = 0x0UL;
-
-            if (enPassantSquare == 0) {
+			if (enPassantSquare == 0) {
                 enPassantBitboard = 0x0UL;
             } else if (enPassantSquare != 0) {
                 enPassantBitboard = 0x1UL << enPassantSquare;
             }
 
-            int moveNumber = getMoveNumber(boardRestoreDataRepresentation);
-            int halfMoveClock = getHalfMoveClock(boardRestoreDataRepresentation);
-            int repetitionNumber = getRepetitionNumber(boardRestoreDataRepresentation);
+			//Extracts the repetition number from the integer encoding the restore board data
+			int repetitionNumber = (int)((boardRestoreDataRepresentation & 0x3000) >> 12);
 
+			//Extracts the half move clock (since last pawn push/capture) from the integer encoding the restore board data
+			//If we extract 63, then we know that there was no half-move clock and return -1 (original value of instance variable)
+	        int halfMoveClock;
+	        if (((boardRestoreDataRepresentation & 0xFC000) >> 14) == 63) {
+		        halfMoveClock = -1;
+	        } else {
+		        halfMoveClock = (int) ((boardRestoreDataRepresentation & 0xFC000) >> 14);
+	        }
+			
+			//Extracts the move number from the integer encoding the restore board data
+			//If we extract 4095, then we know that there was no move number and return -1 (original value of instance variable)
+	        int moveNumber;
+	        if (((boardRestoreDataRepresentation & 0xFFF00000) >> 20) == 4095) {
+		        moveNumber = -1;
+	        } else {
+		        moveNumber = (int) ((boardRestoreDataRepresentation & 0xFFF00000) >> 20);
+	        }
+			
             //Restores the instance variable of the board
             inputBoard.setSideToMove(sideToMove);
             inputBoard.setWhiteShortCastle(whiteShortCastleRights);
@@ -564,11 +494,16 @@ namespace Chess_Engine {
             inputBoard.setRepetitionNumber(repetitionNumber);
 
             //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-            int pieceMoved = getPieceMoved(unmoveRepresentationInput);
-            int startSquare = getStartSquare(unmoveRepresentationInput);
-            int destinationSquare = getDestinationSquare(unmoveRepresentationInput);
-            int flag = getFlag(unmoveRepresentationInput);
-            int pieceCaptured = getPieceCaptured(unmoveRepresentationInput);
+			int pieceMoved = (int)((unmoveRepresentationInput & 0xF) >> 0);
+			int startSquare = (int)((unmoveRepresentationInput & 0x3F0) >> 4);
+			int destinationSquare = (int)((unmoveRepresentationInput & 0xFC00) >> 10);
+			int flag = (int)((unmoveRepresentationInput & 0xF0000) >> 16);
+			int pieceCaptured;
+			if (((unmoveRepresentationInput & 0xF00000) >> 20) == 15) {
+				pieceCaptured = 0;
+			} else {
+				pieceCaptured = (int)((unmoveRepresentationInput & 0xF00000) >> 20);
+			}
 
             //Gets the array of bitboards and piece array
             ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();

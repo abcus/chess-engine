@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
    
-    class Board {
+    public sealed class Board {
 
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
 

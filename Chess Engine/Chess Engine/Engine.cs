@@ -16,14 +16,13 @@ namespace Chess_Engine {
 
 			
 
-            Board gameBoard = new Board(test);
+            Board gameBoard = new Board(Constants.FEN_START);
             InputOutput.drawBoard(gameBoard);
             Test.kingInCheckTest(gameBoard, gameBoard.getSideToMove());
 
 			
-
             Stopwatch s = Stopwatch.StartNew();
-            Console.WriteLine(Test.perft(5, gameBoard));
+            Console.WriteLine(Test.perft(6, gameBoard));
             Console.WriteLine(s.Elapsed);
 
         }
