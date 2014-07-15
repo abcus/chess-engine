@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,7 +17,10 @@ namespace Chess_Engine {
 
             //Creates a new engine object and calls its run method
             Engine chessEngine = new Engine();
+            
+            
             chessEngine.run(); 
+            
         }
 
     }

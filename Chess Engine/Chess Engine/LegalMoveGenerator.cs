@@ -117,6 +117,8 @@ namespace Chess_Engine {
                     return Constants.CHECK;
                 } else if (numberOfChecks == 2) {
                     return Constants.DOUBLE_CHECK;
+                } else if (numberOfChecks > 2) {
+	                return Constants.MULTIPLE_CHECK;
                 }
             }
 
@@ -138,6 +140,8 @@ namespace Chess_Engine {
                     return Constants.CHECK;
                 } else if (numberOfChecks == 2) {
                     return Constants.DOUBLE_CHECK;
+                } else if (numberOfChecks > 2) {
+	                return Constants.MULTIPLE_CHECK;
                 }
             }
             return Constants.NOT_IN_CHECK;
@@ -153,11 +157,7 @@ namespace Chess_Engine {
             //Checks to see if the king is in check in the current position
             int kingCheckStatus = kingInCheck(inputBoard, sideToMove);
 
-            //Generates legal knight moves and adds them to the list
-            generateListOfKnightMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
-
-            //Generates legal king moves and adds them to the list
-            generateListOfKingMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
+            
 
             //Generates legal pawn moves and adds them to the list
             generateListOfPawnSingleMoves(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
@@ -167,6 +167,9 @@ namespace Chess_Engine {
             generateListOfPawnPromotions(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
             generateListOfPawnPromotionCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
 
+			//Generates legal knight moves and adds them to the list
+			generateListOfKnightMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
+
             //Generates legal bishop moves and adds them to the list
             generateListOfBishipMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
 
@@ -175,6 +178,9 @@ namespace Chess_Engine {
 
             //Generates legal queen moves and adds them to the list
             generateListOfQueenMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
+
+			//Generates legal king moves and adds them to the list
+			generateListOfKingMovesAndCaptures(inputBoard, sideToMove, bitboardArray, aggregateBitboardArray, pieceArray, listOfLegalMoves);
 
             //If the king is not in check, then generates legal castling moves and adds them to the list
             if (kingCheckStatus == Constants.NOT_IN_CHECK) {
@@ -186,122 +192,8 @@ namespace Chess_Engine {
         }
 
         //Generates legal knight moves and captures and adds them to the list of legal moves
-        private static void generateListOfKnightMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
 
-            ulong whitePieces = aggregateBitboardArray[0];
-            ulong blackPieces = aggregateBitboardArray[1];
-            
-            if (sideToMove == Constants.WHITE) {
-                ulong whiteKnightBitboard = bitboardArrayInput[Constants.WHITE_KNIGHT - 1];
-                List<int> indicesOfWhiteKnight = Constants.bitScan(whiteKnightBitboard);
-                
-                foreach (int knightIndex in indicesOfWhiteKnight) {
-                    ulong knightMovementFromIndex = Constants.knightMoves[knightIndex];
-                    ulong pseudoLegalKnightMovementFromIndex = knightMovementFromIndex &= (~whitePieces);
-                    List<int> indicesOfWhiteKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
-                    foreach (int knightMoveIndex in indicesOfWhiteKnightMovesFromIndex) {
-
-                        uint moveRepresentation = 0x0;
-                        
-                        if (pieceArrayInput[knightMoveIndex] == Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex,Constants.QUIET_MOVE, Constants.EMPTY);
-                        } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
-                        }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
-                        if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
-                            listOfLegalMoves.Add(moveRepresentation);
-                        }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
-                    }
-                    
-                }
-
-            } else if (sideToMove == Constants.BLACK) {
-                ulong blackKnightBitboard = bitboardArrayInput[Constants.BLACK_KNIGHT - 1];
-                List<int> indicesOfBlackKnight = Constants.bitScan(blackKnightBitboard);
-
-                foreach (int knightIndex in indicesOfBlackKnight) {
-                    ulong knightMovementFromIndex = Constants.knightMoves[knightIndex];
-                    ulong pseudoLegalKnightMovementFromIndex = knightMovementFromIndex &= (~blackPieces);
-                    List<int> indicesOfBlackKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
-                    foreach (int knightMoveIndex in indicesOfBlackKnightMovesFromIndex) {
-
-                        uint moveRepresentation = 0x0;
-
-                        if (pieceArrayInput[knightMoveIndex] == Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
-                        } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
-                        }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
-                        if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
-                            listOfLegalMoves.Add(moveRepresentation);
-                        }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
-                    }
-                }
-            }
-        }
-
-        private static void generateListOfKingMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
-
-            ulong whitePieces = aggregateBitboardArray[0];
-            ulong blackPieces = aggregateBitboardArray[1];
-            
-            if (sideToMove == Constants.WHITE) {
-                ulong whiteKingBitboard = bitboardArrayInput[Constants.WHITE_KING - 1];
-                List<int> indicesOfWhiteKing = Constants.bitScan(whiteKingBitboard);
-
-                foreach (int kingIndex in indicesOfWhiteKing) {
-                    ulong kingMovementFromIndex = Constants.kingMoves[kingIndex];
-                    ulong pseudoLegalKingMovementFromIndex = kingMovementFromIndex &= (~whitePieces);
-                    List<int> indicesOfWhiteKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
-                    foreach (int kingMoveIndex in indicesOfWhiteKingMovesFromIndex) {
-
-                        uint moveRepresentation = 0x0;
-
-                        if (pieceArrayInput[kingMoveIndex] == Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
-                        }
-                        else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
-                        }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
-                        if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
-                            listOfLegalMoves.Add(moveRepresentation);
-                        }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
-                    }
-                }
-            } else if (sideToMove == Constants.BLACK) {
-                ulong blackKingBitboard = bitboardArrayInput[Constants.BLACK_KING - 1];
-                List<int> indicesOfBlackKing = Constants.bitScan(blackKingBitboard);
-
-                foreach (int kingIndex in indicesOfBlackKing) {
-                    ulong kingMovementFromIndex = Constants.kingMoves[kingIndex];
-                    ulong pseudoLegalKingMovementFromIndex = kingMovementFromIndex &= (~blackPieces);
-                    List<int> indicesOfBlackKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
-                    foreach (int kingMoveIndex in indicesOfBlackKingMovesFromIndex) {
-
-                        uint moveRepresentation = 0x0;
-
-                        if (pieceArrayInput[kingMoveIndex] == Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
-                        } else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
-                            moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
-                        }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
-                        if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
-                            listOfLegalMoves.Add(moveRepresentation);
-                        }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
-                    }
-                }
-            }
-        }
-
-        private static void generateListOfPawnSingleMoves(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
+	    private static void generateListOfPawnSingleMoves(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
 
             ulong allPieces = aggregateBitboardArray[2];
             
@@ -664,7 +556,65 @@ namespace Chess_Engine {
             }
         }
 
-        private static void generateListOfBishipMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
+	    private static void generateListOfKnightMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
+
+		    ulong whitePieces = aggregateBitboardArray[0];
+		    ulong blackPieces = aggregateBitboardArray[1];
+            
+		    if (sideToMove == Constants.WHITE) {
+			    ulong whiteKnightBitboard = bitboardArrayInput[Constants.WHITE_KNIGHT - 1];
+			    List<int> indicesOfWhiteKnight = Constants.bitScan(whiteKnightBitboard);
+                
+			    foreach (int knightIndex in indicesOfWhiteKnight) {
+				    ulong knightMovementFromIndex = Constants.knightMoves[knightIndex];
+				    ulong pseudoLegalKnightMovementFromIndex = knightMovementFromIndex &= (~whitePieces);
+				    List<int> indicesOfWhiteKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
+				    foreach (int knightMoveIndex in indicesOfWhiteKnightMovesFromIndex) {
+
+					    uint moveRepresentation = 0x0;
+                        
+					    if (pieceArrayInput[knightMoveIndex] == Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex,Constants.QUIET_MOVE, Constants.EMPTY);
+					    } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
+					    }
+					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
+						    listOfLegalMoves.Add(moveRepresentation);
+					    }
+					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+				    }
+                    
+			    }
+
+		    } else if (sideToMove == Constants.BLACK) {
+			    ulong blackKnightBitboard = bitboardArrayInput[Constants.BLACK_KNIGHT - 1];
+			    List<int> indicesOfBlackKnight = Constants.bitScan(blackKnightBitboard);
+
+			    foreach (int knightIndex in indicesOfBlackKnight) {
+				    ulong knightMovementFromIndex = Constants.knightMoves[knightIndex];
+				    ulong pseudoLegalKnightMovementFromIndex = knightMovementFromIndex &= (~blackPieces);
+				    List<int> indicesOfBlackKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
+				    foreach (int knightMoveIndex in indicesOfBlackKnightMovesFromIndex) {
+
+					    uint moveRepresentation = 0x0;
+
+					    if (pieceArrayInput[knightMoveIndex] == Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+					    } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
+					    }
+					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
+						    listOfLegalMoves.Add(moveRepresentation);
+					    }
+					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+				    }
+			    }
+		    }
+	    }
+
+	    private static void generateListOfBishipMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
 
             ulong whitePieces = aggregateBitboardArray[0];
             ulong blackPieces = aggregateBitboardArray[1];
@@ -895,7 +845,64 @@ namespace Chess_Engine {
             }
         }
 
-        private static void generateListOfKingCastling(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
+	    private static void generateListOfKingMovesAndCaptures(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
+
+		    ulong whitePieces = aggregateBitboardArray[0];
+		    ulong blackPieces = aggregateBitboardArray[1];
+            
+		    if (sideToMove == Constants.WHITE) {
+			    ulong whiteKingBitboard = bitboardArrayInput[Constants.WHITE_KING - 1];
+			    List<int> indicesOfWhiteKing = Constants.bitScan(whiteKingBitboard);
+
+			    foreach (int kingIndex in indicesOfWhiteKing) {
+				    ulong kingMovementFromIndex = Constants.kingMoves[kingIndex];
+				    ulong pseudoLegalKingMovementFromIndex = kingMovementFromIndex &= (~whitePieces);
+				    List<int> indicesOfWhiteKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
+				    foreach (int kingMoveIndex in indicesOfWhiteKingMovesFromIndex) {
+
+					    uint moveRepresentation = 0x0;
+
+					    if (pieceArrayInput[kingMoveIndex] == Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+					    }
+					    else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
+					    }
+					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
+						    listOfLegalMoves.Add(moveRepresentation);
+					    }
+					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+				    }
+			    }
+		    } else if (sideToMove == Constants.BLACK) {
+			    ulong blackKingBitboard = bitboardArrayInput[Constants.BLACK_KING - 1];
+			    List<int> indicesOfBlackKing = Constants.bitScan(blackKingBitboard);
+
+			    foreach (int kingIndex in indicesOfBlackKing) {
+				    ulong kingMovementFromIndex = Constants.kingMoves[kingIndex];
+				    ulong pseudoLegalKingMovementFromIndex = kingMovementFromIndex &= (~blackPieces);
+				    List<int> indicesOfBlackKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
+				    foreach (int kingMoveIndex in indicesOfBlackKingMovesFromIndex) {
+
+					    uint moveRepresentation = 0x0;
+
+					    if (pieceArrayInput[kingMoveIndex] == Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+					    } else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
+						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
+					    }
+					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
+						    listOfLegalMoves.Add(moveRepresentation);
+					    }
+					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+				    }
+			    }
+		    }
+	    }
+
+	    private static void generateListOfKingCastling(Board inputBoard, int sideToMove, ulong[] bitboardArrayInput, ulong[] aggregateBitboardArray, int[] pieceArrayInput, List<uint> listOfLegalMoves) {
 
             
             

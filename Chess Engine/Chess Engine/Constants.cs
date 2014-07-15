@@ -86,8 +86,8 @@ namespace Chess_Engine {
         //Enumerated type for side to move
         public const int WHITE = 0, BLACK = 1;
 
-        //Enumberated type for checks
-        public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2;
+        //Enumberated type for checks (multiple check is there because making a king move could result in it moving into multiple checks)
+	    public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
 
         //Enumerated type for castling rights
         public const int CANNOT_CASTLE = 0, CAN_CASTLE = 1;

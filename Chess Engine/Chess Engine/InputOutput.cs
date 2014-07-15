@@ -142,7 +142,7 @@ namespace Chess_Engine {
             }
 
             Console.WriteLine("Repetitions of this position: " + moveData[2]);
-            
+            Console.WriteLine("");
         }
 
 

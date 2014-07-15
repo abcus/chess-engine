@@ -83,28 +83,28 @@ namespace Chess_Engine {
         //METHODS THAT DECODE U32-INT REPRESENTING MOVES AND BOARD INSTANCE VARIABLES----------------------------
 
         //Extracts the piece moved from the integer that encodes the move
-        private static int getPieceMoved(uint moveRepresentation) {
+        public static int getPieceMoved(uint moveRepresentation) {
             int pieceMoved = (int)((moveRepresentation & 0xF) >> 0);
             return pieceMoved;
         }
         //Extracts the start square from the integer that encodes the move
-        private static int getStartSquare(uint moveRepresentation) {
+        public static int getStartSquare(uint moveRepresentation) {
             int startSquare = (int)((moveRepresentation & 0x3F0) >> 4);
             return startSquare;
         }
         //Extracts the destination square from the integer that encodes the move
-        private static int getDestinationSquare(uint moveRepresentation) {
+        public static int getDestinationSquare(uint moveRepresentation) {
             int destinationSquare = (int)((moveRepresentation & 0xFC00) >> 10);
             return destinationSquare;
         }
         //Extracts the flag from the integer that encodes the move
-        private static int getFlag(uint moveRepresentation) {
+        public static int getFlag(uint moveRepresentation) {
             int flag = (int)((moveRepresentation & 0xF0000) >> 16);
             return flag;
         }
         //Extracts the piece captured from the integer that encodes the move
         //If we extract 15, then we know that there was no piece captured and return 0
-        private static int getPieceCaptured(uint moveRepresentation) {
+        public static int getPieceCaptured(uint moveRepresentation) {
             int pieceCaptured = (int)((moveRepresentation & 0xF00000) >> 20);
 
             if (pieceCaptured == 15) {

@@ -499,7 +499,172 @@ namespace Chess_Engine {
                 case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
                 case Constants.CHECK: Console.WriteLine("King is in check"); break;
                 case Constants.DOUBLE_CHECK: Console.WriteLine("King is in double check"); break;
+				case Constants.MULTIPLE_CHECK: Console.WriteLine("King is in multiple check"); break;
             }
         }
+        //Prints out a list of legal moves
+        public static void printLegalMove(Board inputBoard)
+        {
+            List<uint> moveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+
+            Console.WriteLine("Number of legal moves in this position: " + moveList.Count);
+            int moveCount = 0;
+
+            foreach (uint moveRepresentation in moveList) {
+                moveCount ++;
+
+				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation));
+                
+
+
+            }
+        }
+
+        private static string printMoveStringFromMoveRepresentation(uint moveRepresentation) {
+            int columnOfStartSquare = (Move.getStartSquare(moveRepresentation) % 8);
+            int rowOfStartSquare = (Move.getStartSquare(moveRepresentation) / 8);
+            char fileOfStartSquare = (char)('h' - columnOfStartSquare);
+            string startSquare = (fileOfStartSquare + (1 + rowOfStartSquare).ToString());
+
+            int columnOfDestinationSquare = (Move.getDestinationSquare(moveRepresentation) % 8);
+            int rowOfDestinationSquare = (Move.getDestinationSquare(moveRepresentation) / 8);
+            char fileOfDestinationSquare = (char)('h' - columnOfDestinationSquare);
+            string destinationSquare = (fileOfDestinationSquare + (1 + rowOfDestinationSquare).ToString() + " ");
+
+            string moveString = "";
+
+
+            if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_PAWN) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE || Move.getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
+                    moveString += startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE || Move.getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
+                    moveString += startSquare + "x" + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.KNIGHT_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=N";
+                } else if (Move.getFlag(moveRepresentation) == Constants.BISHOP_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=B"; ;
+                } else if (Move.getFlag(moveRepresentation) == Constants.ROOK_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=R";
+                } else if (Move.getFlag(moveRepresentation) == Constants.QUEEN_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=Q";
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_KNIGHT) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "N" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "N" + startSquare + "x" + destinationSquare;
+                } 
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_BISHOP) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "B" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "B" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_ROOK) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "R" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "R" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_QUEEN) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "Q" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "Q" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.WHITE_KING) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "K" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "K" + startSquare + "x" + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.SHORT_CASTLE) {
+                    moveString += "O-O";
+                } else if (Move.getFlag(moveRepresentation) == Constants.LONG_CASTLE) {
+                    moveString += "O-O-O";
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_PAWN) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE || Move.getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
+                    moveString += startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE || Move.getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
+                    moveString += startSquare + "x" + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.KNIGHT_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=n";
+                } else if (Move.getFlag(moveRepresentation) == Constants.BISHOP_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=b"; 
+                } else if (Move.getFlag(moveRepresentation) == Constants.ROOK_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=r";
+                } else if (Move.getFlag(moveRepresentation) == Constants.QUEEN_PROMOTION) {
+                    moveString += startSquare + destinationSquare + "=q";
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_KNIGHT) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "n" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "n" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_BISHOP) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "b" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "b" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_ROOK) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "r" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "r" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_QUEEN) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "q" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "q" + startSquare + "x" + destinationSquare;
+                }
+            } else if (Move.getPieceMoved(moveRepresentation) == Constants.BLACK_KING) {
+                if (Move.getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
+                    moveString += "k" + startSquare + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.CAPTURE) {
+                    moveString += "k" + startSquare + "x" + destinationSquare;
+                } else if (Move.getFlag(moveRepresentation) == Constants.SHORT_CASTLE) {
+                    moveString += " O-O";
+                } else if (Move.getFlag(moveRepresentation) == Constants.LONG_CASTLE) {
+                    moveString += "O-O-O";
+                }
+            }
+            return moveString;
+        }
+
+		public static int perft(int depth, Board inputBoard) {
+			int nodes = 0;
+			if (depth == 0) {
+				return 1;
+			} else if (depth == 1) {
+				List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+				return psdueoLegaloveList.Count;
+			} else {
+				List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+				foreach (uint move in psdueoLegaloveList) {
+					uint boardRestoreData = Move.makeMove(move, inputBoard);
+					nodes += perft(depth - 1, inputBoard);
+					Move.unmakeMove(move, inputBoard, boardRestoreData);
+				}
+				return nodes;
+			}
+		}
+
+		public static void perftDivide(int depth, Board inputBoard) {
+			
+			List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+
+			int count = 0;
+			
+			foreach (uint move in psdueoLegaloveList) {
+
+				count++;
+				uint boardRestoreData = Move.makeMove(move, inputBoard);
+				Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth-1, inputBoard));
+				Move.unmakeMove(move, inputBoard, boardRestoreData);
+			}
+		}
     }
 }
