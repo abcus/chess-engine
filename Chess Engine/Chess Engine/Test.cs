@@ -493,7 +493,7 @@ namespace Chess_Engine {
 
         //Checks if the king is in check and prints out the result
         public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
-            int checkStatus = LegalMoveGenerator.kingInCheck(inputBoard, colourOfKingToCheck);
+            int checkStatus = inputBoard.kingInCheck(colourOfKingToCheck);
 
             switch (checkStatus) {
                 case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
@@ -505,7 +505,7 @@ namespace Chess_Engine {
         //Prints out a list of legal moves
         public static void printLegalMove(Board inputBoard)
         {
-            List<uint> moveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+            List<uint> moveList = inputBoard.generateListOfLegalMoves();
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Count);
             int moveCount = 0;
@@ -672,10 +672,10 @@ namespace Chess_Engine {
 			if (depth == 0) {
 				return 1;
 			} else if (depth == 1) {
-				List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+				List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
 				return psdueoLegaloveList.Count;
 			} else {
-				List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+				List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
 				foreach (uint move in psdueoLegaloveList) {
 					uint boardRestoreData = inputBoard.makeMove(move);
 					nodes += perft(depth - 1, inputBoard);
@@ -687,7 +687,7 @@ namespace Chess_Engine {
 
 		public static void perftDivide(int depth, Board inputBoard) {
 			
-			List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
+			List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
 
 			int count = 0;
 			

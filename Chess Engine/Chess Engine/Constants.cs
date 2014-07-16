@@ -29,6 +29,8 @@ namespace Chess_Engine {
         public const ulong RANK_6 = RANK_1 << (8 * 5);
         public const ulong RANK_7 = RANK_1 << (8 * 6);
         public const ulong RANK_8 = RANK_1 << (8 * 7);
+	    public const ulong RANK_2_TO_6 = (RANK_2 | RANK_3 | RANK_4 | RANK_5 | RANK_6);
+		public const ulong RANK_3_TO_7 = (RANK_3 | RANK_4 | RANK_5 | RANK_6 | RANK_7);
 
         //Light and dark squares
         public const ulong LIGHT_SQUARES = 0xAA55AA55AA55AA55UL;
@@ -592,7 +594,7 @@ namespace Chess_Engine {
 
         //gets arraylist containing index of all 1s
         public static List<int> bitScan(ulong bitboard) {
-            var indices = new List<int>();
+            var indices = new List<int>(8);
 			const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
 
             while (bitboard != 0) {

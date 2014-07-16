@@ -12,17 +12,17 @@ namespace Chess_Engine {
         public void run() {
             Constants.initializeConstants();
 
-			string test = "n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1";
+			string test = "n1n5/1Pk5/8/8/8/8/5Kp1/5N1N w - - 0 1";
 
 			
 
-            Board gameBoard = new Board(Constants.FEN_START);
+            Board gameBoard = new Board(test);
             InputOutput.drawBoard(gameBoard);
             Test.kingInCheckTest(gameBoard, gameBoard.getSideToMove());
 
 			
             Stopwatch s = Stopwatch.StartNew();
-            Console.WriteLine(Test.perft(6, gameBoard));
+            Console.WriteLine(Test.perft(5, gameBoard));
             Console.WriteLine(s.Elapsed);
 
         }
