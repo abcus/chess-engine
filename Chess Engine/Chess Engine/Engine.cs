@@ -12,7 +12,7 @@ namespace Chess_Engine {
         public void run() {
             Constants.initializeConstants();
 
-			string test = "n1n5/1Pk5/8/8/8/8/5Kp1/5N1N w - - 0 1";
+			string test = "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1";
 
 			
 
@@ -22,8 +22,9 @@ namespace Chess_Engine {
 
 			
             Stopwatch s = Stopwatch.StartNew();
-            Console.WriteLine(Test.perft(5, gameBoard));
-            Console.WriteLine(s.Elapsed);
+            Console.WriteLine(Test.perft(6, gameBoard));
+	        //Test.perftDivide(5, gameBoard);
+			Console.WriteLine(s.Elapsed);
 
         }
     }

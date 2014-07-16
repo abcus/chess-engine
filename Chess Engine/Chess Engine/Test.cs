@@ -470,15 +470,17 @@ namespace Chess_Engine {
             }
         }
 
+		/*
+
         //creates and prints a move object
         public static void createAndPrintMove() {
-            uint move = Move.moveEncoder(Constants.BLACK_ROOK, Constants.A1, Constants.A8, Constants.QUIET_MOVE, 0);
+            uint move = Board.moveEncoder(Constants.BLACK_ROOK, Constants.A1, Constants.A8, Constants.QUIET_MOVE, 0);
             Console.WriteLine(Convert.ToString(move, 2).PadLeft(24, '0'));
         }
 
         //makes a move using the move method and prints out the resulting board
         public static uint makeMoveTest(Board inputBoard, int sideToMove, int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
-            uint moveRepresentation = Move.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
+            uint moveRepresentation = Board.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
             uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
             InputOutput.drawBoard(inputBoard);
             return boardRestoreData;
@@ -486,10 +488,12 @@ namespace Chess_Engine {
 
         //Unmakes a move using the unmake move method and prints out the resulting board
         public static void unmakeMoveTest(Board inputBoard, int sideToMove, int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, uint boardRestoreData) {
-            uint moveRepresentation = Move.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
+            uint moveRepresentation = Board.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
             inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
             InputOutput.drawBoard(inputBoard);
         }
+
+		 */
 
         //Checks if the king is in check and prints out the result
         public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {

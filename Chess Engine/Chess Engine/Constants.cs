@@ -594,7 +594,7 @@ namespace Chess_Engine {
 
         //gets arraylist containing index of all 1s
         public static List<int> bitScan(ulong bitboard) {
-            var indices = new List<int>(8);
+            var indices = new List<int>(30);
 			const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
 
             while (bitboard != 0) {

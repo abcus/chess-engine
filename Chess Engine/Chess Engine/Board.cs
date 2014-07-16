@@ -11,6 +11,8 @@ namespace Chess_Engine {
     public sealed class Board {
 
         //INSTANCE VARIABLES-----------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
 
         //Variables that uniquely describe a board state
 
@@ -72,7 +74,9 @@ namespace Chess_Engine {
         internal ulong zobristKey = 0x0UL;
 
         //CONSTRUCTOR------------------------------------------------------------------------------------
-        
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+
         //Constructor that sets up the board to the default starting position
         public Board() {
         }
@@ -82,7 +86,9 @@ namespace Chess_Engine {
             FENToBoard(FEN);
         }
 
-		//MAKE MOVE METHODS-----------------------------------------------------------------------
+		//MAKE MOVE METHODS-------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
 
 		//Static method that makes a move by updating the board object's instance variables
 		public uint makeMove(uint moveRepresentationInput) {
@@ -207,7 +213,7 @@ namespace Chess_Engine {
 						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare - 8] = Constants.EMPTY;
 					} else if (pieceMoved == Constants.BLACK_PAWN) {
-						this.arrayOfBitboards[Constants.WHITE_PAWN] &= (~(destinationSquareBitboard << 8));
+						this.arrayOfBitboards[Constants.WHITE_PAWN - 1] &= (~(destinationSquareBitboard << 8));
 						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare + 8] = Constants.EMPTY;
 					}
@@ -418,6 +424,8 @@ namespace Chess_Engine {
 		}
 
 		//UNMAKE MOVE METHODS--------------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
 
         //Method that unmakes a move by restoring the board object's instance variables
 	    public void unmakeMove(uint unmoveRepresentationInput, uint boardRestoreDataRepresentation) {
@@ -653,6 +661,9 @@ namespace Chess_Engine {
 	    }
 
 		//METHOD THAT RETURNS HOW MANY TIMES A CERTAIN SQUARE IS ATTACKED--------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+
 		public int timesSquareIsAttacked(int colourUnderAttack, int squareToCheck) {
 
 			int numberOfTimesAttacked = 0;
@@ -731,6 +742,9 @@ namespace Chess_Engine {
 		}
 		
 		//METHOD THAT RETURNS WHETHER THE KING IS IN CHECK----------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+
 		public int kingInCheck(int colourOfKingUnderAttack) {
 
 			int numberOfChecks = 0;
@@ -780,6 +794,9 @@ namespace Chess_Engine {
 		}
 
 		//METHOD THAT GENERATES A LIST OF LEGAL MOVES FROM THE CURRENT BOARD POSITION------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		
 		public List<uint> generateListOfLegalMoves() {
 			
 			//Generates all of the white moves
@@ -791,66 +808,23 @@ namespace Chess_Engine {
 				int kingCheckStatus = this.kingInCheck(sideToMove);
 
 				//Gets the indices of all of the pieces
-				List<int> indicesOfWhitePawnOnSecondToSixthRank = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_PAWN - 1] & (Constants.RANK_2_TO_6));
-				List<int> indicesOfWhitePawnOnSecondRank = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_PAWN - 1] & Constants.RANK_2);
-				List<int> indicesOfWhitePawnOnFifthRank = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_PAWN - 1] & (Constants.RANK_5));
-				List<int> indicesOfWhitePawnOnSeventhRank = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_PAWN - 1] & Constants.RANK_7);
+				List<int> indicesOfWhitePawn = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_PAWN - 1]);
 				List<int> indicesOfWhiteKnight = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1]);
 				List<int> indicesOfWhiteBishop = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_BISHOP - 1]);
 				List<int> indicesOfWhiteRook = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_ROOK - 1]);
 				List<int> indicesOfWhiteQueen = Constants.bitScan(this.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
 
-				//Generates white pawn single moves and pawn captures
-				foreach (int pawnIndex in indicesOfWhitePawnOnSecondToSixthRank) {
-					ulong pawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					List<int> indidcesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indidcesOfWhitePawnMovesFromIndex) {
+				//Generates white pawn moves and captures
+				foreach (int pawnIndex in indicesOfWhitePawn) {
 
-						uint moveRepresentation = 0x0;
-						moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+					//For pawns that are between the 2nd and 6th ranks, generate single pushes and captures
+					if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A6) {
+						//Generates white pawn single moves
+						ulong singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
-					}
-
-					ulong pawnCapturesFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
-					ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
-					List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
-					foreach (int pawnMoveIndex in indicesOfWhitePawnMovesFromIndex) {
-
-						uint moveRepresentation = 0x0;
-
-						moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
-
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
-					}
-
-
-				}
-
-
-
-				//Generates white pawn double moves
-				foreach (int pawnIndex in indicesOfWhitePawnOnSecondRank) {
-					ulong singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalSinglePawnMovementFromIndex = singlePawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					if (pseudoLegalSinglePawnMovementFromIndex != 0) {
-						ulong doublePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex + 8];
-						ulong pseudoLegalDoublePawnMovementFromIndex = doublePawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-
-						List<int> indicesOfWhitePawnDoubleMovesFromIndex = Constants.bitScan(pseudoLegalDoublePawnMovementFromIndex);
-						foreach (int pawnDoubleMoveIndex in indicesOfWhitePawnDoubleMovesFromIndex) {
-
-							uint moveRepresentation = 0x0;
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnDoubleMoveIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
+						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
+							int indexOfWhitePawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 
 							uint boardRestoreData = this.makeMove(moveRepresentation);
 							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -858,20 +832,16 @@ namespace Chess_Engine {
 							}
 							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
-					}
-				}
 
-				//Generates white en passant captures
-				if (this.enPassantSquare != 0) {
-					foreach (int pawnIndex in indicesOfWhitePawnOnFifthRank) {
-						ulong pawnMovementFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
-						ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (this.enPassantSquare);
-						List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
+						//Generates white pawn captures
+						ulong pawnCapturesFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
+						ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
+						List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
 						foreach (int pawnMoveIndex in indicesOfWhitePawnMovesFromIndex) {
 
 							uint moveRepresentation = 0x0;
 
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
 
 							uint boardRestoreData = this.makeMove(moveRepresentation);
 							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -879,57 +849,88 @@ namespace Chess_Engine {
 							}
 							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
-
 					}
-				}
 
-				
-				//Generates white promotions
-				foreach (int pawnIndex in indicesOfWhitePawnOnSeventhRank) {
-					ulong pawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indicesOfWhitePawnMovesFromIndex) {
+					//For pawns that are on the 2nd rank, generate double pawn pushes
+					if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
+						ulong singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
+						ulong doublePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex + 8];
 
-						uint moveRepresentationKnightPromotion = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationBishopPromotion = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationRookPromotion = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationQueenPromotion = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
+							int indexOfWhitePawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 
-						//Only have to check one of the four promotion types to see if it leaves the king in check
-						uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentationKnightPromotion);
-							listOfLegalMoves.Add(moveRepresentationBishopPromotion);
-							listOfLegalMoves.Add(moveRepresentationRookPromotion);
-							listOfLegalMoves.Add(moveRepresentationQueenPromotion);
+							uint boardRestoreData = this.makeMove(moveRepresentation);
+							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentation);
+							}
+							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
-						this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
 					}
-				}
 
-				//Generates white promotion captures
-				foreach (int pawnIndex in indicesOfWhitePawnOnSeventhRank) {
-					ulong pawnMovementFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
-					List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indicesOfWhitePawnMovesFromIndex) {
+					//If en passant is possible, For pawns that are on the 5th rank, generate en passant captures
+					if (this.enPassantSquare != 0) {
+						if (pawnIndex >= Constants.H5 && pawnIndex <= Constants.A5) {
+							ulong pawnCapturesFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
 
-						uint moveRepresentationKnightPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationBishopPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationRookPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationQueenPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
+								int indexOfWhiteEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
+								uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
 
-						uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
+								uint boardRestoreData = this.makeMove(moveRepresentation);
+								if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
+									listOfLegalMoves.Add(moveRepresentation);
+								}
+								this.unmakeMove(moveRepresentation, boardRestoreData);
+							}
 						}
-						this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
 					}
 
+					//For pawns on the 7th rank, generate promotions and promotion captures
+					if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
+						ulong singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
+						
+						//Generates white pawn promotions
+						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
+							int indexOfWhitePawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentationKnightPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationBishopPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+
+							//Only have to check one of the four promotion types to see if it leaves the king in check
+							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
+							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentationKnightPromotion);
+								listOfLegalMoves.Add(moveRepresentationBishopPromotion);
+								listOfLegalMoves.Add(moveRepresentationRookPromotion);
+								listOfLegalMoves.Add(moveRepresentationQueenPromotion);
+							}
+							this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
+						}
+
+
+						//Generates white pawn capture promotions
+						ulong pawnCapturesFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
+						ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
+						List<int> indicesOfWhitePawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
+						foreach (int pawnMoveIndex in indicesOfWhitePawnCapturesFromIndex) {
+
+							uint moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+
+							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
+							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
+							}
+							this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
+						}
+					}
 				}
 
 				//generates white knight moves and captures
@@ -942,9 +943,9 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[knightMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						} else if (pieceArray[knightMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -969,11 +970,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[bishopMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a black piece at that location, so generate a capture
 						else if (pieceArray[bishopMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -997,11 +998,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[rookMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a black piece at that location, so generate a capture
 						else if (pieceArray[rookMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -1034,11 +1035,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[queenMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a black piece at that location, so generate a capture
 						else if (pieceArray[queenMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -1061,9 +1062,9 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[kingMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						} else if (pieceArray[kingMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
@@ -1076,7 +1077,7 @@ namespace Chess_Engine {
 				//Generates white king castling moves (if the king is not in check)
 				if (kingCheckStatus == Constants.NOT_IN_CHECK) {
 					if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
+						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if ((this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0)) {
@@ -1086,7 +1087,7 @@ namespace Chess_Engine {
 					}
 
 					if ((this.whiteLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
+						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if ((this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0)) {
@@ -1095,6 +1096,7 @@ namespace Chess_Engine {
 						this.unmakeMove(moveRepresentation, boardRestoreData);
 					}
 				}
+				
 
 				//returns the list of legal moves
 				return listOfLegalMoves;
@@ -1110,63 +1112,58 @@ namespace Chess_Engine {
 				ulong enPassantBitboard = this.getEnPassant();
 
 				//Inces of all the pieces
-				List<int> indicesOfBlackPawnOnThirdToSeventhRank = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_PAWN - 1] & (Constants.RANK_3_TO_7));
-				List<int> indicesOfBlackPawnOnSeventhRank = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_PAWN - 1] & Constants.RANK_7);
-				List<int> indicesOfBlackPawnOnFourthRank = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_PAWN - 1] & (Constants.RANK_4));
-				List<int> indicesOfBlackPawnOnSecondRank = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_PAWN - 1] & Constants.RANK_2);
+				List<int> indicesOfBlackPawn = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_PAWN - 1]);
 				List<int> indicesOfBlackKnight = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1]);
 				List<int> indicesOfBlackBishop = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_BISHOP - 1]);
 				List<int> indicesOfBlackRook = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_ROOK - 1]);
 				List<int> indicesOfBlackQueen = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
 				List<int> indicesOfBlackKing = Constants.bitScan(this.arrayOfBitboards[Constants.BLACK_KING - 1]);
 				
-				//Generates black pawn single moves and captures
-				foreach (int pawnIndex in indicesOfBlackPawnOnThirdToSeventhRank) {
-					ulong pawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					List<int> indicesOfBlackPawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indicesOfBlackPawnMovesFromIndex) {
+				//Generates black pawn moves
+				foreach (int pawnIndex in indicesOfBlackPawn) {
 
-						uint moveRepresentation = 0x0;
-						moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+					if (pawnIndex >= Constants.H3 && pawnIndex <= Constants.A7) {
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
+						//Generates black pawn single moves
+						ulong singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
+
+						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
+							int indexOfBlackPawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+
+							uint boardRestoreData = this.makeMove(moveRepresentation);
+							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentation);
+							}
+							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						//Generates pawn captures
+						ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
+						ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES]);
+						List<int> indicesOfBlackPawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
+						foreach (int pawnMoveIndex in indicesOfBlackPawnCapturesFromIndex) {
+
+							uint moveRepresentation = 0x0;
+
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
+
+							uint boardRestoreData = this.makeMove(moveRepresentation);
+							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentation);
+							}
+							this.unmakeMove(moveRepresentation, boardRestoreData);
+						}
 					}
 
-					ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
-					ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES]);
-					List<int> indicesOfBlackPawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
-					foreach (int pawnMoveIndex in indicesOfBlackPawnCapturesFromIndex) {
-
-						uint moveRepresentation = 0x0;
-
-						moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
-
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
-					}
-				}
-
-				//Generates black pawn double moves
-				foreach (int pawnIndex in indicesOfBlackPawnOnSeventhRank) {
-					ulong singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalSinglePawnMovementFromIndex = singlePawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					if (pseudoLegalSinglePawnMovementFromIndex != 0) {
+					//Generates black pawn double moves
+					if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
+						ulong singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
 						ulong doublePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex - 8];
-						ulong pseudoLegalDoublePawnMovementFromIndex = doublePawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
 
-						List<int> indicesOfBlackPawnDoubleMovesFromIndex = Constants.bitScan(pseudoLegalDoublePawnMovementFromIndex);
-						foreach (int pawnDoubleMoveIndex in indicesOfBlackPawnDoubleMovesFromIndex) {
-
-							uint moveRepresentation = 0x0;
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnDoubleMoveIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
+						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
+							int indexOfBlackPawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 
 							uint boardRestoreData = this.makeMove(moveRepresentation);
 							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1175,76 +1172,71 @@ namespace Chess_Engine {
 							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
 					}
-				}
 
-				//Generates black pawn en passant captures
-				if (this.enPassantSquare != 0) {
-					foreach (int pawnIndex in indicesOfBlackPawnOnFourthRank) {
-						ulong pawnMovementFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
-						ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (this.enPassantSquare);
-						List<int> indicesOfBlackPawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-						foreach (int pawnMoveIndex in indicesOfBlackPawnMovesFromIndex) {
+					//Generates black pawn en passant captures
+					if (this.enPassantSquare != 0) {
+						if (pawnIndex >= Constants.H4 && pawnIndex <= Constants.A4) {
+							ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
 
-							uint moveRepresentation = 0x0;
+							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
+								int indexOfBlackEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
+								uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
 
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
+								uint boardRestoreData = this.makeMove(moveRepresentation);
+								if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+									listOfLegalMoves.Add(moveRepresentation);
+								}
+								this.unmakeMove(moveRepresentation, boardRestoreData);
 							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
 						}
 					}
-				}
 
-				//Generates black pawn promotions
-				foreach (int pawnIndex in indicesOfBlackPawnOnSecondRank) {
-					ulong pawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (~this.arrayOfAggregateBitboards[Constants.ALL_PIECES]);
-					List<int> indicesOfBlackPawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indicesOfBlackPawnMovesFromIndex) {
 
-						uint moveRepresentationKnightPromotion = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationBishopPromotion = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationRookPromotion = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-						uint moveRepresentationQueenPromotion = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+					if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
+						ulong singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
 
-						//Only have to check one of the four promotion types to see if it leaves the king in check
-						uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentationKnightPromotion);
-							listOfLegalMoves.Add(moveRepresentationBishopPromotion);
-							listOfLegalMoves.Add(moveRepresentationRookPromotion);
-							listOfLegalMoves.Add(moveRepresentationQueenPromotion);
+						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
+							int indexOfBlackPawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
+							uint moveRepresentationKnightPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationBishopPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
+							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+
+							//Only have to check one of the four promotion types to see if it leaves the king in check
+							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
+							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentationKnightPromotion);
+								listOfLegalMoves.Add(moveRepresentationBishopPromotion);
+								listOfLegalMoves.Add(moveRepresentationRookPromotion);
+								listOfLegalMoves.Add(moveRepresentationQueenPromotion);
+							}
+							this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
 						}
-						this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
+
+						ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
+						ulong pseudoLegalPawnCapturesFromIndex = pawnCapturesFromIndex &= (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES]);
+						List<int> indicesOfBlackPawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
+						foreach (int pawnMoveIndex in indicesOfBlackPawnCapturesFromIndex) {
+
+							uint moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+
+							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
+							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+								listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
+								listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
+							}
+							this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
+						}
 					}
 
 				}
+
 				
-				//Generates black promotion captures
-				foreach (int pawnIndex in indicesOfBlackPawnOnSecondRank) {
-					ulong pawnMovementFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
-					ulong pseudoLegalPawnMovementFromIndex = pawnMovementFromIndex &= (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES]);
-					List<int> indicesOfBlackPawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnMovementFromIndex);
-					foreach (int pawnMoveIndex in indicesOfBlackPawnMovesFromIndex) {
-
-						uint moveRepresentationKnightPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationBishopPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationRookPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-						uint moveRepresentationQueenPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-
-						uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
-							listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
-						}
-						this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
-					}
-				}
 
 				//Generates black knight moves and captures
 				foreach (int knightIndex in indicesOfBlackKnight) {
@@ -1256,9 +1248,9 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[knightMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						} else if (pieceArray[knightMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1281,11 +1273,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[bishopMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a white piece at that location, so generate a capture
 						else if (pieceArray[bishopMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1307,11 +1299,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[rookMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a white piece at that location, so generate a capture
 						else if (pieceArray[rookMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1343,11 +1335,11 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[queenMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						}
 							//If not empty, then must be a white piece at that location, so generate a capture
 						else if (pieceArray[queenMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1367,9 +1359,9 @@ namespace Chess_Engine {
 						uint moveRepresentation = 0x0;
 
 						if (pieceArray[kingMoveIndex] == Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 						} else if (pieceArray[kingMoveIndex] != Constants.EMPTY) {
-							moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
+							moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
 						}
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
@@ -1382,7 +1374,7 @@ namespace Chess_Engine {
 				//Generates black king castling moves (if the king is not in check)
 				if (kingCheckStatus == Constants.NOT_IN_CHECK) {
 					if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
+						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if ((this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0)) {
@@ -1392,7 +1384,7 @@ namespace Chess_Engine {
 					}
 
 					if ((this.blackLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
+						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
 						if ((this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0)) {
@@ -1410,6 +1402,8 @@ namespace Chess_Engine {
 		}
 
 	    //OTHER METHODS----------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
 
         //takes in a FEN string and sets all the instance variables based on it
         public void FENToBoard(string FEN) {
@@ -1595,9 +1589,25 @@ namespace Chess_Engine {
 			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
 	    }
 
+		//Takes information on piece moved, start square, destination square, type of move, and piece captured
+		//Creates a 32-bit unsigned integer representing this information
+		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
+		private static uint moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
+			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16));
+
+			//If no piece is captured, then we set the bits corresponding to that variable to 15 (the maximum value for 4 bits)
+			if (pieceCaptured == 0) {
+				moveRepresentation |= 15 << 20;
+			} else {
+				moveRepresentation |= pieceCaptured << 20;
+			}
+			return (uint)moveRepresentation;
+		} 
 
 
-        //GET METHODS----------------------------------------------------------------------------------------
+        //GET METHODS (FOR I/O)----------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
 
         //gets the array of piece bitboards (returns an array of 12 bitboards)
         //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
@@ -1652,100 +1662,6 @@ namespace Chess_Engine {
             moveData[2] = repetionOfPosition;
 
             return moveData;
-        }
-
-
-        //SET METHODS-----------------------------------------------------------------------------------------
-
-
-        //sets the appropriate bitboard and updates the piecearray
-        //Updates the white pieces bitboard (index 0), black pieces bitboard (index 1), and occupied bitboard (index 2)
-        public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput, int[] pieceArrayInput) {
-
-            ulong oldPieceBitboard = arrayOfBitboards[(pieceTypeInput - 1)];
-            
-            if (pieceTypeInput == Constants.WHITE_PAWN || pieceTypeInput == Constants.WHITE_KNIGHT ||
-                pieceTypeInput == Constants.WHITE_BISHOP || pieceTypeInput == Constants.WHITE_ROOK ||
-                pieceTypeInput == Constants.WHITE_QUEEN || pieceTypeInput == Constants.WHITE_KING) {
-                arrayOfAggregateBitboards[0] &= (~oldPieceBitboard);
-                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
-                arrayOfAggregateBitboards[0] |= bitboardInput;
-            } else if (pieceTypeInput == Constants.BLACK_PAWN || pieceTypeInput == Constants.BLACK_KNIGHT ||
-                pieceTypeInput == Constants.BLACK_BISHOP || pieceTypeInput == Constants.BLACK_ROOK ||
-                pieceTypeInput == Constants.BLACK_QUEEN || pieceTypeInput == Constants.BLACK_KING) {
-                arrayOfAggregateBitboards[1] &= (~oldPieceBitboard);
-                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
-                arrayOfAggregateBitboards[1] |= bitboardInput;
-            }
-            arrayOfAggregateBitboards[2] = arrayOfAggregateBitboards[0] | arrayOfAggregateBitboards[1];
-            
-            //sets the piece array to the input
-            pieceArray = pieceArrayInput;
-
-            
-        }
-
-        //Sets the appropriate bitboard (overridden method)
-        //Updates the white pieces bitboard, black pieces bitboard, and occupied bitboard
-        public void setPieceBitboard(int pieceTypeInput, ulong bitboardInput) {
-            ulong oldPieceBitboard = arrayOfBitboards[(pieceTypeInput - 1)];
-
-            if (pieceTypeInput == Constants.WHITE_PAWN || pieceTypeInput == Constants.WHITE_KNIGHT ||
-                pieceTypeInput == Constants.WHITE_BISHOP || pieceTypeInput == Constants.WHITE_ROOK ||
-                pieceTypeInput == Constants.WHITE_QUEEN || pieceTypeInput == Constants.WHITE_KING) {
-                arrayOfAggregateBitboards[0] &= (~oldPieceBitboard);
-                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
-                arrayOfAggregateBitboards[0] |= bitboardInput;
-            } else if (pieceTypeInput == Constants.BLACK_PAWN || pieceTypeInput == Constants.BLACK_KNIGHT ||
-                pieceTypeInput == Constants.BLACK_BISHOP || pieceTypeInput == Constants.BLACK_ROOK ||
-                pieceTypeInput == Constants.BLACK_QUEEN || pieceTypeInput == Constants.BLACK_KING) {
-                arrayOfAggregateBitboards[1] &= (~oldPieceBitboard);
-                arrayOfBitboards[(pieceTypeInput - 1)] = bitboardInput;
-                arrayOfAggregateBitboards[1] |= bitboardInput;
-            }
-            arrayOfAggregateBitboards[2] = arrayOfAggregateBitboards[0] | arrayOfAggregateBitboards[1];
-        }
-
-        //sets the side to move
-        public void setSideToMove(int sideToMoveInput) {
-            sideToMove = sideToMoveInput;
-        }
-
-        //sets white short castling rights
-        public void setWhiteShortCastle(int whiteShortCastleRightsInput) {
-            whiteShortCastleRights = whiteShortCastleRightsInput;
-        }
-        //sets white short castling rights
-        public void setWhiteLongCastle(int whiteLongCastleRightsInput) {
-            whiteLongCastleRights = whiteLongCastleRightsInput;
-        }
-        //sets white short castling rights
-        public void setBlackShortCastle(int blackShortCastleRightsInput) {
-            blackShortCastleRights = blackShortCastleRightsInput;
-        }
-        //sets white short castling rights
-        public void setBlackLongCastle(int blackLongCastleRightsInput) {
-            blackLongCastleRights = blackLongCastleRightsInput;
-        }
-
-        //sets en passant square and color
-        public void setEnPassantSquare(ulong enPassantSquareInput) {
-            enPassantSquare = enPassantSquareInput;
-        }
-
-        //sets the move number
-        public void setMoveNumber(int moveNumberInput) {
-            moveNumber = moveNumberInput;
-        }
-
-        //sets the halfmove clock (since pawn pushes or captures)
-        public void setHalfMoveClock(int halfMoveClockInput) {
-            HalfMovesSincePawnMoveOrCapture = halfMoveClockInput;
-        }
-
-        //sets the number of repetitions
-        public void setRepetitionNumber(int repetitionNumberInput) {
-            repetionOfPosition = repetitionNumberInput;
         }
     }
 }
