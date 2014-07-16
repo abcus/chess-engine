@@ -479,7 +479,7 @@ namespace Chess_Engine {
         //makes a move using the move method and prints out the resulting board
         public static uint makeMoveTest(Board inputBoard, int sideToMove, int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
             uint moveRepresentation = Move.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
-            uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+            uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
             InputOutput.drawBoard(inputBoard);
             return boardRestoreData;
         }
@@ -487,7 +487,7 @@ namespace Chess_Engine {
         //Unmakes a move using the unmake move method and prints out the resulting board
         public static void unmakeMoveTest(Board inputBoard, int sideToMove, int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, uint boardRestoreData) {
             uint moveRepresentation = Move.moveEncoder(pieceMoved, startSquare, destinationSquare, flag, pieceCaptured);
-            Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+            inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
             InputOutput.drawBoard(inputBoard);
         }
 
@@ -677,9 +677,9 @@ namespace Chess_Engine {
 			} else {
 				List<uint> psdueoLegaloveList = LegalMoveGenerator.generateListOfLegalMoves(inputBoard);
 				foreach (uint move in psdueoLegaloveList) {
-					uint boardRestoreData = Move.makeMove(move, inputBoard);
+					uint boardRestoreData = inputBoard.makeMove(move);
 					nodes += perft(depth - 1, inputBoard);
-					Move.unmakeMove(move, inputBoard, boardRestoreData);
+					inputBoard.unmakeMove(move, boardRestoreData);
 				}
 				return nodes;
 			}
@@ -694,9 +694,9 @@ namespace Chess_Engine {
 			foreach (uint move in psdueoLegaloveList) {
 
 				count++;
-				uint boardRestoreData = Move.makeMove(move, inputBoard);
+				uint boardRestoreData = inputBoard.makeMove(move);
 				Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth-1, inputBoard));
-				Move.unmakeMove(move, inputBoard, boardRestoreData);
+				inputBoard.unmakeMove(move, boardRestoreData);
 			}
 		}
     }

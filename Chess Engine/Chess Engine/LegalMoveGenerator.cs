@@ -211,11 +211,11 @@ namespace Chess_Engine {
                         uint moveRepresentation = 0x0;
                         moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                       
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -233,11 +233,11 @@ namespace Chess_Engine {
                         uint moveRepresentation = 0x0;
                         moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
                 }
             }
@@ -265,11 +265,11 @@ namespace Chess_Engine {
                             uint moveRepresentation = 0x0;
                             moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnDoubleMoveIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 
-                            uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                            uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                             if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
                                 listOfLegalMoves.Add(moveRepresentation);
                             }
-                            Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                            inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                         }
                     }
                 }
@@ -291,11 +291,11 @@ namespace Chess_Engine {
                             uint moveRepresentation = 0x0;
                             moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnDoubleMoveIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 
-                            uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                            uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                             if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                                 listOfLegalMoves.Add(moveRepresentation);
                             }
-                            Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                            inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                         }
                     }
                 }
@@ -323,11 +323,11 @@ namespace Chess_Engine {
 
                         moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArrayInput[pawnMoveIndex]);
                         
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -348,11 +348,11 @@ namespace Chess_Engine {
 
                         moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArrayInput[pawnMoveIndex]);
 
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -384,12 +384,12 @@ namespace Chess_Engine {
 
                             moveRepresentation = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
 
-                            uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                            uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                             if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK)
                             {
                                 listOfLegalMoves.Add(moveRepresentation);
                             }
-                            Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                            inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                         }
 
                     }
@@ -413,12 +413,12 @@ namespace Chess_Engine {
 
                             moveRepresentation = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
 
-                            uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                            uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                             if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK)
                             {
                                 listOfLegalMoves.Add(moveRepresentation);
                             }
-                            Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                            inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                         }
                     }
                 }
@@ -446,14 +446,14 @@ namespace Chess_Engine {
                         uint moveRepresentationQueenPromotion = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
                         //Only have to check one of the four promotion types to see if it leaves the king in check
-                        uint boardRestoreData = Move.makeMove(moveRepresentationKnightPromotion, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentationKnightPromotion);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentationKnightPromotion);
                             listOfLegalMoves.Add(moveRepresentationBishopPromotion);
                             listOfLegalMoves.Add(moveRepresentationRookPromotion);
                             listOfLegalMoves.Add(moveRepresentationQueenPromotion);
                         }
-                        Move.unmakeMove(moveRepresentationKnightPromotion, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
                     }
                 }
             } else if (sideToMove == Constants.BLACK) {
@@ -473,14 +473,14 @@ namespace Chess_Engine {
                         uint moveRepresentationQueenPromotion = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
                         //Only have to check one of the four promotion types to see if it leaves the king in check
-                        uint boardRestoreData = Move.makeMove(moveRepresentationKnightPromotion, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentationKnightPromotion);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentationKnightPromotion);
                             listOfLegalMoves.Add(moveRepresentationBishopPromotion);
                             listOfLegalMoves.Add(moveRepresentationRookPromotion);
                             listOfLegalMoves.Add(moveRepresentationQueenPromotion);
                         }
-                        Move.unmakeMove(moveRepresentationKnightPromotion, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
                     }
 
                 }
@@ -511,7 +511,7 @@ namespace Chess_Engine {
                         uint moveRepresentationRookPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArrayInput[pawnMoveIndex]);
                         uint moveRepresentationQueenPromotionCapture = Move.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArrayInput[pawnMoveIndex]);
 
-                        uint boardRestoreData = Move.makeMove(moveRepresentationKnightPromotionCapture, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentationKnightPromotionCapture);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK)
                         {
                             listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
@@ -519,7 +519,7 @@ namespace Chess_Engine {
                             listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
                             listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
                         }
-                        Move.unmakeMove(moveRepresentationKnightPromotionCapture, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
                     }
 
                 }
@@ -542,7 +542,7 @@ namespace Chess_Engine {
                         uint moveRepresentationRookPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArrayInput[pawnMoveIndex]);
                         uint moveRepresentationQueenPromotionCapture = Move.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArrayInput[pawnMoveIndex]);
 
-                        uint boardRestoreData = Move.makeMove(moveRepresentationKnightPromotionCapture, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentationKnightPromotionCapture);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK)
                         {
                             listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
@@ -550,7 +550,7 @@ namespace Chess_Engine {
                             listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
                             listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
                         }
-                        Move.unmakeMove(moveRepresentationKnightPromotionCapture, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
                     }
                 }
             }
@@ -578,11 +578,11 @@ namespace Chess_Engine {
 					    } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
 						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
 					    }
-					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
 					    if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
 						    listOfLegalMoves.Add(moveRepresentation);
 					    }
-					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+					    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
 				    }
                     
 			    }
@@ -604,11 +604,11 @@ namespace Chess_Engine {
 					    } else if (pieceArrayInput[knightMoveIndex] != Constants.EMPTY) {
 						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArrayInput[knightMoveIndex]);
 					    }
-					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
 					    if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
 						    listOfLegalMoves.Add(moveRepresentation);
 					    }
-					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+					    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
 				    }
 			    }
 		    }
@@ -644,12 +644,12 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[bishopMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArrayInput[bishopMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK)
                         {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -677,11 +677,11 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[bishopMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArrayInput[bishopMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
                 }
             }
@@ -716,12 +716,12 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[rookMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArrayInput[rookMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK)
                         {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -748,11 +748,11 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[rookMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArrayInput[rookMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
 
                 }
@@ -796,11 +796,11 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[queenMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArrayInput[queenMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
                 }
             } else if (sideToMove == Constants.BLACK) {
@@ -835,11 +835,11 @@ namespace Chess_Engine {
                         else if (pieceArrayInput[queenMoveIndex] != Constants.EMPTY) {
                             moveRepresentation = Move.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArrayInput[queenMoveIndex]);
                         }
-                        uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                        uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                         if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
                             listOfLegalMoves.Add(moveRepresentation);
                         }
-                        Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                        inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                     }
                 }
             }
@@ -868,11 +868,11 @@ namespace Chess_Engine {
 					    else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
 						    moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
 					    }
-					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
 					    if (kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) {
 						    listOfLegalMoves.Add(moveRepresentation);
 					    }
-					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+					    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
 				    }
 			    }
 		    } else if (sideToMove == Constants.BLACK) {
@@ -892,11 +892,11 @@ namespace Chess_Engine {
 					    } else if (pieceArrayInput[kingMoveIndex] != Constants.EMPTY) {
 						    moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArrayInput[kingMoveIndex]);
 					    }
-					    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+					    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
 					    if (kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) {
 						    listOfLegalMoves.Add(moveRepresentation);
 					    }
-					    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+					    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
 				    }
 			    }
 		    }
@@ -924,21 +924,21 @@ namespace Chess_Engine {
                 if ((whiteShortCastleRights == Constants.CAN_CASTLE) && ((allPieces & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
                     uint moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
                     
-                    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                     if ((kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) && (timesSquareIsAttacked(inputBoard, Constants.WHITE, Constants.F1) == 0)) {
                         listOfLegalMoves.Add(moveRepresentation);
                     }
-                    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                 }
 
                 if ((whiteLongCastleRights == Constants.CAN_CASTLE) && ((allPieces & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
                     uint moveRepresentation = Move.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
 
-                    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                     if ((kingInCheck(inputBoard, Constants.WHITE) == Constants.NOT_IN_CHECK) && (timesSquareIsAttacked(inputBoard, Constants.WHITE, Constants.D1) == 0)) {
                         listOfLegalMoves.Add(moveRepresentation);
                     }
-                    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                 }
 
             } else if (sideToMove == Constants.BLACK) {
@@ -946,21 +946,21 @@ namespace Chess_Engine {
                 if ((blackShortCastleRights == Constants.CAN_CASTLE) && ((allPieces & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
                     uint moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
 
-                    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                     if ((kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) && (timesSquareIsAttacked(inputBoard, Constants.BLACK, Constants.F8) == 0)) {
                         listOfLegalMoves.Add(moveRepresentation);
                     }
-                    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                 }
 
                 if ((blackLongCastleRights == Constants.CAN_CASTLE) && ((allPieces & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
                     uint moveRepresentation = Move.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
 
-                    uint boardRestoreData = Move.makeMove(moveRepresentation, inputBoard);
+                    uint boardRestoreData = inputBoard.makeMove(moveRepresentation);
                     if ((kingInCheck(inputBoard, Constants.BLACK) == Constants.NOT_IN_CHECK) && (timesSquareIsAttacked(inputBoard, Constants.BLACK, Constants.D8) == 0)) {
                         listOfLegalMoves.Add(moveRepresentation);
                     }
-                    Move.unmakeMove(moveRepresentation, inputBoard, boardRestoreData);
+                    inputBoard.unmakeMove(moveRepresentation, boardRestoreData);
                 }
             }
         }

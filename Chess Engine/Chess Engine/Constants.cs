@@ -92,6 +92,9 @@ namespace Chess_Engine {
         //Enumerated type for castling rights
         public const int CANNOT_CASTLE = 0, CAN_CASTLE = 1;
 
+		//Enmerated type for aggregate bitboard array
+	    public const int WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
+
         //Enumerated type for squares
         public const int 
             H1 = 00, G1 = 01, F1 = 02, E1 = 03, D1 = 04, C1 = 05, B1 = 06, A1 = 07, 
@@ -587,24 +590,18 @@ namespace Chess_Engine {
 
         //BIT MANIPULATION METHODS----------------------------------------------------------------------------
 
-        //gets first set (index of least significant bit)
-        private static int findFirstSet(ulong bitboard) {
-            const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
-            return index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58];
-        }
-
         //gets arraylist containing index of all 1s
         public static List<int> bitScan(ulong bitboard) {
             var indices = new List<int>();
-            
+			const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
+
             while (bitboard != 0) {
-                indices.Add(findFirstSet(bitboard));
+				indices.Add(index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58]);
                 bitboard &= bitboard - 1;
             }
             return indices;
         }
 
-      
         //Finds the popcount (number of 1s in the bit)
         //This method was copied directly from stockfish
         public static int popcount(ulong bitboard) {
