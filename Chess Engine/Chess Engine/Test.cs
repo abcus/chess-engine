@@ -519,6 +519,8 @@ namespace Chess_Engine {
                 moveCount ++;
 
 				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation));
+                
+
 
             }
         }

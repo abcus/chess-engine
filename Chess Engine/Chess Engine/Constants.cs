@@ -107,10 +107,12 @@ namespace Chess_Engine {
             H6 = 40, G6 = 41, F6 = 42, E6 = 43, D6 = 44, C6 = 45, B6 = 46, A6 = 47, 
             H7 = 48, G7 = 49, F7 = 50, E7 = 51, D7 = 52, C7 = 53, B7 = 54, A7 = 55, 
             H8 = 56, G8 = 57, F8 = 58, E8 = 59, D8 = 60, C8 = 61, B8 = 62, A8 = 63;
-        
+
+		//De Bruijn shift number
+		private const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
 
         //De Brujin tables
-        public static readonly int[] index64 = {
+        private static readonly int[] index64 = {
              0, 47,  1, 56, 48, 27,  2, 60,
              57, 49, 41, 37, 28, 16,  3, 61,
              54, 58, 35, 52, 50, 42, 21, 44,
@@ -595,7 +597,7 @@ namespace Chess_Engine {
         //gets arraylist containing index of all 1s
         public static List<int> bitScan(ulong bitboard) {
             var indices = new List<int>(30);
-			const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
+			
 
             while (bitboard != 0) {
 				indices.Add(index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58]);
@@ -612,13 +614,5 @@ namespace Chess_Engine {
             bitboard = ((bitboard >> 4) + bitboard) & 0x0F0F0F0F0F0F0F0FUL;
             return (int)((bitboard * 0x0101010101010101UL) >> 56);
         }
-
-		//Finds the popcount (number of 1s in the bit) if there are a maximum of 15 1s
-		//Also copied from stockfish
-	    public static int popcountMax15(ulong bitboard) {
-			bitboard -=  (bitboard >> 1) & 0x5555555555555555UL;
-			bitboard  = ((bitboard >> 2) & 0x3333333333333333UL) + (bitboard & 0x3333333333333333UL);
-			return (int)(bitboard * 0x1111111111111111UL) >> 60;
-	    }
     }
 }

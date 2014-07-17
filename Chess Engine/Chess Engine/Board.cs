@@ -95,7 +95,10 @@ namespace Chess_Engine {
 
 			//stores the board restore data in a 32-bit unsigned integer
 			int boardRestoreData = 0x0;
-			
+
+			//encodes side to move and castling rights
+			boardRestoreData |= ((this.sideToMove << 0) | (this.whiteShortCastleRights << 2) | (this.whiteLongCastleRights << 3) | (this.blackShortCastleRights << 4) | (this.blackLongCastleRights << 5));
+
 			//Encodes en passant square
 			//Calculates the en passant square number (if any) from the en passant bitboard
 			//If there is no en-passant square, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
@@ -104,13 +107,6 @@ namespace Chess_Engine {
 			} else {
 				boardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
 			}
-
-			//encodes castling rights
-			boardRestoreData |= sideToMove << 0;
-			boardRestoreData |= whiteShortCastleRights << 2;
-			boardRestoreData |= whiteLongCastleRights << 3;
-			boardRestoreData |= blackShortCastleRights << 4;
-			boardRestoreData |= blackLongCastleRights << 5;
 
 			//encodes repetition number
 			boardRestoreData |= repetionOfPosition << 12;
@@ -172,16 +168,18 @@ namespace Chess_Engine {
 				}
 
 				//Updates the castling rights instance variables if the rook got captured
-				if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.A1) {
-					this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.H1) {
-					this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.A8) {
-					this.blackLongCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.H8) {
-					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+				if (flag == Constants.CAPTURE) {
+					if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.A1) {
+						this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+					} else if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.H1) {
+						this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
+					} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.A8) {
+						this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+					} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.H8) {
+						this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+					}
 				}
-
+				
 				//sets the en Passant square to 0x0UL;
 				this.enPassantSquare = 0x0UL;
 
@@ -232,7 +230,7 @@ namespace Chess_Engine {
 			}
 
 			//Updates the king and rook bitboard and piece array
-				//Also updates the castling instance variable, sets en passant square to 0
+			//Also updates the castling instance variable, sets en passant square to 0
 			else if (flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
 
 				//Updates the castling rights instance variables (sets them to false)
@@ -308,23 +306,26 @@ namespace Chess_Engine {
 			}
 
 			//If regular promotion, updates the pawn's bitboard, the promoted piece bitboard, and the piece array
-				//If capture-promotion, also updates the captured piece's bitboard
-				//sets en passant square to 0
+			//If capture-promotion, also updates the captured piece's bitboard
+			//sets en passant square to 0
 			else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.BISHOP_PROMOTION || flag == Constants.ROOK_PROMOTION
 				|| flag == Constants.QUEEN_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE
 				|| flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 
 				//Updates the castling rights instance variables if the rook got captured
-				if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.A1) {
-					this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.H1) {
-					this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.A8) {
-					this.blackLongCastleRights = Constants.CANNOT_CASTLE;
-				} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.H8) {
-					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+				if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE
+					|| flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+						if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.A1) {
+							this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+						} else if (pieceCaptured == Constants.WHITE_ROOK && destinationSquare == Constants.H1) {
+							this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
+						} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.A8) {
+							this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+						} else if (pieceCaptured == Constants.BLACK_ROOK && destinationSquare == Constants.H8) {
+							this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+						}	
 				}
-
+				
 				//sets the en Passant square to 0x0UL;
 				this.enPassantSquare = 0x0UL;
 
@@ -1322,18 +1323,18 @@ namespace Chess_Engine {
                     String binary = "00000000";
                     binary = binary.Substring(0, index) + "1" + binary.Substring(index + 1);
                     switch (c) {
-                        case 'P': wPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'N': wKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'B': wBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'R': wRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'Q': wQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'K': wKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'p': bPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'n': bKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'b': bBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'r': bRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'q': bQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-                        case 'k': bKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'P': this.wPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'N': this.wKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'B': this.wBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'R': this.wRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'Q': this.wQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'K': this.wKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'p': this.bPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'n': this.bKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'b': this.bBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'r': this.bRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'q': this.bQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'k': this.bKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
                         case '1': index += 1; break;
                         case '2': index += 2; break;
                         case '3': index += 3; break;
@@ -1347,18 +1348,18 @@ namespace Chess_Engine {
             }
 
             //stores the bitboards in the array
-            arrayOfBitboards[0] = wPawn;
-            arrayOfBitboards[1] = wKnight;
-            arrayOfBitboards[2] = wBishop;
-            arrayOfBitboards[3] = wRook;
-            arrayOfBitboards[4] = wQueen;
-            arrayOfBitboards[5] = wKing;
-            arrayOfBitboards[6] = bPawn;
-            arrayOfBitboards[7] = bKnight;
-            arrayOfBitboards[8] = bBishop;
-            arrayOfBitboards[9] = bRook;
-            arrayOfBitboards[10] = bQueen;
-            arrayOfBitboards[11] = bKing;
+			this.arrayOfBitboards[0] = wPawn;
+			this.arrayOfBitboards[1] = wKnight;
+			this.arrayOfBitboards[2] = wBishop;
+			this.arrayOfBitboards[3] = wRook;
+			this.arrayOfBitboards[4] = wQueen;
+			this.arrayOfBitboards[5] = wKing;
+			this.arrayOfBitboards[6] = bPawn;
+			this.arrayOfBitboards[7] = bKnight;
+			this.arrayOfBitboards[8] = bBishop;
+			this.arrayOfBitboards[9] = bRook;
+			this.arrayOfBitboards[10] = bQueen;
+			this.arrayOfBitboards[11] = bKing;
 
             //sets the piece array
              //loops through each of the 8 strings representing the rows, from the bottom row to the top
@@ -1373,18 +1374,18 @@ namespace Chess_Engine {
                 //If there is a number, then it advances the index by that number
                 foreach (char c in row) {
                     switch (c) {
-                        case 'P': pieceArray[7 + 8 * i - index] = Constants.WHITE_PAWN; index++; break;
-                        case 'N': pieceArray[7 + 8 * i - index] = Constants.WHITE_KNIGHT; index++; break;
-                        case 'B': pieceArray[7 + 8 * i - index] = Constants.WHITE_BISHOP; index++; break;
-                        case 'R': pieceArray[7 + 8 * i - index] = Constants.WHITE_ROOK; index++; break;
-                        case 'Q': pieceArray[7 + 8 * i - index] = Constants.WHITE_QUEEN; index++; break;
-                        case 'K': pieceArray[7 + 8 * i - index] = Constants.WHITE_KING; index++; break;
-                        case 'p': pieceArray[7 + 8 * i - index] = Constants.BLACK_PAWN; index++; break;
-                        case 'n': pieceArray[7 + 8 * i - index] = Constants.BLACK_KNIGHT; index++; break;
-                        case 'b': pieceArray[7 + 8 * i - index] = Constants.BLACK_BISHOP; index++; break;
-                        case 'r': pieceArray[7 + 8 * i - index] = Constants.BLACK_ROOK; index++; break;
-                        case 'q': pieceArray[7 + 8 * i - index] = Constants.BLACK_QUEEN; index++; break;
-                        case 'k': pieceArray[7 + 8 * i - index] = Constants.BLACK_KING; index++; break;
+						case 'P': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_PAWN; index++; break;
+						case 'N': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_KNIGHT; index++; break;
+						case 'B': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_BISHOP; index++; break;
+						case 'R': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_ROOK; index++; break;
+						case 'Q': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_QUEEN; index++; break;
+						case 'K': this.pieceArray[7 + 8 * i - index] = Constants.WHITE_KING; index++; break;
+						case 'p': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_PAWN; index++; break;
+						case 'n': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_KNIGHT; index++; break;
+						case 'b': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_BISHOP; index++; break;
+						case 'r': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_ROOK; index++; break;
+						case 'q': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_QUEEN; index++; break;
+						case 'k': this.pieceArray[7 + 8 * i - index] = Constants.BLACK_KING; index++; break;
                         case '1': index += 1; break;
                         case '2': index += 2; break;
                         case '3': index += 3; break;
@@ -1400,28 +1401,28 @@ namespace Chess_Engine {
             //Sets the side to move variable
             foreach (char c in FENfields[1]) {
                 if (c == 'w') {
-                    sideToMove = Constants.WHITE;
+					this.sideToMove = Constants.WHITE;
                 } else if (c == 'b') {
-                    sideToMove = Constants.BLACK;
+					this.sideToMove = Constants.BLACK;
                 }
             }
             
             //Sets the castling availability variables
             if (FENfields[2] == "-") {
-                whiteShortCastleRights = 0;
-                whiteLongCastleRights = 0;
-                blackShortCastleRights = 0;
-                blackLongCastleRights = 0;
+				this.whiteShortCastleRights = 0;
+				this.whiteLongCastleRights = 0;
+				this.blackShortCastleRights = 0;
+				this.blackLongCastleRights = 0;
             } else if (FENfields[2] != "-") {
                 foreach (char c in FENfields[2]) {
                     if (c == 'K') {
-                        whiteShortCastleRights = Constants.CAN_CASTLE;
+						this.whiteShortCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'Q') {
-                        whiteLongCastleRights = Constants.CAN_CASTLE;
+						this.whiteLongCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'k') {
-                        blackShortCastleRights = Constants.CAN_CASTLE;
+						this.blackShortCastleRights = Constants.CAN_CASTLE;
                     } else if (c == 'q') {
-                        blackLongCastleRights = Constants.CAN_CASTLE;
+						this.blackLongCastleRights = Constants.CAN_CASTLE;
                     }
                 }
             }
@@ -1438,7 +1439,7 @@ namespace Chess_Engine {
                 } else if (char.IsDigit(c) == true) {
                     factorOfEPSquare = ((int)Char.GetNumericValue(c) - 1);
                 }
-                enPassantSquare = 0x1UL << (baseOfEPSquare + factorOfEPSquare * 8);
+				this.enPassantSquare = 0x1UL << (baseOfEPSquare + factorOfEPSquare * 8);
             }
             
             //Checks to see if there is a halfmove clock or move number in the FEN string
@@ -1446,29 +1447,29 @@ namespace Chess_Engine {
             if (FENfields.Length >= 5) {
                 //sets the halfmove clock since last capture or pawn move
                 foreach (char c in FENfields[4]) {
-                    HalfMovesSincePawnMoveOrCapture = (int) Char.GetNumericValue(c);
+					this.HalfMovesSincePawnMoveOrCapture = (int)Char.GetNumericValue(c);
                 }
 
                 //sets the move number
                 foreach (char c in FENfields[5]) {
-                    moveNumber = (int) Char.GetNumericValue(c);
+					this.moveNumber = (int)Char.GetNumericValue(c);
                 }
             } else {
-                HalfMovesSincePawnMoveOrCapture = -1;
-                moveNumber = -1;
+				this.HalfMovesSincePawnMoveOrCapture = -1;
+				this.moveNumber = -1;
             }
 
             //Sets the repetition number variable
-            repetionOfPosition = 0;
+			this.repetionOfPosition = 0;
 
             //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
-            whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
-            blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
-            allPieces = whitePieces | blackPieces;
+			this.whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
+			this.blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
+			this.allPieces = whitePieces | blackPieces;
 
-            arrayOfAggregateBitboards[0] = whitePieces;
-            arrayOfAggregateBitboards[1] = blackPieces;
-            arrayOfAggregateBitboards[2] = allPieces;
+			this.arrayOfAggregateBitboards[0] = whitePieces;
+			this.arrayOfAggregateBitboards[1] = blackPieces;
+			this.arrayOfAggregateBitboards[2] = allPieces;
 
         }
 
@@ -1496,23 +1497,23 @@ namespace Chess_Engine {
         //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
         //element 6 = black pawn, 7 = black knight, 8 = black bishop, 9 = black rook, 10 = black queen, 11 = black king
         public ulong[] getArrayOfPieceBitboards() {
-            return arrayOfBitboards;
+			return this.arrayOfBitboards;
         }
 
         //gets the array of aggregate piece bitboards (returns an array of 3 bitboards)
         //element 0 = white pieces, element 1 = black pieces, element 2 = all pieces
         public ulong[] getArrayOfAggregatePieceBitboards() {
-            return arrayOfAggregateBitboards;
+			return this.arrayOfAggregateBitboards;
         }
 
         //gets the array of pieces
         public int[] getPieceArray() {
-            return pieceArray;
+			return this.pieceArray;
         }
 
         //gets the side to move
         public int getSideToMove() {
-            return sideToMove;
+			return this.sideToMove;
         }
 
         //gets the castling rights (returns an array of 4 bools)
@@ -1521,10 +1522,10 @@ namespace Chess_Engine {
         public int[] getCastleRights() {
             int[] castleRights = new int[4];
 
-            castleRights[0] = whiteShortCastleRights;
-            castleRights[1] = whiteLongCastleRights;
-            castleRights[2] = blackShortCastleRights;
-            castleRights[3] = blackLongCastleRights;
+			castleRights[0] = this.whiteShortCastleRights;
+			castleRights[1] = this.whiteLongCastleRights;
+			castleRights[2] = this.blackShortCastleRights;
+			castleRights[3] = this.blackLongCastleRights;
 
             return castleRights;
         }
@@ -1532,7 +1533,7 @@ namespace Chess_Engine {
         //gets the En Passant colour and square
         //element 0 = en passant colour, and element 1 = en passant square
         public ulong getEnPassant() {
-            return enPassantSquare;
+			return this.enPassantSquare;
         }
 
         //gets the move data
@@ -1540,9 +1541,9 @@ namespace Chess_Engine {
         public int[] getMoveData() {
             int[] moveData = new int[3];
 
-            moveData[0] = moveNumber;
-            moveData[1] = HalfMovesSincePawnMoveOrCapture;
-            moveData[2] = repetionOfPosition;
+			moveData[0] = this.moveNumber;
+			moveData[1] = this.HalfMovesSincePawnMoveOrCapture;
+			moveData[2] = this.repetionOfPosition;
 
             return moveData;
         }
