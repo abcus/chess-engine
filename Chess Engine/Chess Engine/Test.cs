@@ -510,39 +510,37 @@ namespace Chess_Engine {
         //Prints out a list of legal moves
         public static void printLegalMove(Board inputBoard)
         {
-            List<uint> moveList = inputBoard.generateListOfPsdueoLegalMoves();
+            List<int> moveList = inputBoard.generateListOfPsdueoLegalMoves();
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Count);
             int moveCount = 0;
 
-            foreach (uint moveRepresentation in moveList) {
+            foreach (int moveRepresentation in moveList) {
                 moveCount ++;
 
 				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation));
-                
-
 
             }
         }
 
 		//Extracts the piece moved from the integer that encodes the move
-		private static int getPieceMoved(uint moveRepresentation) {
-			int pieceMoved = (int)((moveRepresentation & 0xF) >> 0);
+		private static int getPieceMoved(int moveRepresentation) {
+			int pieceMoved = ((moveRepresentation & 0xF) >> 0);
 			return pieceMoved;
 		}
 		//Extracts the start square from the integer that encodes the move
-		private static int getStartSquare(uint moveRepresentation) {
-			int startSquare = (int)((moveRepresentation & 0x3F0) >> 4);
+		private static int getStartSquare(int moveRepresentation) {
+			int startSquare = ((moveRepresentation & 0x3F0) >> 4);
 			return startSquare;
 		}
 		//Extracts the destination square from the integer that encodes the move
-		private static int getDestinationSquare(uint moveRepresentation) {
-			int destinationSquare = (int)((moveRepresentation & 0xFC00) >> 10);
+		private static int getDestinationSquare(int moveRepresentation) {
+			int destinationSquare = ((moveRepresentation & 0xFC00) >> 10);
 			return destinationSquare;
 		}
 		//Extracts the flag from the integer that encodes the move
-		private static int getFlag(uint moveRepresentation) {
-			int flag = (int)((moveRepresentation & 0xF0000) >> 16);
+		private static int getFlag(int moveRepresentation) {
+			int flag = ((moveRepresentation & 0xF0000) >> 16);
 			return flag;
 		}
 		//Extracts the piece captured from the integer that encodes the move
@@ -558,7 +556,7 @@ namespace Chess_Engine {
 		}
 
 		//prints out a move string from a move representation uint
-        private static string printMoveStringFromMoveRepresentation(uint moveRepresentation) {
+        private static string printMoveStringFromMoveRepresentation(int moveRepresentation) {
             int columnOfStartSquare = (getStartSquare(moveRepresentation) % 8);
             int rowOfStartSquare = (getStartSquare(moveRepresentation) / 8);
             char fileOfStartSquare = (char)('h' - columnOfStartSquare);
@@ -675,12 +673,12 @@ namespace Chess_Engine {
 		public static int perft(int depth, Board inputBoard) {
 			int nodes = 0;
 			if (depth == 1) {
-				List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
+				List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 				return psdueoLegaloveList.Count;
 			} else {
-				List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
-				foreach (uint move in psdueoLegaloveList) {
-					uint boardRestoreData = inputBoard.makeMove(move);
+				List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
+				foreach (int move in psdueoLegaloveList) {
+					int boardRestoreData = inputBoard.makeMove(move);
 					nodes += perft(depth - 1, inputBoard);
 					inputBoard.unmakeMove(move, boardRestoreData);
 				}
@@ -690,14 +688,14 @@ namespace Chess_Engine {
 
 		public static void perftDivide(int depth, Board inputBoard) {
 			
-			List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
+			List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 
 			int count = 0;
 			
-			foreach (uint move in psdueoLegaloveList) {
+			foreach (int move in psdueoLegaloveList) {
 
 				count++;
-				uint boardRestoreData = inputBoard.makeMove(move);
+				int boardRestoreData = inputBoard.makeMove(move);
 				Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth-1, inputBoard));
 				inputBoard.unmakeMove(move, boardRestoreData);
 			}

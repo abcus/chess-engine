@@ -91,60 +91,56 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 
 		//Static method that makes a move by updating the board object's instance variables
-		public uint makeMove(uint moveRepresentationInput) {
+		public int makeMove(int moveRepresentationInput) {
 
 			//stores the board restore data in a 32-bit unsigned integer
-			int tempBoardRestoreData = 0x0;
-			uint boardRestoreData = 0;
-
+			int boardRestoreData = 0x0;
+			
 			//Encodes en passant square
 			//Calculates the en passant square number (if any) from the en passant bitboard
 			//If there is no en-passant square, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
 			if (Constants.bitScan(enPassantSquare).Count == 0) {
-				tempBoardRestoreData |= 63 << 6;
+				boardRestoreData |= 63 << 6;
 			} else {
-				tempBoardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
+				boardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
 			}
 
 			//encodes castling rights
-			tempBoardRestoreData |= sideToMove << 0;
-			tempBoardRestoreData |= whiteShortCastleRights << 2;
-			tempBoardRestoreData |= whiteLongCastleRights << 3;
-			tempBoardRestoreData |= blackShortCastleRights << 4;
-			tempBoardRestoreData |= blackLongCastleRights << 5;
+			boardRestoreData |= sideToMove << 0;
+			boardRestoreData |= whiteShortCastleRights << 2;
+			boardRestoreData |= whiteLongCastleRights << 3;
+			boardRestoreData |= blackShortCastleRights << 4;
+			boardRestoreData |= blackLongCastleRights << 5;
 
 			//encodes repetition number
-			tempBoardRestoreData |= repetionOfPosition << 12;
+			boardRestoreData |= repetionOfPosition << 12;
 
 			//encodes half-move clock
 			//If there is no half-move clock, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
 			if (HalfMovesSincePawnMoveOrCapture == -1) {
-				tempBoardRestoreData |= 63 << 14;
+				boardRestoreData |= 63 << 14;
 			} else {
-				tempBoardRestoreData |= HalfMovesSincePawnMoveOrCapture << 14;
+				boardRestoreData |= HalfMovesSincePawnMoveOrCapture << 14;
 			}
 
 			//encodes move number
-			//If there is no move number, then we set the bits corresponding to that variable to 4095 (the maximum value for 12 bits)
+			//If there is no move number, then we set the bits corresponding to that variable to 2047 (the maximum value for 11 bits)
 			if (moveNumber == -1) {
-				tempBoardRestoreData |= 4095 << 20;
+				boardRestoreData |= 2047 << 20;
 			} else {
-				tempBoardRestoreData |= moveNumber << 20;
+				boardRestoreData |= moveNumber << 20;
 			}
 
-			//returns the encoded board restore data
-			boardRestoreData = (uint)(tempBoardRestoreData);
-
 			//Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-			int pieceMoved = (int)((moveRepresentationInput & 0xF) >> 0);
-			int startSquare = (int)((moveRepresentationInput & 0x3F0) >> 4);
-			int destinationSquare = (int)((moveRepresentationInput & 0xFC00) >> 10);
-			int flag = (int)((moveRepresentationInput & 0xF0000) >> 16);
+			int pieceMoved = ((moveRepresentationInput & 0xF) >> 0);
+			int startSquare = ((moveRepresentationInput & 0x3F0) >> 4);
+			int destinationSquare = ((moveRepresentationInput & 0xFC00) >> 10);
+			int flag = ((moveRepresentationInput & 0xF0000) >> 16);
 			int pieceCaptured;
 			if (((moveRepresentationInput & 0xF00000) >> 20) == 15) {
 				pieceCaptured = 0;
 			} else {
-				pieceCaptured = (int)((moveRepresentationInput & 0xF00000) >> 20);
+				pieceCaptured = ((moveRepresentationInput & 0xF00000) >> 20);
 			}
 
 			//Calculates bitboards for removing piece from start square and adding piece to destionation square
@@ -411,53 +407,52 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 
         //Method that unmakes a move by restoring the board object's instance variables
-	    public void unmakeMove(uint unmoveRepresentationInput, uint boardRestoreDataRepresentation) {
+	    public void unmakeMove(int unmoveRepresentationInput, int boardRestoreDataRepresentation) {
 
 		    //Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
-		    this.sideToMove = (int) ((boardRestoreDataRepresentation & 0x3) >> 0);
-			this.whiteShortCastleRights = (int) ((boardRestoreDataRepresentation & 0x4) >> 2);
-			this.whiteLongCastleRights = (int) ((boardRestoreDataRepresentation & 0x8) >> 3);
-			this.blackShortCastleRights = (int) ((boardRestoreDataRepresentation & 0x10) >> 4);
-			this.blackLongCastleRights = (int) ((boardRestoreDataRepresentation & 0x20) >> 5);
+		    this.sideToMove = ((boardRestoreDataRepresentation & 0x3) >> 0);
+			this.whiteShortCastleRights = ((boardRestoreDataRepresentation & 0x4) >> 2);
+			this.whiteLongCastleRights = ((boardRestoreDataRepresentation & 0x8) >> 3);
+			this.blackShortCastleRights = ((boardRestoreDataRepresentation & 0x10) >> 4);
+			this.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
 
 		    //Sets the en passant square from the integer encoding the restore board data
 		    //If we extract 63, then we know that there was no en passant square and set the instance variable for EQ square to 0x0UL
-		    int enPassantIndex;
 		    if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 63) {
 				this.enPassantSquare = 0x0UL;
 		    } else {
-			    this.enPassantSquare = 0x1UL << ((int) ((boardRestoreDataRepresentation & 0xFC0) >> 6));
+			    this.enPassantSquare = 0x1UL << ((boardRestoreDataRepresentation & 0xFC0) >> 6);
 		    }
 			
 		    //Sets the repetition number from the integer encoding the restore board data
-		    this.repetionOfPosition = (int) ((boardRestoreDataRepresentation & 0x3000) >> 12);
+		    this.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
 
 		    //Sets the half move clock (since last pawn push/capture) from the integer encoding the restore board data
 		    //If we extract 63, then we know that there was no half-move clock and return -1 (original value of instance variable)
 		    if (((boardRestoreDataRepresentation & 0xFC000) >> 14) == 63) {
 			    this.HalfMovesSincePawnMoveOrCapture = -1;
 		    } else {
-			    this.HalfMovesSincePawnMoveOrCapture = (int) ((boardRestoreDataRepresentation & 0xFC000) >> 14);
+			    this.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
 		    }
 
 		    //Sets the move number from the integer encoding the restore board data
 		    //If we extract 4095, then we know that there was no move number and return -1 (original value of instance variable)
-		    if (((boardRestoreDataRepresentation & 0xFFF00000) >> 20) == 4095) {
+		    if (((boardRestoreDataRepresentation & 0x7FF00000) >> 20) == 2047) {
 			    this.moveNumber = -1;
 		    } else {
-			    this.moveNumber = (int) ((boardRestoreDataRepresentation & 0xFFF00000) >> 20);
+			    this.moveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
 		    }
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    int pieceMoved = (int) ((unmoveRepresentationInput & 0xF) >> 0);
-		    int startSquare = (int) ((unmoveRepresentationInput & 0x3F0) >> 4);
-		    int destinationSquare = (int) ((unmoveRepresentationInput & 0xFC00) >> 10);
-		    int flag = (int) ((unmoveRepresentationInput & 0xF0000) >> 16);
+		    int pieceMoved = ((unmoveRepresentationInput & 0xF) >> 0);
+		    int startSquare = ((unmoveRepresentationInput & 0x3F0) >> 4);
+		    int destinationSquare = ((unmoveRepresentationInput & 0xFC00) >> 10);
+		    int flag = ((unmoveRepresentationInput & 0xF0000) >> 16);
 		    int pieceCaptured;
 		    if (((unmoveRepresentationInput & 0xF00000) >> 20) == 15) {
 			    pieceCaptured = 0;
 		    } else {
-			    pieceCaptured = (int) ((unmoveRepresentationInput & 0xF00000) >> 20);
+			    pieceCaptured = ((unmoveRepresentationInput & 0xF00000) >> 20);
 		    }
 
 		    //Calculates bitboards for removing piece from start square and adding piece to destionation square
@@ -766,13 +761,13 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 		
-		public List<uint> generateListOfPsdueoLegalMoves() {
+		public List<int> generateListOfPsdueoLegalMoves() {
 			
 			//Generates all of the white moves
 			if (sideToMove == Constants.WHITE) {
 
-				List<uint> listOfPseudoLegalMoves = new List<uint>(50);
-				List<uint> listOfLegalMoves = new List<uint>(50);
+				List<int> listOfPseudoLegalMoves = new List<int>(50);
+				List<int> listOfLegalMoves = new List<int>(50);
 
 				//Checks to see if the king is in check in the current position
 				int kingCheckStatus = this.kingInCheck(sideToMove);
@@ -794,7 +789,7 @@ namespace Chess_Engine {
 
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfWhitePawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							int moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 
@@ -804,7 +799,7 @@ namespace Chess_Engine {
 						List<int> indicesOfWhitePawnMovesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
 						foreach (int pawnMoveIndex in indicesOfWhitePawnMovesFromIndex) {
 
-							uint moveRepresentation = 0x0;
+							int moveRepresentation = 0x0;
 
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
@@ -818,7 +813,7 @@ namespace Chess_Engine {
 
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
 							int indexOfWhitePawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
+							int moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
@@ -830,7 +825,7 @@ namespace Chess_Engine {
 
 							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
 								int indexOfWhiteEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
-								uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
+								int moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
 								listOfPseudoLegalMoves.Add(moveRepresentation);
 							}
 						}
@@ -843,10 +838,10 @@ namespace Chess_Engine {
 						//Generates white pawn promotions
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfWhitePawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentationKnightPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationBishopPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+							int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
+							int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
+							int moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
+							int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
 							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotion);
 							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotion);
@@ -861,10 +856,10 @@ namespace Chess_Engine {
 						List<int> indicesOfWhitePawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
 						foreach (int pawnMoveIndex in indicesOfWhitePawnCapturesFromIndex) {
 
-							uint moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 
 							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotionCapture);
 							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotionCapture);
@@ -881,7 +876,7 @@ namespace Chess_Engine {
 					List<int> indicesOfWhiteKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
 					foreach (int knightMoveIndex in indicesOfWhiteKnightMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[knightMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -904,7 +899,7 @@ namespace Chess_Engine {
 					List<int> indicesOfWhiteBishopMovesFromIndex = Constants.bitScan(pseudoLegalBishopMovementFromIndex);
 					foreach (int bishopMoveIndex in indicesOfWhiteBishopMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[bishopMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -928,7 +923,7 @@ namespace Chess_Engine {
 					List<int> indicesOfWhiteRookMovesFromIndex = Constants.bitScan(pseudoLegalRookMovementFromIndex);
 					foreach (int rookMoveIndex in indicesOfWhiteRookMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[rookMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -961,7 +956,7 @@ namespace Chess_Engine {
 
 					foreach (int queenMoveIndex in indicesOfWhiteQueenMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[queenMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -984,7 +979,7 @@ namespace Chess_Engine {
 					List<int> indicesOfWhiteKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
 					foreach (int kingMoveIndex in indicesOfWhiteKingMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[kingMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -998,9 +993,9 @@ namespace Chess_Engine {
 				//Generates white king castling moves (if the king is not in check)
 				if (kingCheckStatus == Constants.NOT_IN_CHECK) {
 					if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
+						int moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
+						int boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
@@ -1008,9 +1003,9 @@ namespace Chess_Engine {
 					}
 
 					if ((this.whiteLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
+						int moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
+						int boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
@@ -1019,8 +1014,8 @@ namespace Chess_Engine {
 				}
 				
 				//Checks all pseudo legal moves and adds them to list of legal moves if king is not in check
-				foreach (uint moveRepresentation in listOfPseudoLegalMoves) {
-					uint boardRestoreData = this.makeMove(moveRepresentation);
+				foreach (int moveRepresentation in listOfPseudoLegalMoves) {
+					int boardRestoreData = this.makeMove(moveRepresentation);
 					if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
 						listOfLegalMoves.Add(moveRepresentation);
 					}
@@ -1032,8 +1027,8 @@ namespace Chess_Engine {
 
 			} else if (sideToMove == Constants.BLACK) {
 
-				List<uint> listOfPseudoLegalMoves = new List<uint>(50);
-				List<uint> listOfLegalMoves = new List<uint>(50);
+				List<int> listOfPseudoLegalMoves = new List<int>(50);
+				List<int> listOfLegalMoves = new List<int>(50);
 
 				//Checks to see if the king is in check in the current position
 				int kingCheckStatus = this.kingInCheck(sideToMove);
@@ -1059,7 +1054,7 @@ namespace Chess_Engine {
 
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfBlackPawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+							int moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 
@@ -1069,7 +1064,7 @@ namespace Chess_Engine {
 						List<int> indicesOfBlackPawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
 						foreach (int pawnMoveIndex in indicesOfBlackPawnCapturesFromIndex) {
 
-							uint moveRepresentation = 0x0;
+							int moveRepresentation = 0x0;
 
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
@@ -1083,7 +1078,7 @@ namespace Chess_Engine {
 
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
 							int indexOfBlackPawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
+							int moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
@@ -1095,7 +1090,7 @@ namespace Chess_Engine {
 
 							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
 								int indexOfBlackEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
-								uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
+								int moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
 								listOfPseudoLegalMoves.Add(moveRepresentation);
 							}
 						}
@@ -1107,10 +1102,10 @@ namespace Chess_Engine {
 
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfBlackPawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
-							uint moveRepresentationKnightPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationBishopPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+							int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
+							int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
+							int moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
+							int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
 							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotion);
 							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotion);
@@ -1123,10 +1118,10 @@ namespace Chess_Engine {
 						List<int> indicesOfBlackPawnCapturesFromIndex = Constants.bitScan(pseudoLegalPawnCapturesFromIndex);
 						foreach (int pawnMoveIndex in indicesOfBlackPawnCapturesFromIndex) {
 
-							uint moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 
 							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotionCapture);
 							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotionCapture);
@@ -1146,7 +1141,7 @@ namespace Chess_Engine {
 					List<int> indicesOfBlackKnightMovesFromIndex = Constants.bitScan(pseudoLegalKnightMovementFromIndex);
 					foreach (int knightMoveIndex in indicesOfBlackKnightMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[knightMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -1168,7 +1163,7 @@ namespace Chess_Engine {
 					List<int> indicesOfBlackBishopMovesFromIndex = Constants.bitScan(pseudoLegalBishopMovementFromIndex);
 					foreach (int bishopMoveIndex in indicesOfBlackBishopMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[bishopMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -1191,7 +1186,7 @@ namespace Chess_Engine {
 					List<int> indicesOfBlackRookMovesFromIndex = Constants.bitScan(pseudoLegalRookMovementFromIndex);
 					foreach (int rookMoveIndex in indicesOfBlackRookMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[rookMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -1224,7 +1219,7 @@ namespace Chess_Engine {
 
 					foreach (int queenMoveIndex in indicesOfBlackQueenMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[queenMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -1245,7 +1240,7 @@ namespace Chess_Engine {
 					List<int> indicesOfBlackKingMovesFromIndex = Constants.bitScan(pseudoLegalKingMovementFromIndex);
 					foreach (int kingMoveIndex in indicesOfBlackKingMovesFromIndex) {
 
-						uint moveRepresentation = 0x0;
+						int moveRepresentation = 0x0;
 
 						if (pieceArray[kingMoveIndex] == Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
@@ -1260,9 +1255,9 @@ namespace Chess_Engine {
 				//Generates black king castling moves (if the king is not in check)
 				if (kingCheckStatus == Constants.NOT_IN_CHECK) {
 					if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
+						int moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
+						int boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
@@ -1270,9 +1265,9 @@ namespace Chess_Engine {
 					}
 
 					if ((this.blackLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
+						int moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
 
-						uint boardRestoreData = this.makeMove(moveRepresentation);
+						int boardRestoreData = this.makeMove(moveRepresentation);
 						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
 							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
@@ -1280,8 +1275,8 @@ namespace Chess_Engine {
 					}
 				}
 				//Checks all pseudo legal moves and adds them to list of legal moves if king is not in check
-				foreach (uint moveRepresentation in listOfPseudoLegalMoves) {
-					uint boardRestoreData = this.makeMove(moveRepresentation);
+				foreach (int moveRepresentation in listOfPseudoLegalMoves) {
+					int boardRestoreData = this.makeMove(moveRepresentation);
 					if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
 						listOfLegalMoves.Add(moveRepresentation);
 					}
@@ -1480,7 +1475,7 @@ namespace Chess_Engine {
 	//Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
-		private static uint moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
+		private static int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
 			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16));
 
 			//If no piece is captured, then we set the bits corresponding to that variable to 15 (the maximum value for 4 bits)
@@ -1489,7 +1484,7 @@ namespace Chess_Engine {
 			} else {
 				moveRepresentation |= pieceCaptured << 20;
 			}
-			return (uint)moveRepresentation;
+			return moveRepresentation;
 		} 
 
 
