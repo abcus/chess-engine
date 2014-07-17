@@ -7,24 +7,24 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
     
-    class Engine {
+    public sealed class Engine {
         
         public void run() {
             Constants.initializeConstants();
 
-			string test = "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1";
-
+	        Test.perftSuite();
 			
+			//string test = "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1";
+	        //Board gameBoard = new Board(Constants.FEN_START);
+	        //InputOutput.drawBoard(gameBoard);
+	        //Test.kingInCheckTest(gameBoard, gameBoard.getSideToMove());
 
-            Board gameBoard = new Board(test);
-            InputOutput.drawBoard(gameBoard);
-            Test.kingInCheckTest(gameBoard, gameBoard.getSideToMove());
 
-			
-            Stopwatch s = Stopwatch.StartNew();
-            Console.WriteLine(Test.perft(6, gameBoard));
+
+	        //Stopwatch s = Stopwatch.StartNew();
+	        //Console.WriteLine(Test.perft(6, gameBoard));
 	        //Test.perftDivide(5, gameBoard);
-			Console.WriteLine(s.Elapsed);
+	        //Console.WriteLine(s.Elapsed);
 
         }
     }

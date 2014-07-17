@@ -193,7 +193,6 @@ namespace Chess_Engine {
 				//updates the bitboard 
 				this.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
 				this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-				this.updateAggregateBitboards();
 				//Removes the int representing the piece from the start square of the piece array, and adds an int representing the piece to the destination square of the piece array
 				this.pieceArray[startSquare] = Constants.EMPTY;
 				this.pieceArray[destinationSquare] = pieceMoved;
@@ -202,19 +201,16 @@ namespace Chess_Engine {
 				//Don't have to update the array because it was already overridden with the capturing piece
 				if (flag == Constants.CAPTURE) {
 					this.arrayOfBitboards[pieceCaptured - 1] &= (~destinationSquareBitboard);
-					this.updateAggregateBitboards();
-				}
+					}
 
 				//If there was an en-passant capture, remove the bit corresponding to the square of the captured pawn (one below destination square for white pawn capturing, and one above destination square for black pawn capturing) from the bitboard
 				//Update the array because the pawn destination square and captured pawn are on different squares
 				if (flag == Constants.EN_PASSANT_CAPTURE) {
 					if (pieceMoved == Constants.WHITE_PAWN) {
 						this.arrayOfBitboards[Constants.BLACK_PAWN - 1] &= (~(destinationSquareBitboard >> 8));
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare - 8] = Constants.EMPTY;
 					} else if (pieceMoved == Constants.BLACK_PAWN) {
 						this.arrayOfBitboards[Constants.WHITE_PAWN - 1] &= (~(destinationSquareBitboard << 8));
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare + 8] = Constants.EMPTY;
 					}
 				}
@@ -233,7 +229,6 @@ namespace Chess_Engine {
 				//Removes the bit corresponding to the start square, and adds a bit corresponding with the destination square
 				this.arrayOfBitboards[pieceMoved - 1] &= ~startSquareBitboard;
 				this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-				this.updateAggregateBitboards();
 				//Removes the int representing the pawn from the start square of the piece array, and adds an int representing the pawn to the destination square of the piece array
 				this.pieceArray[startSquare] = Constants.EMPTY;
 				this.pieceArray[destinationSquare] = pieceMoved;
@@ -258,7 +253,6 @@ namespace Chess_Engine {
 				//Removes the bit corresponding to the start square, and adds a bit corresponding with the destination square
 				this.arrayOfBitboards[pieceMoved - 1] &= ~startSquareBitboard;
 				this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-				this.updateAggregateBitboards();
 				//Removes the int representing the king from the start square of the piece array, and adds an int representing the king to the destination square of the piece array
 				this.pieceArray[startSquare] = Constants.EMPTY;
 				this.pieceArray[destinationSquare] = pieceMoved;
@@ -273,8 +267,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookStartSquareBitboard);
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookDestinationSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 						this.pieceArray[Constants.H1] = Constants.EMPTY;
 						this.pieceArray[Constants.F1] = Constants.WHITE_ROOK;
 
@@ -286,8 +279,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookStartSquareBitboard);
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookDestinationSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 						this.pieceArray[Constants.A1] = Constants.EMPTY;
 						this.pieceArray[Constants.D1] = Constants.WHITE_ROOK;
 					}
@@ -301,8 +293,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookStartSquareBitboard);
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookDestinationSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 						this.pieceArray[Constants.H8] = Constants.EMPTY;
 						this.pieceArray[Constants.F8] = Constants.BLACK_ROOK;
 					}
@@ -313,8 +304,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookStartSquareBitboard);
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookDestinationSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 						this.pieceArray[Constants.A8] = Constants.EMPTY;
 						this.pieceArray[Constants.D8] = Constants.BLACK_ROOK;
 					}
@@ -345,25 +335,20 @@ namespace Chess_Engine {
 				if (pieceMoved == Constants.WHITE_PAWN) {
 					//Removes the bit corresponding to the start square 
 					this.arrayOfBitboards[Constants.WHITE_PAWN - 1] &= (~startSquareBitboard);
-					this.updateAggregateBitboards();
 					this.pieceArray[startSquare] = Constants.EMPTY;
 
 					//Adds a bit corresponding to the destination square in the promoted piece bitboard
 					if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.WHITE_KNIGHT;
 					} else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.WHITE_BISHOP;
 					} else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.WHITE_ROOK;
 					} else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.WHITE_QUEEN;
 					}
 
@@ -371,31 +356,25 @@ namespace Chess_Engine {
 					//Don't have to update the array because it was already overridden with the capturing piece
 					if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE || flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[pieceCaptured - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					}
+						}
 
 				} else if (pieceMoved == Constants.BLACK_PAWN) {
 					//Removes the bit corresponding to the start square 
 					this.arrayOfBitboards[Constants.BLACK_PAWN - 1] &= (~startSquareBitboard);
-					this.updateAggregateBitboards();
 					this.pieceArray[startSquare] = Constants.EMPTY;
 
 					//Adds a bit corresponding to the destination square in the promoted piece bitboard
 					if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.BLACK_KNIGHT;
 					} else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.BLACK_BISHOP;
 					} else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.BLACK_ROOK;
 					} else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] |= destinationSquareBitboard;
-						this.updateAggregateBitboards();
 						this.pieceArray[destinationSquare] = Constants.BLACK_QUEEN;
 					}
 
@@ -403,8 +382,7 @@ namespace Chess_Engine {
 					//Don't have to update the array because it was already overridden with the capturing piece
 					if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE || flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[pieceCaptured - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					}
+						}
 				}
 			}
 
@@ -414,6 +392,11 @@ namespace Chess_Engine {
 			} else if (sideToMove == Constants.BLACK) {
 				sideToMove = Constants.WHITE;
 			}
+
+			//updates the aggregate bitboards
+			this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN - 1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] | this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | this.arrayOfBitboards[Constants.WHITE_ROOK - 1] | this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] | this.arrayOfBitboards[Constants.WHITE_KING - 1]);
+			this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN - 1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] | this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | this.arrayOfBitboards[Constants.BLACK_ROOK - 1] | this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] | this.arrayOfBitboards[Constants.BLACK_KING - 1]);
+			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
 
 			//increments the full-move number (implement later)
 			//Implement the half-move clock later (in the moves)
@@ -488,8 +471,7 @@ namespace Chess_Engine {
 			    //Removes the bit corresponding to the destination square, and adds a bit corresponding with the start square (to unmake move)
 				this.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
 				this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-			    this.updateAggregateBitboards();
-
+			    
 			    //Removes the int representing the piece from the destination square of the piece array, and adds an int representing the piece to the start square of the piece array (to unmake move)
 			    this.pieceArray[destinationSquare] = Constants.EMPTY;
 			    this.pieceArray[startSquare] = pieceMoved;
@@ -498,21 +480,18 @@ namespace Chess_Engine {
 			    //Also re-add the captured piece to the array
 			    if (flag == Constants.CAPTURE) {
 					this.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
-					this.updateAggregateBitboards();
-				    this.pieceArray[destinationSquare] = pieceCaptured;
+					this.pieceArray[destinationSquare] = pieceCaptured;
 			    }
 				    //If there was an en-passant capture, add the bit corresponding to the square of the captured pawn (one below destination square for white pawn capturing, and one above destination square for black pawn capturing) from the bitboard
 				    //Also re-add teh captured pawn to the array 
 			    else if (flag == Constants.EN_PASSANT_CAPTURE) {
 				    if (pieceMoved == Constants.WHITE_PAWN) {
 						this.arrayOfBitboards[Constants.BLACK_PAWN-1] |= (destinationSquareBitboard >> 8);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare - 8] = Constants.BLACK_PAWN;
+						this.pieceArray[destinationSquare - 8] = Constants.BLACK_PAWN;
 					}
 				    else if (pieceMoved == Constants.BLACK_PAWN) {
 					    this.arrayOfBitboards[Constants.WHITE_PAWN - 1] |= (destinationSquareBitboard << 8);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare + 8] = Constants.WHITE_PAWN;
+						this.pieceArray[destinationSquare + 8] = Constants.WHITE_PAWN;
 					}
 			    }
 		    }
@@ -521,8 +500,7 @@ namespace Chess_Engine {
 			    //Removes the bit corresponding to the DESTINATION square, and adds a bit corresponding with the start square
 			    this.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
 				this.arrayOfBitboards[pieceMoved - 1] |= startSquareBitboard;
-				this.updateAggregateBitboards();
-
+				
 			    //Removes the int representing the king from the start square of the piece array, and adds an int representing the king to the destination square of the piece array
 			    this.pieceArray[destinationSquare] = Constants.EMPTY;
 			    this.pieceArray[startSquare] = pieceMoved;
@@ -536,8 +514,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookDestinationSquareBitboard);
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookStartSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 					    this.pieceArray[Constants.F1] = Constants.EMPTY;
 					    this.pieceArray[Constants.H1] = Constants.WHITE_ROOK;
 
@@ -549,8 +526,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookDestinationSquareBitboard);
 						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookStartSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 					    this.pieceArray[Constants.D1] = Constants.EMPTY;
 					    this.pieceArray[Constants.A1] = Constants.WHITE_ROOK;
 				    }
@@ -564,8 +540,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookDestinationSquareBitboard);
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookStartSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 					    pieceArray[Constants.F8] = Constants.EMPTY;
 					    pieceArray[Constants.H8] = Constants.BLACK_ROOK;
 				    }
@@ -576,8 +551,7 @@ namespace Chess_Engine {
 
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookDestinationSquareBitboard);
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookStartSquareBitboard;
-						this.updateAggregateBitboards();
-
+						
 					    pieceArray[Constants.D8] = Constants.EMPTY;
 					    pieceArray[Constants.A8] = Constants.BLACK_ROOK;
 				    }
@@ -592,26 +566,21 @@ namespace Chess_Engine {
 			    if (pieceMoved == Constants.WHITE_PAWN) {
 				    //Adds the bit corresponding to the start square 
 					this.arrayOfBitboards[pieceMoved - 1] |= startSquareBitboard;
-					this.updateAggregateBitboards();
-				    this.pieceArray[startSquare] = pieceMoved;
+					this.pieceArray[startSquare] = pieceMoved;
 
 				    //removes a bit corresponding to the destination square in the promoted piece bitboard
 				    if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
 					    this.arrayOfBitboards[Constants.WHITE_ROOK - 1]&= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    }
 
 				    //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
@@ -619,33 +588,27 @@ namespace Chess_Engine {
 				    if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
 				        flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = pieceCaptured;
+						this.pieceArray[destinationSquare] = pieceCaptured;
 				    }
 			    }
 			    else if (pieceMoved == Constants.BLACK_PAWN) {
 				    //Adds the bit corresponding to the start square 
 					this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-					this.updateAggregateBitboards();
-				    this.pieceArray[startSquare] = pieceMoved;
+					this.pieceArray[startSquare] = pieceMoved;
 
 				    //removes the bit corresponding to the destination square in the promoted piece bitboard
 				    if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] &= (~destinationSquareBitboard);
-						this.updateAggregateBitboards();
-					    this.pieceArray[destinationSquare] = Constants.EMPTY;
+						this.pieceArray[destinationSquare] = Constants.EMPTY;
 				    }
 
 				    //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
@@ -653,11 +616,14 @@ namespace Chess_Engine {
 				    if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
 				        flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
-					    this.updateAggregateBitboards();
-						this.pieceArray[destinationSquare] = pieceCaptured;
+					    this.pieceArray[destinationSquare] = pieceCaptured;
 				    }
 			    }
 		    }
+			//updates the aggregate bitboards
+			this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN - 1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] | this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | this.arrayOfBitboards[Constants.WHITE_ROOK - 1] | this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] | this.arrayOfBitboards[Constants.WHITE_KING - 1]);
+			this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN - 1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] | this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | this.arrayOfBitboards[Constants.BLACK_ROOK - 1] | this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] | this.arrayOfBitboards[Constants.BLACK_KING - 1]);
+			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
 	    }
 
 		//METHOD THAT RETURNS HOW MANY TIMES A CERTAIN SQUARE IS ATTACKED--------------------------------------------
@@ -667,6 +633,7 @@ namespace Chess_Engine {
 		public int timesSquareIsAttacked(int colourUnderAttack, int squareToCheck) {
 
 			int numberOfTimesAttacked = 0;
+			ulong bitboardOfAttackers = 0x0UL;
 
 			if (colourUnderAttack == Constants.WHITE) {
 
@@ -675,33 +642,34 @@ namespace Chess_Engine {
 				int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
 				ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
 
-				numberOfTimesAttacked += Constants.popcount(rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_ROOK - 1]);
-				numberOfTimesAttacked += Constants.popcount(rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
-
 				//Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
 				ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.bishopOccupancyMask[squareToCheck];
 				int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
 				ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
 
-				numberOfTimesAttacked += Constants.popcount(bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_BISHOP - 1]);
-				numberOfTimesAttacked += Constants.popcount(bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
-
 				//Looks up knight attack set from square, and intersects with opponent's knight bitboard
 				ulong knightMoveFromSquare = Constants.knightMoves[squareToCheck];
-
-				numberOfTimesAttacked += Constants.popcount(knightMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1]);
 
 				//Looks up white pawn attack set from square, and intersects with opponent's pawn bitboard
 				ulong whitePawnMoveFromSquare = Constants.whiteCapturesAndCapturePromotions[squareToCheck];
 
-				numberOfTimesAttacked += Constants.popcount(whitePawnMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_PAWN - 1]);
-
 				//Looks up king attack set from square, and intersects with opponent's king bitboard
 				ulong kingMoveFromSquare = Constants.kingMoves[squareToCheck];
 
-				numberOfTimesAttacked += Constants.popcount(kingMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KING - 1]);
+				bitboardOfAttackers |= ((rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_ROOK - 1])
+									| (rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - 1])
+									| (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_BISHOP - 1])
+									| (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - 1])
+									| (knightMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1])
+									| (whitePawnMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_PAWN - 1])
+									| (kingMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KING - 1]));
 
-				return numberOfTimesAttacked;
+				if (bitboardOfAttackers == 0) {
+					return 0;
+				} else {
+					numberOfTimesAttacked = Constants.popcount(bitboardOfAttackers);
+					return numberOfTimesAttacked;
+				}
 
 			} else if (colourUnderAttack == Constants.BLACK) {
 
@@ -710,33 +678,34 @@ namespace Chess_Engine {
 				int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
 				ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
 
-				numberOfTimesAttacked += Constants.popcount(rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_ROOK - 1]);
-				numberOfTimesAttacked += Constants.popcount(rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
-
 				//Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
 				ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL_PIECES] & Constants.bishopOccupancyMask[squareToCheck];
 				int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
 				ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
 
-				numberOfTimesAttacked += Constants.popcount(bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_BISHOP - 1]);
-				numberOfTimesAttacked += Constants.popcount(bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
-
 				//Looks up knight attack set from square, and intersects with opponent's knight bitboard
 				ulong knightMoveFromSquare = Constants.knightMoves[squareToCheck];
-
-				numberOfTimesAttacked += Constants.popcount(knightMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1]);
 
 				//Looks up black pawn attack set from square, and intersects with opponent's pawn bitboard
 				ulong blackPawnMoveFromSquare = Constants.blackCapturesAndCapturePromotions[squareToCheck];
 
-				numberOfTimesAttacked += Constants.popcount(blackPawnMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_PAWN - 1]);
-
 				//Looks up king attack set from square, and intersects with opponent's king bitboard
 				ulong kingMoveFromSquare = Constants.kingMoves[squareToCheck];
 
-				numberOfTimesAttacked += Constants.popcount(kingMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KING - 1]);
+				bitboardOfAttackers = ((rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_ROOK - 1])
+				                       | (rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN - 1])
+				                       | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_BISHOP - 1])
+				                       | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN - 1])
+				                       | (knightMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1])
+				                       | (blackPawnMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_PAWN - 1])
+				                       | (kingMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KING - 1]));
 
-				return numberOfTimesAttacked;
+				if (bitboardOfAttackers == 0) {
+					return 0;
+				} else {
+					numberOfTimesAttacked = Constants.popcount(bitboardOfAttackers);
+					return numberOfTimesAttacked;
+				}
 			}
 			return 0;
 		}
@@ -797,11 +766,12 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 		
-		public List<uint> generateListOfLegalMoves() {
+		public List<uint> generateListOfPsdueoLegalMoves() {
 			
 			//Generates all of the white moves
 			if (sideToMove == Constants.WHITE) {
 
+				List<uint> listOfPseudoLegalMoves = new List<uint>(50);
 				List<uint> listOfLegalMoves = new List<uint>(50);
 
 				//Checks to see if the king is in check in the current position
@@ -825,12 +795,7 @@ namespace Chess_Engine {
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfWhitePawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
 							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 
 						//Generates white pawn captures
@@ -842,12 +807,7 @@ namespace Chess_Engine {
 							uint moveRepresentation = 0x0;
 
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
 
@@ -859,29 +819,19 @@ namespace Chess_Engine {
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
 							int indexOfWhitePawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
 							uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
 
 					//If en passant is possible, For pawns that are on the 5th rank, generate en passant captures
-					if (this.enPassantSquare != 0) {
+					if ((this.enPassantSquare & Constants.RANK_6 ) != 0) {
 						if (pawnIndex >= Constants.H5 && pawnIndex <= Constants.A5) {
 							ulong pawnCapturesFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex];
 
 							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
 								int indexOfWhiteEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
 								uint moveRepresentation = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.BLACK_PAWN);
-
-								uint boardRestoreData = this.makeMove(moveRepresentation);
-								if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-									listOfLegalMoves.Add(moveRepresentation);
-								}
-								this.unmakeMove(moveRepresentation, boardRestoreData);
+								listOfPseudoLegalMoves.Add(moveRepresentation);
 							}
 						}
 					}
@@ -898,15 +848,10 @@ namespace Chess_Engine {
 							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
 							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
-							//Only have to check one of the four promotion types to see if it leaves the king in check
-							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
-							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentationKnightPromotion);
-								listOfLegalMoves.Add(moveRepresentationBishopPromotion);
-								listOfLegalMoves.Add(moveRepresentationRookPromotion);
-								listOfLegalMoves.Add(moveRepresentationQueenPromotion);
-							}
-							this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationRookPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationQueenPromotion);
 						}
 
 
@@ -921,14 +866,10 @@ namespace Chess_Engine {
 							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 
-							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
-							if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
-							}
-							this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationRookPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationQueenPromotionCapture);
 						}
 					}
 				}
@@ -947,11 +888,7 @@ namespace Chess_Engine {
 						} else if (pieceArray[knightMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 
 				}
@@ -976,11 +913,7 @@ namespace Chess_Engine {
 						else if (pieceArray[bishopMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 
 				}
@@ -1004,11 +937,7 @@ namespace Chess_Engine {
 						else if (pieceArray[rookMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 
 				}
@@ -1041,11 +970,7 @@ namespace Chess_Engine {
 						else if (pieceArray[queenMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 
@@ -1066,11 +991,7 @@ namespace Chess_Engine {
 						} else if (pieceArray[kingMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 
@@ -1080,8 +1001,8 @@ namespace Chess_Engine {
 						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if ((this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0)) {
-							listOfLegalMoves.Add(moveRepresentation);
+						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 						this.unmakeMove(moveRepresentation, boardRestoreData);
 					}
@@ -1090,19 +1011,28 @@ namespace Chess_Engine {
 						uint moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if ((this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0)) {
-							listOfLegalMoves.Add(moveRepresentation);
+						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 						this.unmakeMove(moveRepresentation, boardRestoreData);
 					}
 				}
 				
+				//Checks all pseudo legal moves and adds them to list of legal moves if king is not in check
+				foreach (uint moveRepresentation in listOfPseudoLegalMoves) {
+					uint boardRestoreData = this.makeMove(moveRepresentation);
+					if (this.kingInCheck(Constants.WHITE) == Constants.NOT_IN_CHECK) {
+						listOfLegalMoves.Add(moveRepresentation);
+					}
+					this.unmakeMove(moveRepresentation, boardRestoreData);
+				}
 
 				//returns the list of legal moves
 				return listOfLegalMoves;
 
 			} else if (sideToMove == Constants.BLACK) {
 
+				List<uint> listOfPseudoLegalMoves = new List<uint>(50);
 				List<uint> listOfLegalMoves = new List<uint>(50);
 
 				//Checks to see if the king is in check in the current position
@@ -1130,12 +1060,7 @@ namespace Chess_Engine {
 						if ((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) {
 							int indexOfBlackPawnSingleMoveFromIndex = Constants.bitScan(singlePawnMovementFromIndex).ElementAt(0);
 							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 
 						//Generates pawn captures
@@ -1147,12 +1072,7 @@ namespace Chess_Engine {
 							uint moveRepresentation = 0x0;
 
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
 
@@ -1164,29 +1084,19 @@ namespace Chess_Engine {
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL_PIECES]) == 0)) {
 							int indexOfBlackPawnDoubleMoveFromIndex = Constants.bitScan(doublePawnMovementFromIndex).ElementAt(0);
 							uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
-
-							uint boardRestoreData = this.makeMove(moveRepresentation);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentation);
-							}
-							this.unmakeMove(moveRepresentation, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 					}
 
 					//Generates black pawn en passant captures
-					if (this.enPassantSquare != 0) {
+					if ((this.enPassantSquare & Constants.RANK_3) != 0) {
 						if (pawnIndex >= Constants.H4 && pawnIndex <= Constants.A4) {
 							ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
 
 							if ((pawnCapturesFromIndex & this.enPassantSquare) != 0) {
 								int indexOfBlackEnPassantCaptureFromIndex = Constants.bitScan(pawnCapturesFromIndex & this.enPassantSquare).ElementAt(0);
 								uint moveRepresentation = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, Constants.WHITE_PAWN);
-
-								uint boardRestoreData = this.makeMove(moveRepresentation);
-								if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-									listOfLegalMoves.Add(moveRepresentation);
-								}
-								this.unmakeMove(moveRepresentation, boardRestoreData);
+								listOfPseudoLegalMoves.Add(moveRepresentation);
 							}
 						}
 					}
@@ -1202,15 +1112,10 @@ namespace Chess_Engine {
 							uint moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
 							uint moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
 
-							//Only have to check one of the four promotion types to see if it leaves the king in check
-							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotion);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentationKnightPromotion);
-								listOfLegalMoves.Add(moveRepresentationBishopPromotion);
-								listOfLegalMoves.Add(moveRepresentationRookPromotion);
-								listOfLegalMoves.Add(moveRepresentationQueenPromotion);
-							}
-							this.unmakeMove(moveRepresentationKnightPromotion, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationRookPromotion);
+							listOfPseudoLegalMoves.Add(moveRepresentationQueenPromotion);
 						}
 
 						ulong pawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex];
@@ -1223,14 +1128,10 @@ namespace Chess_Engine {
 							uint moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 							uint moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
 
-							uint boardRestoreData = this.makeMove(moveRepresentationKnightPromotionCapture);
-							if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-								listOfLegalMoves.Add(moveRepresentationKnightPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationBishopPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationRookPromotionCapture);
-								listOfLegalMoves.Add(moveRepresentationQueenPromotionCapture);
-							}
-							this.unmakeMove(moveRepresentationKnightPromotionCapture, boardRestoreData);
+							listOfPseudoLegalMoves.Add(moveRepresentationKnightPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationBishopPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationRookPromotionCapture);
+							listOfPseudoLegalMoves.Add(moveRepresentationQueenPromotionCapture);
 						}
 					}
 
@@ -1252,11 +1153,8 @@ namespace Chess_Engine {
 						} else if (pieceArray[knightMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_KNIGHT, knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 
@@ -1279,11 +1177,8 @@ namespace Chess_Engine {
 						else if (pieceArray[bishopMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_BISHOP, bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 				//generates black rook moves and captures
@@ -1305,11 +1200,8 @@ namespace Chess_Engine {
 						else if (pieceArray[rookMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_ROOK, rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 
 				}
@@ -1341,11 +1233,8 @@ namespace Chess_Engine {
 						else if (pieceArray[queenMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_QUEEN, queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 
@@ -1363,11 +1252,8 @@ namespace Chess_Engine {
 						} else if (pieceArray[kingMoveIndex] != Constants.EMPTY) {
 							moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
 						}
-						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
-							listOfLegalMoves.Add(moveRepresentation);
-						}
-						this.unmakeMove(moveRepresentation, boardRestoreData);
+
+						listOfPseudoLegalMoves.Add(moveRepresentation);
 					}
 				}
 
@@ -1377,8 +1263,8 @@ namespace Chess_Engine {
 						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if ((this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0)) {
-							listOfLegalMoves.Add(moveRepresentation);
+						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 						this.unmakeMove(moveRepresentation, boardRestoreData);
 					}
@@ -1387,12 +1273,21 @@ namespace Chess_Engine {
 						uint moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
 
 						uint boardRestoreData = this.makeMove(moveRepresentation);
-						if ((this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) && (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0)) {
-							listOfLegalMoves.Add(moveRepresentation);
+						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
+							listOfPseudoLegalMoves.Add(moveRepresentation);
 						}
 						this.unmakeMove(moveRepresentation, boardRestoreData);
 					}
 				}
+				//Checks all pseudo legal moves and adds them to list of legal moves if king is not in check
+				foreach (uint moveRepresentation in listOfPseudoLegalMoves) {
+					uint boardRestoreData = this.makeMove(moveRepresentation);
+					if (this.kingInCheck(Constants.BLACK) == Constants.NOT_IN_CHECK) {
+						listOfLegalMoves.Add(moveRepresentation);
+					}
+					this.unmakeMove(moveRepresentation, boardRestoreData);
+				}
+
 				//returns the list of legal moves
 				return listOfLegalMoves;
 			}
@@ -1582,14 +1477,7 @@ namespace Chess_Engine {
 
         }
 
-		//Updates the aggregate bitboards after making and unmaking moves
-	    private void updateAggregateBitboards() {
-			this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN-1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT-1] | this.arrayOfBitboards[Constants.WHITE_BISHOP-1] | this.arrayOfBitboards[Constants.WHITE_ROOK-1] | this.arrayOfBitboards[Constants.WHITE_QUEEN-1] | this.arrayOfBitboards[Constants.WHITE_KING-1]);
-			this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN-1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT-1] | this.arrayOfBitboards[Constants.BLACK_BISHOP-1] | this.arrayOfBitboards[Constants.BLACK_ROOK-1] | this.arrayOfBitboards[Constants.BLACK_QUEEN-1] | this.arrayOfBitboards[Constants.BLACK_KING-1]);
-			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
-	    }
-
-		//Takes information on piece moved, start square, destination square, type of move, and piece captured
+	//Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
 		private static uint moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {

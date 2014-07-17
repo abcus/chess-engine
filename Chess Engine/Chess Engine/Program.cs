@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
     
-    class Program {
+    public sealed class Program {
         
         static void Main(string[] args) {
 

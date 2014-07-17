@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
     
-    class InputOutput {
+    public sealed class InputOutput {
 
         //CONSTRUCTOR----------------------------------------------------------------------------------------
 

@@ -612,5 +612,13 @@ namespace Chess_Engine {
             bitboard = ((bitboard >> 4) + bitboard) & 0x0F0F0F0F0F0F0F0FUL;
             return (int)((bitboard * 0x0101010101010101UL) >> 56);
         }
+
+		//Finds the popcount (number of 1s in the bit) if there are a maximum of 15 1s
+		//Also copied from stockfish
+	    public static int popcountMax15(ulong bitboard) {
+			bitboard -=  (bitboard >> 1) & 0x5555555555555555UL;
+			bitboard  = ((bitboard >> 2) & 0x3333333333333333UL) + (bitboard & 0x3333333333333333UL);
+			return (int)(bitboard * 0x1111111111111111UL) >> 60;
+	    }
     }
 }

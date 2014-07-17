@@ -8,7 +8,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Chess_Engine {
-    class Test {
+    
+	public sealed class Test {
 
         //Generates king moves from square H1 to A8
         public static void generateKingMoves() {
@@ -509,7 +510,7 @@ namespace Chess_Engine {
         //Prints out a list of legal moves
         public static void printLegalMove(Board inputBoard)
         {
-            List<uint> moveList = inputBoard.generateListOfLegalMoves();
+            List<uint> moveList = inputBoard.generateListOfPsdueoLegalMoves();
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Count);
             int moveCount = 0;
@@ -673,13 +674,11 @@ namespace Chess_Engine {
 
 		public static int perft(int depth, Board inputBoard) {
 			int nodes = 0;
-			if (depth == 0) {
-				return 1;
-			} else if (depth == 1) {
-				List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
+			if (depth == 1) {
+				List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 				return psdueoLegaloveList.Count;
 			} else {
-				List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
+				List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 				foreach (uint move in psdueoLegaloveList) {
 					uint boardRestoreData = inputBoard.makeMove(move);
 					nodes += perft(depth - 1, inputBoard);
@@ -691,7 +690,7 @@ namespace Chess_Engine {
 
 		public static void perftDivide(int depth, Board inputBoard) {
 			
-			List<uint> psdueoLegaloveList = inputBoard.generateListOfLegalMoves();
+			List<uint> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 
 			int count = 0;
 			
@@ -703,5 +702,77 @@ namespace Chess_Engine {
 				inputBoard.unmakeMove(move, boardRestoreData);
 			}
 		}
+
+	    public static void perftSuite() {
+			Board gameBoard = new Board("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+		    Console.WriteLine("1134888 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("1015133 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("1440467 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("5k2/8/8/8/8/8/8/4K2R w K - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("661072 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("803711 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1");
+			Console.WriteLine(Test.perft(4, gameBoard));
+			Console.WriteLine("1274206 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1");
+			Console.WriteLine(Test.perft(4, gameBoard));
+			Console.WriteLine("1720476 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("3821001 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1");
+			Console.WriteLine(Test.perft(5, gameBoard));
+			Console.WriteLine("1004658 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("4k3/1P6/8/8/8/8/K7/8 w - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("217342 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/P1k5/K7/8/8/8/8/8 w - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("92683 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("K1k5/8/P7/8/8/8/8/8 w - - 0 1");
+			Console.WriteLine(Test.perft(6, gameBoard));
+			Console.WriteLine("2217 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/k1P5/8/1K6/8/8/8/8 w - - 0 1");
+			Console.WriteLine(Test.perft(7, gameBoard));
+			Console.WriteLine("567584 (theoretical value)");
+			Console.WriteLine("");
+
+			gameBoard = new Board("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
+			Console.WriteLine(Test.perft(4, gameBoard));
+			Console.WriteLine("23527 (theoretical value)");
+			Console.WriteLine("");
+	    }
     }
 }
