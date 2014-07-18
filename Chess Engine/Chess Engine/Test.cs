@@ -498,7 +498,16 @@ namespace Chess_Engine {
 
         //Checks if the king is in check and prints out the result
         public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
-            int checkStatus = inputBoard.kingInCheck(colourOfKingToCheck);
+
+            int indexOfKing = 0;
+
+            if (colourOfKingToCheck == Constants.WHITE) {
+                indexOfKing = Constants.bitScan(inputBoard.arrayOfBitboards[Constants.WHITE_KING - 1]).ElementAt(0);
+            } else if (colourOfKingToCheck == Constants.BLACK) {
+                indexOfKing = Constants.bitScan(inputBoard.arrayOfBitboards[Constants.BLACK_KING - 1]).ElementAt(0);
+            }
+
+            int checkStatus = inputBoard.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
 
             switch (checkStatus) {
                 case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
@@ -674,14 +683,34 @@ namespace Chess_Engine {
 
 		public static int perft(int depth, Board inputBoard) {
 			int nodes = 0;
-			if (depth == 1) {
-				List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
-				return psdueoLegaloveList.Count;
-			} else {
-				List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
+		    
+		    if (depth == 1) {
+                int boardRestoreData = inputBoard.encodeBoardRestoreData();
+                List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
+		        int numberOfLegalMovesFromList = 0;
+                
+                foreach (int move in psdueoLegaloveList) {
+                    int flag = ((move & 0xF0000) >> 16);
+                    byte pieceMoved = (byte)((move & 0xF) >> 0);
+
+                    inputBoard.makeMove(move);
+                    if (isMoveLegal(inputBoard, flag, pieceMoved) == true) {
+                        numberOfLegalMovesFromList ++;
+                    }
+                    inputBoard.unmakeMove(move, boardRestoreData);
+                }
+                return numberOfLegalMovesFromList;
+		    } else {
+			    int boardRestoreData = inputBoard.encodeBoardRestoreData();
+                List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 				foreach (int move in psdueoLegaloveList) {
-					int boardRestoreData = inputBoard.makeMove(move);
-					nodes += perft(depth - 1, inputBoard);
+					int flag = ((move& 0xF0000) >> 16);
+                    byte pieceMoved = (byte)((move & 0xF) >> 0);
+
+                    inputBoard.makeMove(move);
+				    if (isMoveLegal(inputBoard, flag, pieceMoved) == true) {
+                        nodes += perft(depth - 1, inputBoard);
+				    }
 					inputBoard.unmakeMove(move, boardRestoreData);
 				}
 				return nodes;
@@ -693,85 +722,162 @@ namespace Chess_Engine {
 			List<int> psdueoLegaloveList = inputBoard.generateListOfPsdueoLegalMoves();
 
 			int count = 0;
-			
+            int boardRestoreData = inputBoard.encodeBoardRestoreData();
+
 			foreach (int move in psdueoLegaloveList) {
 
 				count++;
-				int boardRestoreData = inputBoard.makeMove(move);
-				Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth-1, inputBoard));
+				int flag = ((move & 0xF0000) >> 16);
+                byte pieceMoved = (byte)((move & 0xF) >> 0);
+
+                inputBoard.makeMove(move);
+			    if (isMoveLegal(inputBoard, flag, pieceMoved) == true) {
+                    Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1, inputBoard));
+			    }
 				inputBoard.unmakeMove(move, boardRestoreData);
 			}
 		}
 
+	    public static bool isMoveLegal(Board inputBoard, int flag, byte pieceMoved) {
+
+	        bool isMoveLegal = false;
+	        
+            //White to move
+            if (pieceMoved <= Constants.WHITE_KING) {
+                int indexOfWhiteKing = Constants.bitScan(inputBoard.arrayOfBitboards[Constants.WHITE_KING - 1]).ElementAt(0);
+                
+                if (flag == Constants.SHORT_CASTLE) {
+                    if ((inputBoard.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && inputBoard.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else if (flag == Constants.LONG_CASTLE) {
+                    if ((inputBoard.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && inputBoard.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else {
+                    if (inputBoard.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) {
+                        isMoveLegal = true;
+                    }
+                }     
+	        }
+           //Black to move
+           else if (pieceMoved >= Constants.BLACK_PAWN) {
+               int indexOfBlackKing = Constants.bitScan(inputBoard.arrayOfBitboards[Constants.BLACK_KING - 1]).ElementAt(0); 
+               
+               if (flag == Constants.SHORT_CASTLE) {
+                    if ((inputBoard.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && (inputBoard.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0)) {
+                        isMoveLegal = true;
+                    }
+                } else if ((flag == Constants.LONG_CASTLE)) {
+                    if ((inputBoard.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && inputBoard.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else {
+                    if (inputBoard.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) {
+                        isMoveLegal = true;
+                    }
+                }     
+	        } 
+	        return isMoveLegal;
+	    }
+
 	    public static void perftSuite() {
 			Board gameBoard = new Board("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+	        int nodes = Test.perft(6, gameBoard);
+			Console.WriteLine(nodes);
 		    Console.WriteLine("1134888 (theoretical value)");
+            Console.WriteLine("Difference: " + (1134888 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+	        nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("1015133 (theoretical value)");
+            Console.WriteLine("Difference: " + (1015133 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("1440467 (theoretical value)");
+            Console.WriteLine("Difference: " + (1440467 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("5k2/8/8/8/8/8/8/4K2R w K - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("661072 (theoretical value)");
+            Console.WriteLine("Difference: " + (661072 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("803711 (theoretical value)");
+            Console.WriteLine("Difference: " + (803711 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1");
-			Console.WriteLine(Test.perft(4, gameBoard));
+            nodes = Test.perft(4, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("1274206 (theoretical value)");
+            Console.WriteLine("Difference: " + (1274206 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1");
-			Console.WriteLine(Test.perft(4, gameBoard));
+            nodes = Test.perft(4, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("1720476 (theoretical value)");
+            Console.WriteLine("Difference: " + (1720476 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("3821001 (theoretical value)");
+            Console.WriteLine("Difference: " + (3821001 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1");
-			Console.WriteLine(Test.perft(5, gameBoard));
+            nodes = Test.perft(5, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("1004658 (theoretical value)");
+            Console.WriteLine("Difference: " + (1004658 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("4k3/1P6/8/8/8/8/K7/8 w - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("217342 (theoretical value)");
+            Console.WriteLine("Difference: " + (217342 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/P1k5/K7/8/8/8/8/8 w - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("92683 (theoretical value)");
+            Console.WriteLine("Difference: " + (92683 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("K1k5/8/P7/8/8/8/8/8 w - - 0 1");
-			Console.WriteLine(Test.perft(6, gameBoard));
+            nodes = Test.perft(6, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("2217 (theoretical value)");
+            Console.WriteLine("Difference: " + (2217 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/k1P5/8/1K6/8/8/8/8 w - - 0 1");
-			Console.WriteLine(Test.perft(7, gameBoard));
+            nodes = Test.perft(7, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("567584 (theoretical value)");
+            Console.WriteLine("Difference: " + (567584 - nodes));
 			Console.WriteLine("");
 
 			gameBoard = new Board("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
-			Console.WriteLine(Test.perft(4, gameBoard));
+            nodes = Test.perft(4, gameBoard);
+            Console.WriteLine(nodes);
 			Console.WriteLine("23527 (theoretical value)");
+            Console.WriteLine("Difference: " + (23527 - nodes));
 			Console.WriteLine("");
 	    }
     }

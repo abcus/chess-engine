@@ -606,15 +606,22 @@ namespace Chess_Engine {
         //BIT MANIPULATION METHODS----------------------------------------------------------------------------
 
         //gets arraylist containing index of all 1s
-        public static List<int> bitScan(ulong bitboard) {
-            var indices = new List<int>(30);
-			
+        public static int[] bitScan(ulong bitboard) {
 
+            int temp = 0;
+            
+            int[] indicesOfBits = {
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+            };
+            
             while (bitboard != 0) {
-				indices.Add(index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58]);
+                indicesOfBits[temp++] = (index64[((bitboard ^ (bitboard - 1))*deBruijn64) >> 58]);
                 bitboard &= bitboard - 1;
             }
-            return indices;
+            return indicesOfBits;
         }
 
         //Finds the popcount (number of 1s in the bit)
