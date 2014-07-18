@@ -42,6 +42,17 @@ namespace Chess_Engine {
         public const ulong BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES = 0x0600000000000000UL;
         public const ulong BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES = 0x7000000000000000UL;
 
+        //Rook moves in castling
+        public const ulong A1_BITBOARD = 0x0000000000000080UL;
+        public const ulong D1_BITBOARD = 0x0000000000000010UL;
+        public const ulong F1_BITBOARD = 0x0000000000000004UL;
+        public const ulong H1_BITBOARD = 0x0000000000000001UL;
+
+        public const ulong A8_BITBOARD = 0x8000000000000000UL;
+        public const ulong D8_BITBOARD = 0x1000000000000000UL;
+        public const ulong F8_BITBOARD = 0x0400000000000000UL;
+        public const ulong H8_BITBOARD = 0x0100000000000000UL;
+
         //To convert from unsigned long to signed, subtract 18446744073709551616 if the unsigned long is bigger than 9223372036854775807
 
         //FEN for starting position
@@ -53,7 +64,7 @@ namespace Chess_Engine {
         
         
         //Enumerated type for types of moves
-        public const int 
+        public const byte 
             QUIET_MOVE = 0,
             DOUBLE_PAWN_PUSH = 1,
             SHORT_CASTLE = 2,
@@ -70,7 +81,7 @@ namespace Chess_Engine {
             QUEEN_PROMOTION_CAPTURE = 13;
         
         //Enumerated types for pieces
-        public const int
+        public const byte
                EMPTY = 0,
                WHITE_PAWN = 1,
                WHITE_KNIGHT = 2,
@@ -86,19 +97,19 @@ namespace Chess_Engine {
                BLACK_KING = 12;
 
         //Enumerated type for side to move
-        public const int WHITE = 0, BLACK = 1;
+        public const byte WHITE = 0, BLACK = 1;
 
         //Enumberated type for checks (multiple check is there because making a king move could result in it moving into multiple checks)
-	    public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
+	    public const byte NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
 
         //Enumerated type for castling rights
-        public const int CANNOT_CASTLE = 0, CAN_CASTLE = 1;
+        public const byte CANNOT_CASTLE = 0, CAN_CASTLE = 1;
 
 		//Enmerated type for aggregate bitboard array
-	    public const int WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
+	    public const byte WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
 
         //Enumerated type for squares
-        public const int 
+        public const byte
             H1 = 00, G1 = 01, F1 = 02, E1 = 03, D1 = 04, C1 = 05, B1 = 06, A1 = 07, 
             H2 = 08, G2 = 09, F2 = 10, E2 = 11, D2 = 12, C2 = 13, B2 = 14, A2 = 15, 
             H3 = 16, G3 = 17, F3 = 18, E3 = 19, D3 = 20, C3 = 21, B3 = 22, A3 = 23, 

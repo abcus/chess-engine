@@ -22,8 +22,8 @@ namespace Chess_Engine {
 
 
 	        Stopwatch s = Stopwatch.StartNew();
-	        Console.WriteLine(Test.perft(6, gameBoard));
-	        //Test.perftDivide(5, gameBoard);
+	        //Console.WriteLine(Test.perft(5, gameBoard));
+	        //Test.perftDivide(6, gameBoard);
 	        Console.WriteLine(s.Elapsed);
 
         }

@@ -39,7 +39,7 @@ namespace Chess_Engine {
 
         //piece array that stores the pieces as integers in a 64-element array
         //Index 0 is H1, and element 63 is A8
-        internal int[] pieceArray = new int[64];
+        internal byte[] pieceArray = new byte[64];
 
         //side to move
         internal int sideToMove = 0;
@@ -93,56 +93,38 @@ namespace Chess_Engine {
 		//Static method that makes a move by updating the board object's instance variables
 		public int makeMove(int moveRepresentationInput) {
 
-			//stores the board restore data in a 32-bit unsigned integer
-			int boardRestoreData = 0x0;
-
-			//encodes side to move and castling rights
-			boardRestoreData |= ((this.sideToMove << 0) | (this.whiteShortCastleRights << 2) | (this.whiteLongCastleRights << 3) | (this.blackShortCastleRights << 4) | (this.blackLongCastleRights << 5));
-
-			//Encodes en passant square
-			//Calculates the en passant square number (if any) from the en passant bitboard
-			//If there is no en-passant square, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
-			if (Constants.bitScan(enPassantSquare).Count == 0) {
-				boardRestoreData |= 63 << 6;
-			} else {
-				boardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
-			}
-
-			//encodes repetition number
-			boardRestoreData |= repetionOfPosition << 12;
-
-			//encodes half-move clock
-			//If there is no half-move clock, then we set the bits corresponding to that variable to 63 (the maximum value for 6 bits)
-			if (HalfMovesSincePawnMoveOrCapture == -1) {
-				boardRestoreData |= 63 << 14;
-			} else {
-				boardRestoreData |= HalfMovesSincePawnMoveOrCapture << 14;
-			}
-
-			//encodes move number
-			//If there is no move number, then we set the bits corresponding to that variable to 2047 (the maximum value for 11 bits)
-			if (moveNumber == -1) {
-				boardRestoreData |= 2047 << 20;
-			} else {
-				boardRestoreData |= moveNumber << 20;
-			}
+            //Encodes the board restore data
+		    int boardRestoreData = encodeBoardRestoreData();
 
 			//Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-			int pieceMoved = ((moveRepresentationInput & 0xF) >> 0);
+			byte pieceMoved = (byte)((moveRepresentationInput & 0xF) >> 0);
 			int startSquare = ((moveRepresentationInput & 0x3F0) >> 4);
 			int destinationSquare = ((moveRepresentationInput & 0xFC00) >> 10);
 			int flag = ((moveRepresentationInput & 0xF0000) >> 16);
-			int pieceCaptured;
-			if (((moveRepresentationInput & 0xF00000) >> 20) == 15) {
-				pieceCaptured = 0;
-			} else {
-				pieceCaptured = ((moveRepresentationInput & 0xF00000) >> 20);
-			}
-
+			byte pieceCaptured = (byte)((moveRepresentationInput & 0xF00000) >> 20);
+			
 			//Calculates bitboards for removing piece from start square and adding piece to destionation square
 			//"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
 			ulong startSquareBitboard = (0x1UL << startSquare);
 			ulong destinationSquareBitboard = (0x1UL << destinationSquare);
+
+            //If a promotion, then don't add piece (pawn) to the destination square
+            //Only remove it from the start square
+            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH ||
+                flag == Constants.EN_PASSANT_CAPTURE
+                || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+                //updates the bitboard and removes the int representing the piece from the start square of the piece array, and adds an int representing the piece to the destination square of the piece array
+                    this.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
+                    this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
+                    this.pieceArray[startSquare] = Constants.EMPTY;
+                    this.pieceArray[destinationSquare] = pieceMoved;
+            } else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE
+                   || flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE
+                   || flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE
+                   || flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+                       this.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
+                       this.pieceArray[startSquare] = Constants.EMPTY;
+            }
 
 			//If quiet move, updates the piece's bitboard and piece array
 			//If capture, also updates the captured piece's bitboard
@@ -183,13 +165,11 @@ namespace Chess_Engine {
 				//sets the en Passant square to 0x0UL;
 				this.enPassantSquare = 0x0UL;
 
-				//Removes the bit corresponding to the start square, and adds a bit corresponding with the destination square
-				//updates the bitboard 
-				this.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
-				this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-				//Removes the int representing the piece from the start square of the piece array, and adds an int representing the piece to the destination square of the piece array
-				this.pieceArray[startSquare] = Constants.EMPTY;
-				this.pieceArray[destinationSquare] = pieceMoved;
+                
+
+				
+
+                
 
 				//If there was a capture, remove the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
 				//Don't have to update the array because it was already overridden with the capturing piece
@@ -243,14 +223,6 @@ namespace Chess_Engine {
 				}
 				//sets the en Passant square to 0x0UL;
 				this.enPassantSquare = 0x0UL;
-
-				//Removes the bit corresponding to the start square, and adds a bit corresponding with the destination square
-				this.arrayOfBitboards[pieceMoved - 1] &= ~startSquareBitboard;
-				this.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-				//Removes the int representing the king from the start square of the piece array, and adds an int representing the king to the destination square of the piece array
-				this.pieceArray[startSquare] = Constants.EMPTY;
-				this.pieceArray[destinationSquare] = pieceMoved;
-				//updates the bitboard and the piece array
 
 				if (pieceMoved == Constants.WHITE_KING) {
 
@@ -330,10 +302,7 @@ namespace Chess_Engine {
 				this.enPassantSquare = 0x0UL;
 
 				if (pieceMoved == Constants.WHITE_PAWN) {
-					//Removes the bit corresponding to the start square 
-					this.arrayOfBitboards[Constants.WHITE_PAWN - 1] &= (~startSquareBitboard);
-					this.pieceArray[startSquare] = Constants.EMPTY;
-
+					
 					//Adds a bit corresponding to the destination square in the promoted piece bitboard
 					if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] |= destinationSquareBitboard;
@@ -356,10 +325,7 @@ namespace Chess_Engine {
 						}
 
 				} else if (pieceMoved == Constants.BLACK_PAWN) {
-					//Removes the bit corresponding to the start square 
-					this.arrayOfBitboards[Constants.BLACK_PAWN - 1] &= (~startSquareBitboard);
-					this.pieceArray[startSquare] = Constants.EMPTY;
-
+					
 					//Adds a bit corresponding to the destination square in the promoted piece bitboard
 					if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] |= destinationSquareBitboard;
@@ -379,23 +345,17 @@ namespace Chess_Engine {
 					//Don't have to update the array because it was already overridden with the capturing piece
 					if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE || flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
 						this.arrayOfBitboards[pieceCaptured - 1] &= (~destinationSquareBitboard);
-						}
+					}
 				}
 			}
 
-			//sets the side to move to the other player
-			if (sideToMove == Constants.WHITE) {
-				sideToMove = Constants.BLACK;
-			} else if (sideToMove == Constants.BLACK) {
-				sideToMove = Constants.WHITE;
-			}
+			//sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
+            sideToMove ^= 1;
 
 			//updates the aggregate bitboards
-			this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN - 1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] | this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | this.arrayOfBitboards[Constants.WHITE_ROOK - 1] | this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] | this.arrayOfBitboards[Constants.WHITE_KING - 1]);
-			this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN - 1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] | this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | this.arrayOfBitboards[Constants.BLACK_ROOK - 1] | this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] | this.arrayOfBitboards[Constants.BLACK_KING - 1]);
-			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
-
-			//increments the full-move number (implement later)
+		    updateAggregateBitboards();
+            
+            //increments the full-move number (implement later)
 			//Implement the half-move clock later (in the moves)
 			//Also implement the repetitions later
 
@@ -410,216 +370,135 @@ namespace Chess_Engine {
         //Method that unmakes a move by restoring the board object's instance variables
 	    public void unmakeMove(int unmoveRepresentationInput, int boardRestoreDataRepresentation) {
 
-		    //Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
-		    this.sideToMove = ((boardRestoreDataRepresentation & 0x3) >> 0);
-			this.whiteShortCastleRights = ((boardRestoreDataRepresentation & 0x4) >> 2);
-			this.whiteLongCastleRights = ((boardRestoreDataRepresentation & 0x8) >> 3);
-			this.blackShortCastleRights = ((boardRestoreDataRepresentation & 0x10) >> 4);
-			this.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
-
-		    //Sets the en passant square from the integer encoding the restore board data
-		    //If we extract 63, then we know that there was no en passant square and set the instance variable for EQ square to 0x0UL
-		    if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 63) {
-				this.enPassantSquare = 0x0UL;
-		    } else {
-			    this.enPassantSquare = 0x1UL << ((boardRestoreDataRepresentation & 0xFC0) >> 6);
-		    }
-			
-		    //Sets the repetition number from the integer encoding the restore board data
-		    this.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
-
-		    //Sets the half move clock (since last pawn push/capture) from the integer encoding the restore board data
-		    //If we extract 63, then we know that there was no half-move clock and return -1 (original value of instance variable)
-		    if (((boardRestoreDataRepresentation & 0xFC000) >> 14) == 63) {
-			    this.HalfMovesSincePawnMoveOrCapture = -1;
-		    } else {
-			    this.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
-		    }
-
-		    //Sets the move number from the integer encoding the restore board data
-		    //If we extract 4095, then we know that there was no move number and return -1 (original value of instance variable)
-		    if (((boardRestoreDataRepresentation & 0x7FF00000) >> 20) == 2047) {
-			    this.moveNumber = -1;
-		    } else {
-			    this.moveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
-		    }
+            //restores the board instance variables
+	        restoreBoardState(boardRestoreDataRepresentation);
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    int pieceMoved = ((unmoveRepresentationInput & 0xF) >> 0);
+		    byte pieceMoved = (byte)((unmoveRepresentationInput & 0xF) >> 0);
 		    int startSquare = ((unmoveRepresentationInput & 0x3F0) >> 4);
 		    int destinationSquare = ((unmoveRepresentationInput & 0xFC00) >> 10);
 		    int flag = ((unmoveRepresentationInput & 0xF0000) >> 16);
-		    int pieceCaptured;
-		    if (((unmoveRepresentationInput & 0xF00000) >> 20) == 15) {
-			    pieceCaptured = 0;
-		    } else {
-			    pieceCaptured = ((unmoveRepresentationInput & 0xF00000) >> 20);
-		    }
-
+		    byte pieceCaptured = (byte)((unmoveRepresentationInput & 0xF00000) >> 20);
+		    
 		    //Calculates bitboards for removing piece from start square and adding piece to destionation square
 		    //"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
 		    ulong startSquareBitboard = (0x1UL << startSquare);
 		    ulong destinationSquareBitboard = (0x1UL << destinationSquare);
 
-		    if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.EN_PASSANT_CAPTURE
-		        || flag == Constants.DOUBLE_PAWN_PUSH) {
+            //Removes the bit corresponding to the destination square, and adds a bit corresponding with the start square (to unmake move)
+            //Removes the int representing the piece from the destination square of the piece array, and adds an int representing the piece to the start square of the piece array (to unmake move)
+            //If it was a promotion, then don't have to remove the pawn from the destination square
+            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH ||
+                flag == Constants.EN_PASSANT_CAPTURE
+                || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+                        this.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
+                        this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
+                        this.pieceArray[destinationSquare] = Constants.EMPTY;
+                        this.pieceArray[startSquare] = pieceMoved;
+            } else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE
+                   || flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE
+                   || flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE
+                   || flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+                       this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
+                       this.pieceArray[startSquare] = pieceMoved;
+            }
 
-			    //Removes the bit corresponding to the destination square, and adds a bit corresponding with the start square (to unmake move)
-				this.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
-				this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-			    
-			    //Removes the int representing the piece from the destination square of the piece array, and adds an int representing the piece to the start square of the piece array (to unmake move)
-			    this.pieceArray[destinationSquare] = Constants.EMPTY;
-			    this.pieceArray[startSquare] = pieceMoved;
-			    
-				//If there was a capture, add to the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
-			    //Also re-add the captured piece to the array
-			    if (flag == Constants.CAPTURE) {
-					this.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
-					this.pieceArray[destinationSquare] = pieceCaptured;
-			    }
-				    //If there was an en-passant capture, add the bit corresponding to the square of the captured pawn (one below destination square for white pawn capturing, and one above destination square for black pawn capturing) from the bitboard
-				    //Also re-add teh captured pawn to the array 
-			    else if (flag == Constants.EN_PASSANT_CAPTURE) {
-				    if (pieceMoved == Constants.WHITE_PAWN) {
-						this.arrayOfBitboards[Constants.BLACK_PAWN-1] |= (destinationSquareBitboard >> 8);
-						this.pieceArray[destinationSquare - 8] = Constants.BLACK_PAWN;
-					}
-				    else if (pieceMoved == Constants.BLACK_PAWN) {
-					    this.arrayOfBitboards[Constants.WHITE_PAWN - 1] |= (destinationSquareBitboard << 8);
-						this.pieceArray[destinationSquare + 8] = Constants.WHITE_PAWN;
-					}
-			    }
-		    }
-		    else if (flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+            //If there was a capture, add to the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
+            //Also re-add the captured piece to the array
+            if (flag == Constants.CAPTURE) {
+                this.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
+                this.pieceArray[destinationSquare] = pieceCaptured;
+            }
+            //If there was an en-passant capture, add the bit corresponding to the square of the captured pawn (one below destination square for white pawn capturing, and one above destination square for black pawn capturing) from the bitboard
+            //Also re-add teh captured pawn to the array 
+            else if (flag == Constants.EN_PASSANT_CAPTURE) {
+                if (pieceMoved == Constants.WHITE_PAWN) {
+                    this.arrayOfBitboards[Constants.BLACK_PAWN - 1] |= (destinationSquareBitboard >> 8);
+                    this.pieceArray[destinationSquare - 8] = Constants.BLACK_PAWN;
+                } else if (pieceMoved == Constants.BLACK_PAWN) {
+                    this.arrayOfBitboards[Constants.WHITE_PAWN - 1] |= (destinationSquareBitboard << 8);
+                    this.pieceArray[destinationSquare + 8] = Constants.WHITE_PAWN; 
+                }  
+            } 
+            //If white king short castle, then move the rook from F1 to H1
+            //If black king short castle, then move the rook from F8 to H8
+            else if (flag == Constants.SHORT_CASTLE) {
+                if (pieceMoved == Constants.WHITE_KING) {
+                    this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~Constants.F1_BITBOARD);
+                    this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= Constants.H1_BITBOARD;
+                    this.pieceArray[Constants.F1] = Constants.EMPTY;
+                    this.pieceArray[Constants.H1] = Constants.WHITE_ROOK;
+                } else if (pieceMoved == Constants.BLACK_KING) {
+                    this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(Constants.F8_BITBOARD);
+                    this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= Constants.H8_BITBOARD;
+                    this.pieceArray[Constants.F8] = Constants.EMPTY;
+                    this.pieceArray[Constants.H8] = Constants.BLACK_ROOK;
+                }
+            }
+           //If king long castle, then move the rook from D1 to A1
+            //If black king long castle, then move the rook from D8 to A8
+            else if (flag == Constants.LONG_CASTLE) {
+                if (pieceMoved == Constants.WHITE_KING) {
+                    this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~Constants.D1_BITBOARD);
+                    this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= Constants.A1_BITBOARD;
+                    this.pieceArray[Constants.D1] = Constants.EMPTY;
+                    this.pieceArray[Constants.A1] = Constants.WHITE_ROOK;
+                } else if (pieceMoved == Constants.BLACK_KING) {
+                    this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(Constants.D8_BITBOARD);
+                    this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= Constants.A8_BITBOARD;
+                    this.pieceArray[Constants.D8] = Constants.EMPTY;
+                    this.pieceArray[Constants.A8] = Constants.BLACK_ROOK;
+                }
+            }
+            else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
+                if (pieceMoved == Constants.WHITE_PAWN) {
+                    this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                } else if (pieceMoved == Constants.BLACK_PAWN) {
+                    this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                }
+            } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
+                if (pieceMoved == Constants.WHITE_PAWN) {
+                    this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                } else if (pieceMoved == Constants.BLACK_PAWN) {
+                    this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                }  
+            } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
+                if (pieceMoved == Constants.WHITE_PAWN) {
+                    this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                } else if (pieceMoved == Constants.BLACK_PAWN) {
+                    this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                } 
+            } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+                if (pieceMoved == Constants.WHITE_PAWN) {
+                    this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                }
+                else if (pieceMoved == Constants.BLACK_PAWN) {
+                    this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] &= (~destinationSquareBitboard);
+                    this.pieceArray[destinationSquare] = Constants.EMPTY;
+                }
 
-			    //Removes the bit corresponding to the DESTINATION square, and adds a bit corresponding with the start square
-			    this.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
-				this.arrayOfBitboards[pieceMoved - 1] |= startSquareBitboard;
-				
-			    //Removes the int representing the king from the start square of the piece array, and adds an int representing the king to the destination square of the piece array
-			    this.pieceArray[destinationSquare] = Constants.EMPTY;
-			    this.pieceArray[startSquare] = pieceMoved;
-
-			    if (pieceMoved == Constants.WHITE_KING) {
-				    
-				    //If short castle, then move the rook from F1 to H1
-				    if (flag == Constants.SHORT_CASTLE) {
-					    ulong rookStartSquareBitboard = (0x1UL << Constants.H1);
-					    ulong rookDestinationSquareBitboard = (0x1UL << Constants.F1);
-
-						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookDestinationSquareBitboard);
-						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookStartSquareBitboard;
-						
-					    this.pieceArray[Constants.F1] = Constants.EMPTY;
-					    this.pieceArray[Constants.H1] = Constants.WHITE_ROOK;
-
-				    }
-					    //If long castle, then move the rook from D1 to A1
-				    else if (flag == Constants.LONG_CASTLE) {
-					    ulong rookStartSquareBitboard = (0x1UL << Constants.A1);
-					    ulong rookDestinationSquareBitboard = 0x1UL << Constants.D1;
-
-						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~rookDestinationSquareBitboard);
-						this.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= rookStartSquareBitboard;
-						
-					    this.pieceArray[Constants.D1] = Constants.EMPTY;
-					    this.pieceArray[Constants.A1] = Constants.WHITE_ROOK;
-				    }
-			    }
-			    else if (pieceMoved == Constants.BLACK_KING) {
-				    
-				    //If short castle, then move the rook from F8 to H8
-				    if (flag == Constants.SHORT_CASTLE) {
-					    ulong rookStartSquareBitboard = (0x1UL << Constants.H8);
-					    ulong rookDestinationSquareBitboard = 0x1UL << Constants.F8;
-
-						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookDestinationSquareBitboard);
-						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookStartSquareBitboard;
-						
-					    pieceArray[Constants.F8] = Constants.EMPTY;
-					    pieceArray[Constants.H8] = Constants.BLACK_ROOK;
-				    }
-					    //If long castle, then move the rook from D8 to A8
-				    else if (flag == Constants.LONG_CASTLE) {
-					    ulong rookStartSquareBitboard = (0x1UL << Constants.A8);
-					    ulong rookDestinationSquareBitboard = 0x1UL << Constants.D8;
-
-						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= ~(rookDestinationSquareBitboard);
-						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= rookStartSquareBitboard;
-						
-					    pieceArray[Constants.D8] = Constants.EMPTY;
-					    pieceArray[Constants.A8] = Constants.BLACK_ROOK;
-				    }
-			    }
-		    }
-		    else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.BISHOP_PROMOTION ||
-		             flag == Constants.ROOK_PROMOTION
-		             || flag == Constants.QUEEN_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE ||
-		             flag == Constants.BISHOP_PROMOTION_CAPTURE
-		             || flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-
-			    if (pieceMoved == Constants.WHITE_PAWN) {
-				    //Adds the bit corresponding to the start square 
-					this.arrayOfBitboards[pieceMoved - 1] |= startSquareBitboard;
-					this.pieceArray[startSquare] = pieceMoved;
-
-				    //removes a bit corresponding to the destination square in the promoted piece bitboard
-				    if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
-					    this.arrayOfBitboards[Constants.WHITE_ROOK - 1]&= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    }
-
-				    //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
-				    //Also adds the captured piece back to the array
-				    if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
-				        flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = pieceCaptured;
-				    }
-			    }
-			    else if (pieceMoved == Constants.BLACK_PAWN) {
-				    //Adds the bit corresponding to the start square 
-					this.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-					this.pieceArray[startSquare] = pieceMoved;
-
-				    //removes the bit corresponding to the destination square in the promoted piece bitboard
-				    if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] &= (~destinationSquareBitboard);
-						this.pieceArray[destinationSquare] = Constants.EMPTY;
-				    }
-
-				    //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
-				    //Also adds the captured piece back to the array
-				    if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
-				        flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-						this.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
-					    this.pieceArray[destinationSquare] = pieceCaptured;
-				    }
-			    }
-		    }
-			//updates the aggregate bitboards
-			this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN - 1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] | this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | this.arrayOfBitboards[Constants.WHITE_ROOK - 1] | this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] | this.arrayOfBitboards[Constants.WHITE_KING - 1]);
-			this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN - 1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] | this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | this.arrayOfBitboards[Constants.BLACK_ROOK - 1] | this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] | this.arrayOfBitboards[Constants.BLACK_KING - 1]);
-			this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
+                //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
+                //Also adds the captured piece back to the array
+                if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
+                    flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE)
+                    if (pieceMoved == Constants.WHITE_PAWN) {
+                        this.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
+                        this.pieceArray[destinationSquare] = pieceCaptured;
+                    }
+                    else if (pieceMoved == Constants.BLACK_PAWN) {
+                        this.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
+                        this.pieceArray[destinationSquare] = pieceCaptured;
+                    }
+            }
+	        //updates the aggregate bitboards
+			updateAggregateBitboards();
 	    }
 
 		//METHOD THAT RETURNS HOW MANY TIMES A CERTAIN SQUARE IS ATTACKED--------------------------------------------
@@ -1449,14 +1328,13 @@ namespace Chess_Engine {
                 foreach (char c in FENfields[4]) {
 					this.HalfMovesSincePawnMoveOrCapture = (int)Char.GetNumericValue(c);
                 }
-
                 //sets the move number
                 foreach (char c in FENfields[5]) {
 					this.moveNumber = (int)Char.GetNumericValue(c);
                 }
             } else {
-				this.HalfMovesSincePawnMoveOrCapture = -1;
-				this.moveNumber = -1;
+				this.HalfMovesSincePawnMoveOrCapture = 0;
+				this.moveNumber = 0;
             }
 
             //Sets the repetition number variable
@@ -1473,21 +1351,57 @@ namespace Chess_Engine {
 
         }
 
-	//Takes information on piece moved, start square, destination square, type of move, and piece captured
+        //Encodes the 32-bit int board restore data from the board's current instance variables
+        public int encodeBoardRestoreData() {
+            //stores the board restore data in a 32-bit unsigned integer
+            //encodes side to move, castling rights, Encodes en passant square, repetition number, half-move clock, and move number
+            int boardRestoreData = ((this.sideToMove << 0) | (this.whiteShortCastleRights << 2) | (this.whiteLongCastleRights << 3) | (this.blackShortCastleRights << 4) 
+                | (this.blackLongCastleRights << 5) | (repetionOfPosition << 12) | (HalfMovesSincePawnMoveOrCapture << 14) | (moveNumber << 20));
+
+            //Calculates the en passant square number (if any) from the en passant bitboard
+            //If there is no en-passant square, then we set the bits corresponding to that variable to 0 
+            if (Constants.bitScan(enPassantSquare).Count != 0) {
+                boardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
+            }
+
+            return boardRestoreData;
+        }
+
+        //Updates the aggregate bitboards
+        private void updateAggregateBitboards() {
+            this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] = (this.arrayOfBitboards[Constants.WHITE_PAWN - 1] | this.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] | this.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | this.arrayOfBitboards[Constants.WHITE_ROOK - 1] | this.arrayOfBitboards[Constants.WHITE_QUEEN - 1] | this.arrayOfBitboards[Constants.WHITE_KING - 1]);
+            this.arrayOfAggregateBitboards[Constants.BLACK_PIECES] = (this.arrayOfBitboards[Constants.BLACK_PAWN - 1] | this.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] | this.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | this.arrayOfBitboards[Constants.BLACK_ROOK - 1] | this.arrayOfBitboards[Constants.BLACK_QUEEN - 1] | this.arrayOfBitboards[Constants.BLACK_KING - 1]);
+            this.arrayOfAggregateBitboards[Constants.ALL_PIECES] = (this.arrayOfAggregateBitboards[Constants.WHITE_PIECES] | this.arrayOfAggregateBitboards[Constants.BLACK_PIECES]);
+        }
+
+	    //Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
 		private static int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
-			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16));
-
-			//If no piece is captured, then we set the bits corresponding to that variable to 15 (the maximum value for 4 bits)
-			if (pieceCaptured == 0) {
-				moveRepresentation |= 15 << 20;
-			} else {
-				moveRepresentation |= pieceCaptured << 20;
-			}
-			return moveRepresentation;
+			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20));
+            return moveRepresentation;
 		} 
 
+        //Takes in board restore data and restores the board's instance variables (in the unmake move method)
+        private void restoreBoardState(int boardRestoreDataRepresentation) {
+            //Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
+            //Sets the repetition number, half-live clock (since last pawn push/capture), and move number from the integer encoding the restore board data
+            this.sideToMove = ((boardRestoreDataRepresentation & 0x3) >> 0);
+            this.whiteShortCastleRights = ((boardRestoreDataRepresentation & 0x4) >> 2);
+            this.whiteLongCastleRights = ((boardRestoreDataRepresentation & 0x8) >> 3);
+            this.blackShortCastleRights = ((boardRestoreDataRepresentation & 0x10) >> 4);
+            this.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
+            this.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
+            this.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
+            this.moveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
+
+            //Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
+            if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 0) {
+                this.enPassantSquare = 0x0UL;
+            } else {
+                this.enPassantSquare = 0x1UL << ((boardRestoreDataRepresentation & 0xFC0) >> 6);
+            }
+        }
 
         //GET METHODS (FOR I/O)----------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
@@ -1507,7 +1421,7 @@ namespace Chess_Engine {
         }
 
         //gets the array of pieces
-        public int[] getPieceArray() {
+        public byte[] getPieceArray() {
 			return this.pieceArray;
         }
 
