@@ -64,7 +64,7 @@ namespace Chess_Engine {
         internal int whiteInCheckmate = 0;
         internal int stalemate = 0;
 
-        internal Boolean endGame = false;
+        internal bool endGame = false;
 
         internal uint lastMove = 0x0;
 
@@ -959,6 +959,46 @@ namespace Chess_Engine {
 	    //OTHER METHODS----------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
+
+        //resets the board back to its default state
+        public void resetBoardState () {
+            this.arrayOfBitboards = new ulong[12];
+            this.wPawn = 0x0UL;
+            this.wKnight = 0x0UL;
+            this.wBishop = 0x0UL;
+            this.wRook = 0x0UL;
+            this.wQueen = 0x0UL;
+            this.wKing = 0x0UL;
+            this.bPawn = 0x0UL;
+            this.bKnight = 0x0UL;
+            this.bBishop = 0x0UL;
+            this.bRook = 0x0UL;
+            this.bQueen = 0x0UL;
+            this.bKing = 0x0UL;
+            this.whitePieces = 0x0UL;
+            this.blackPieces = 0x0UL;
+            this.allPieces = 0x0UL;
+            this.pieceArray = new byte[64];
+            this.sideToMove = 0;
+            this.whiteShortCastleRights = 0;
+            this.whiteLongCastleRights = 0;
+            this.blackShortCastleRights = 0;
+            this.blackLongCastleRights = 0;
+            this.enPassantSquare = 0x0UL;
+            this.moveNumber = 0;
+            this.HalfMovesSincePawnMoveOrCapture = 0;
+            this.repetionOfPosition = 0;
+            this.blackInCheck = 0;
+            this.blackInCheckmate = 0;
+            this.whiteInCheck = 0;
+            this.whiteInCheckmate = 0;
+            this.stalemate = 0;
+            this.endGame = false;
+            this.lastMove = 0x0;
+            this.evaluationFunctionValue = 0;
+            this.zobristKey = 0x0UL;
+        }
+
 
         //takes in a FEN string and sets all the instance variables based on it
         public void FENToBoard(string FEN) {
