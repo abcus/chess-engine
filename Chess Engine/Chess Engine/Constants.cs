@@ -125,10 +125,10 @@ namespace Chess_Engine {
             H8 = 56, G8 = 57, F8 = 58, E8 = 59, D8 = 60, C8 = 61, B8 = 62, A8 = 63;
 
 		//De Bruijn shift number
-		private const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
+		public const ulong deBruijn64 = 0x03f79d71b4cb0a89UL;
 
         //De Brujin tables
-        private static readonly int[] index64 = {
+        public static readonly int[] index64 = {
              0, 47,  1, 56, 48, 27,  2, 60,
              57, 49, 41, 37, 28, 16,  3, 61,
              54, 58, 35, 52, 50, 42, 21, 44,
@@ -622,17 +622,10 @@ namespace Chess_Engine {
             return indices;
         }
 
-        /*
-        public static int[] bitScan(ulong bitboard) {
-            int[] indices = new int[28];
-            int index = 0;
-
-            while (bitboard != 0) {
-                indices[index++] = ((index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58])+1);
-                bitboard &= bitboard - 1;
-            }
-            return indices;
-        }*/
+        //Gets the index of the first 1
+        public static int findFirstSet(ulong bitboard) {
+            return index64[((bitboard ^ (bitboard - 1))*deBruijn64) >> 58];
+        }
 
         //Finds the popcount (number of 1s in the bit)
         //This method was copied directly from stockfish
