@@ -26,10 +26,10 @@ namespace Chess_Engine {
         //OUTPUT METHODS---------------------------------------------------------------------------------------
 
         //Draws the board on the console
-        public static void drawBoard(Board inputBoard) {
+        public static void drawBoard() {
 
             //gets the bitboards from the board object
-            ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
+            ulong[] arrayOfBitboards = Board.getArrayOfPieceBitboards();
 
             ulong wPawn = arrayOfBitboards[0];
             ulong wKnight = arrayOfBitboards[1];
@@ -101,19 +101,19 @@ namespace Chess_Engine {
             //Prints out the side to move, castling rights, en-pessant square, halfmoves since capture/pawn advance, and fullmove number
             
             //side to move
-            int sideToMove = inputBoard.getSideToMove();
+            int sideToMove = Board.getSideToMove();
             String colour = (sideToMove == Constants.WHITE) ? "WHITE" : "BLACK";
             Console.WriteLine("Side to move: " + colour);
             
             //castle rights
-            int[] castleRights = inputBoard.getCastleRights();
+            int[] castleRights = Board.getCastleRights();
             Console.WriteLine("White Short Castle Rights: " + castleRights[0]);
             Console.WriteLine("White Long Castle Rights: " + castleRights[1]);
             Console.WriteLine("Black Short Castle Rights: " + castleRights[2]);
             Console.WriteLine("Black Long Castle Rights: " + castleRights[3]);
 
             //en passant square
-            ulong enPassantSquareBitboard = inputBoard.getEnPassant();
+            ulong enPassantSquareBitboard = Board.getEnPassant();
             
 
             if (enPassantSquareBitboard != 0) {
@@ -128,7 +128,7 @@ namespace Chess_Engine {
 
             //prints move data (fullmove number, half-moves since last pawn push/capture, repetitions of position)
             //If no move number data or halfmove clock data, then prints N/A
-            int[] moveData = inputBoard.getMoveData();
+            int[] moveData = Board.getMoveData();
             if (moveData[0] != -1) {
                 Console.WriteLine("Fullmove number: " + moveData[0]);
             } else {

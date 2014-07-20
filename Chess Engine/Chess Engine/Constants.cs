@@ -1,5 +1,7 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
@@ -107,6 +109,9 @@ namespace Chess_Engine {
 
 		//Enmerated type for aggregate bitboard array
 	    public const byte WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
+
+        //Max moves from a position
+        public const byte MAX_MOVES_FROM_POSITION = 220;
 
         //Enumerated type for squares
         public const byte
@@ -617,6 +622,18 @@ namespace Chess_Engine {
             return indices;
         }
 
+        /*
+        public static int[] bitScan(ulong bitboard) {
+            int[] indices = new int[28];
+            int index = 0;
+
+            while (bitboard != 0) {
+                indices[index++] = ((index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58])+1);
+                bitboard &= bitboard - 1;
+            }
+            return indices;
+        }*/
+
         //Finds the popcount (number of 1s in the bit)
         //This method was copied directly from stockfish
         public static int popcount(ulong bitboard) {
@@ -625,5 +642,9 @@ namespace Chess_Engine {
             bitboard = ((bitboard >> 4) + bitboard) & 0x0F0F0F0F0F0F0F0FUL;
             return (int)((bitboard * 0x0101010101010101UL) >> 56);
         }
+
+
+
+       
     }
 }

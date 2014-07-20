@@ -14,12 +14,7 @@ namespace Chess_Engine {
         static void Main(string[] args) {
 
             Console.BufferHeight = 2000 ;
-
-            //Creates a new engine object and calls its run method
-            Engine chessEngine = new Engine();
-            
-            
-            chessEngine.run(); 
+            Engine.run(); 
             
         }
 
