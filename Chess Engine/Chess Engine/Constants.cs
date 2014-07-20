@@ -66,7 +66,7 @@ namespace Chess_Engine {
         
         
         //Enumerated type for types of moves
-        public const byte 
+        public const int 
             QUIET_MOVE = 0,
             DOUBLE_PAWN_PUSH = 1,
             SHORT_CASTLE = 2,
@@ -83,7 +83,7 @@ namespace Chess_Engine {
             QUEEN_PROMOTION_CAPTURE = 13;
         
         //Enumerated types for pieces
-        public const byte
+        public const int
                EMPTY = 0,
                WHITE_PAWN = 1,
                WHITE_KNIGHT = 2,
@@ -99,22 +99,22 @@ namespace Chess_Engine {
                BLACK_KING = 12;
 
         //Enumerated type for side to move
-        public const byte WHITE = 0, BLACK = 1;
+        public const int WHITE = 0, BLACK = 1;
 
         //Enumberated type for checks (multiple check is there because making a king move could result in it moving into multiple checks)
-	    public const byte NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
+	    public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
 
         //Enumerated type for castling rights
-        public const byte CANNOT_CASTLE = 0, CAN_CASTLE = 1;
+        public const int CANNOT_CASTLE = 0, CAN_CASTLE = 1;
 
 		//Enmerated type for aggregate bitboard array
-	    public const byte WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
+	    public const int WHITE_PIECES = 0, BLACK_PIECES = 1, ALL_PIECES = 2;
 
         //Max moves from a position
-        public const byte MAX_MOVES_FROM_POSITION = 220;
+        public const int MAX_MOVES_FROM_POSITION = 220;
 
         //Enumerated type for squares
-        public const byte
+        public const int
             H1 = 00, G1 = 01, F1 = 02, E1 = 03, D1 = 04, C1 = 05, B1 = 06, A1 = 07, 
             H2 = 08, G2 = 09, F2 = 10, E2 = 11, D2 = 12, C2 = 13, B2 = 14, A2 = 15, 
             H3 = 16, G3 = 17, F3 = 18, E3 = 19, D3 = 20, C3 = 21, B3 = 22, A3 = 23, 

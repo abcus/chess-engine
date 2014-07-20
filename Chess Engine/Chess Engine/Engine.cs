@@ -15,15 +15,14 @@ namespace Chess_Engine {
 	        Test.perftSuite();
 			
 			//string test = "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1";
-	        Board.resetBoardState();
-            Board.FENToBoard(Constants.FEN_START);
+	        Board.FENToBoard(Constants.FEN_RANDOM);
 	        InputOutput.drawBoard();
 	        Test.kingInCheckTest(Board.getSideToMove());
 
             //Test.perftDivide(6, gameBoard);
 
             Stopwatch s = Stopwatch.StartNew();
-            int numberOfNodes = Test.perft(6);
+            int numberOfNodes = Test.perft(5);
             Console.WriteLine(numberOfNodes);
 	        Console.WriteLine(s.Elapsed);
             Console.WriteLine("Nodes per second:" + (numberOfNodes)/(s.ElapsedMilliseconds/1000));

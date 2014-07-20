@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Serialization.Formatters;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -48,51 +49,56 @@ namespace Chess_Engine {
             //creates a new 8x8 array of String and sets it all to spaces
             string[,] chessBoard = new string[8, 8];
             for (int i = 0; i < 64; i++) {
-                chessBoard[i / 8, i % 8] = " ";
+                chessBoard[i / 8, i % 8] = "   ";
             }
 
             //Goes through each of the bitboards; if they have a "1" then it sets the appropriate element in the array to the appropriate piece
             //Note that the array goes from A8 to H1
             for (int i = 0; i < 64; i++) {
                 if (((wPawn >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "P";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " P ";
                 } if (((wKnight >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "N";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " N ";
                 } if (((wBishop >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "B";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " B ";
                 } if (((wRook >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "R";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " R ";
                 } if (((wQueen >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "Q";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " Q ";
                 } if (((wKing >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "K";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "(K)";
                 } if (((bPawn >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "p";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " p ";
                 } if (((bKnight >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "n";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " n ";
                 } if (((bBishop >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "b";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " b ";
                 } if (((bRook >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "r";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " r ";
                 } if (((bQueen >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "q";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " q ";
                 } if (((bKing >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "k";
+                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "(k)";
                 }
             }
 
             //Goes through the 8x8 array and prints its contents
             for (int i = 0; i < 8; i++) {
 
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                if (i == 0) {
+                    Console.WriteLine("  ┌───┬───┬───┬───┬───┬───┬───┬───┐");
+                } else if (i >= 1) {
+                    Console.WriteLine("  ├───┼───┼───┼───┼───┼───┼───┼───┤");
+                }
+                
                 Console.Write((8 - i) + " ");
                 
                 for (int j = 0; j < 8; j++) {
-                    Console.Write("| " + chessBoard[i, j] + " ");
+                    Console.Write("│" + chessBoard[i, j] + "");
                 }
-                Console.WriteLine("|"); 
+                Console.WriteLine("│"); 
             }
-            Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+            Console.WriteLine("  └───┴───┴───┴───┴───┴───┴───┴───┘");
             Console.WriteLine("    A   B   C   D   E   F   G   H");
             Console.WriteLine("");
             Console.WriteLine("");

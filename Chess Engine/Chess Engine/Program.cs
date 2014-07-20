@@ -14,7 +14,6 @@ namespace Chess_Engine {
         static void Main(string[] args) {
 
             Console.BufferHeight = 2000 ;
-
             Engine.run(); 
             
         }

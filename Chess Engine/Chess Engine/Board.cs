@@ -38,7 +38,7 @@ namespace Chess_Engine {
 
         //piece array that stores the pieces as integers in a 64-element array
         //Index 0 is H1, and element 63 is A8
-        internal static byte[] pieceArray = new byte[64];
+        internal static int[] pieceArray = new int[64];
 
         //side to move
         internal static int sideToMove = 0;
@@ -53,7 +53,7 @@ namespace Chess_Engine {
         internal static ulong enPassantSquare = 0x0UL;
         
         //move data
-        internal static int moveNumber = 0;
+        internal static int halfmoveNumber = 0;
         internal static int HalfMovesSincePawnMoveOrCapture = 0;
         internal static int repetionOfPosition = 0;
 
@@ -80,11 +80,11 @@ namespace Chess_Engine {
         public static void makeMove(int moveRepresentationInput) {
 
             //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-			byte pieceMoved = (byte)((moveRepresentationInput & 0xF) >> 0);
+			int pieceMoved = ((moveRepresentationInput & 0xF) >> 0);
 			int startSquare = ((moveRepresentationInput & 0x3F0) >> 4);
 			int destinationSquare = ((moveRepresentationInput & 0xFC00) >> 10);
 			int flag = ((moveRepresentationInput & 0xF0000) >> 16);
-			byte pieceCaptured = (byte)((moveRepresentationInput & 0xF00000) >> 20);
+			int pieceCaptured = ((moveRepresentationInput & 0xF00000) >> 20);
 			
             //Calculates bitboards for removing piece from start square and adding piece to destionation square
 			//"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
@@ -251,11 +251,11 @@ namespace Chess_Engine {
 	        restoreBoardState(boardRestoreDataRepresentation);
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    byte pieceMoved = (byte)((unmoveRepresentationInput & 0xF) >> 0);
+		    int pieceMoved = ((unmoveRepresentationInput & 0xF) >> 0);
 		    int startSquare = ((unmoveRepresentationInput & 0x3F0) >> 4);
 		    int destinationSquare = ((unmoveRepresentationInput & 0xFC00) >> 10);
 		    int flag = ((unmoveRepresentationInput & 0xF0000) >> 16);
-		    byte pieceCaptured = (byte)((unmoveRepresentationInput & 0xF00000) >> 20);
+		    int pieceCaptured = ((unmoveRepresentationInput & 0xF00000) >> 20);
 		    
 		    //Calculates bitboards for removing piece from start square and adding piece to destionation square
 		    //"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
@@ -1023,8 +1023,9 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 
-        //resets the board back to its default state
-        public static void resetBoardState() {
+        //takes in a FEN string, resets the board, and then sets all the instance variables based on it  
+        public static void FENToBoard(string FEN) {
+
             Board.arrayOfBitboards = new ulong[12];
             Board.wPawn = 0x0UL;
             Board.wKnight = 0x0UL;
@@ -1041,14 +1042,14 @@ namespace Chess_Engine {
             Board.whitePieces = 0x0UL;
             Board.blackPieces = 0x0UL;
             Board.allPieces = 0x0UL;
-            Board.pieceArray = new byte[64];
+            Board.pieceArray = new int[64];
             Board.sideToMove = 0;
             Board.whiteShortCastleRights = 0;
             Board.whiteLongCastleRights = 0;
             Board.blackShortCastleRights = 0;
             Board.blackLongCastleRights = 0;
             Board.enPassantSquare = 0x0UL;
-            Board.moveNumber = 0;
+            Board.halfmoveNumber = 0;
             Board.HalfMovesSincePawnMoveOrCapture = 0;
             Board.repetionOfPosition = 0;
             Board.blackInCheck = 0;
@@ -1060,12 +1061,7 @@ namespace Chess_Engine {
             Board.lastMove = 0x0;
             Board.evaluationFunctionValue = 0;
             Board.zobristKey = 0x0UL;
-        }
 
-
-        //takes in a FEN string and sets all the instance variables based on it
-        public static void FENToBoard(string FEN) {
-           
             //Splits the FEN string into 6 fields
             string[] FENfields = FEN.Split(' ');
 
@@ -1218,11 +1214,11 @@ namespace Chess_Engine {
                 }
                 //sets the move number
                 foreach (char c in FENfields[5]) {
-					Board.moveNumber = (int)Char.GetNumericValue(c);
+					Board.halfmoveNumber = (int)Char.GetNumericValue(c);
                 }
             } else {
 				Board.HalfMovesSincePawnMoveOrCapture = 0;
-				Board.moveNumber = 0;
+				Board.halfmoveNumber = 0;
             }
 
             //Sets the repetition number variable
@@ -1239,12 +1235,12 @@ namespace Chess_Engine {
             //stores the board restore data in a 32-bit unsigned integer
             //encodes side to move, castling rights, Encodes en passant square, repetition number, half-move clock, and move number
             int boardRestoreData = ((Board.sideToMove << 0) | (Board.whiteShortCastleRights << 2) | (Board.whiteLongCastleRights << 3) | (Board.blackShortCastleRights << 4) 
-                | (Board.blackLongCastleRights << 5) | (repetionOfPosition << 12) | (HalfMovesSincePawnMoveOrCapture << 14) | (moveNumber << 20));
+                | (Board.blackLongCastleRights << 5) | (repetionOfPosition << 12) | (HalfMovesSincePawnMoveOrCapture << 14) | (halfmoveNumber << 20));
 
             //Calculates the en passant square number (if any) from the en passant bitboard
             //If there is no en-passant square, then we set the bits corresponding to that variable to 0 
-            if (Constants.bitScan(enPassantSquare).Count != 0) {
-                boardRestoreData |= (Constants.bitScan(enPassantSquare).ElementAt(0) << 6);
+            if (enPassantSquare != 0) {
+                boardRestoreData |= (Constants.findFirstSet(enPassantSquare) << 6);
             }
 
             return boardRestoreData;
@@ -1277,7 +1273,7 @@ namespace Chess_Engine {
             Board.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
             Board.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
             Board.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
-            Board.moveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
+            Board.halfmoveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
 
             //Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
             if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 0) {
@@ -1304,7 +1300,7 @@ namespace Chess_Engine {
             return arrayOfAggregateBitboards;
         }
         //gets the array of pieces
-        public static byte[] getPieceArray() {
+        public static int[] getPieceArray() {
 			return Board.pieceArray;
         }
         //gets the side to move
@@ -1334,7 +1330,7 @@ namespace Chess_Engine {
         public static int[] getMoveData() {
            int[] moveData = new int[3];
 
-			moveData[0] = Board.moveNumber;
+			moveData[0] = Board.halfmoveNumber;
 			moveData[1] = Board.HalfMovesSincePawnMoveOrCapture;
 			moveData[2] = Board.repetionOfPosition;
 
