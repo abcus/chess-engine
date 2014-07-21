@@ -80,11 +80,12 @@ namespace Chess_Engine {
         public static void makeMove(int moveRepresentationInput) {
 
             //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-			int pieceMoved = ((moveRepresentationInput & 0xF) >> 0);
-			int startSquare = ((moveRepresentationInput & 0x3F0) >> 4);
-			int destinationSquare = ((moveRepresentationInput & 0xFC00) >> 10);
-			int flag = ((moveRepresentationInput & 0xF0000) >> 16);
-			int pieceCaptured = ((moveRepresentationInput & 0xF00000) >> 20);
+			int pieceMoved = ((moveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
+			int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
+			int destinationSquare = ((moveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
+			int flag = ((moveRepresentationInput & Constants.FLAG_MASK) >> 16);
+			int pieceCaptured = ((moveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
+            int piecePromoted = ((moveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
 			
             //Calculates bitboards for removing piece from start square and adding piece to destionation square
 			//"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
@@ -132,18 +133,17 @@ namespace Chess_Engine {
             //If is any move except a promotion, then add a piece to the destination square
             //If it is a promotion don't add piece (pawn) to the destination square
             //Only remove it from the start square
-            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH ||
-                flag == Constants.EN_PASSANT_CAPTURE
-                || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.EN_PASSANT_CAPTURE || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
                 //updates the bitboard and removes the int representing the piece from the start square of the piece array, and adds an int representing the piece to the destination square of the piece array
-                    Board.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
-                    Board.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[startSquare] = Constants.EMPTY;
-                    Board.pieceArray[destinationSquare] = pieceMoved;
-            } else {
+                Board.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
+                Board.arrayOfBitboards[pieceMoved - 1] |= destinationSquareBitboard;
+                Board.pieceArray[startSquare] = Constants.EMPTY;
+                Board.pieceArray[destinationSquare] = pieceMoved;   
+            } else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                Board.arrayOfBitboards[pieceMoved - 1] &= (~startSquareBitboard);
                Board.pieceArray[startSquare] = Constants.EMPTY;
             }
+
             //If there was a capture, also remove the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
 			//Don't have to update the array because it was already overridden with the capturing piece
 			if (flag == Constants.CAPTURE) {
@@ -191,43 +191,18 @@ namespace Chess_Engine {
                 }       
             }
                 //If regular promotion, updates the pawn's bitboard, the promoted piece bitboard, and the piece array
-            else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
+            else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.WHITE_KNIGHT;
+                    Board.arrayOfBitboards[piecePromoted - 1] |= destinationSquareBitboard;
+                    Board.pieceArray[destinationSquare] = piecePromoted;
                 } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.BLACK_KNIGHT;
+                    Board.arrayOfBitboards[piecePromoted - 1] |= destinationSquareBitboard;
+                    Board.pieceArray[destinationSquare] = piecePromoted;
                 }
-            } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.WHITE_BISHOP;
-                } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.BLACK_BISHOP;
-                }
-            } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_ROOK - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.WHITE_ROOK;
-                } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_ROOK - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.BLACK_ROOK;
-                }
-            } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.WHITE_QUEEN;
-                } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1] |= destinationSquareBitboard;
-                    Board.pieceArray[destinationSquare] = Constants.BLACK_QUEEN;
-                }
-            }
+            } 
 
             //If there was a capture, removes the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
-		    if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
-		        flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+		    if (flag == Constants.PROMOTION_CAPTURE) {
                     Board.arrayOfBitboards[pieceCaptured - 1] &= (~destinationSquareBitboard);
 		    }
             
@@ -251,12 +226,13 @@ namespace Chess_Engine {
 	        restoreBoardState(boardRestoreDataRepresentation);
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    int pieceMoved = ((unmoveRepresentationInput & 0xF) >> 0);
-		    int startSquare = ((unmoveRepresentationInput & 0x3F0) >> 4);
-		    int destinationSquare = ((unmoveRepresentationInput & 0xFC00) >> 10);
-		    int flag = ((unmoveRepresentationInput & 0xF0000) >> 16);
-		    int pieceCaptured = ((unmoveRepresentationInput & 0xF00000) >> 20);
-		    
+		    int pieceMoved = ((unmoveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
+		    int startSquare = ((unmoveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
+		    int destinationSquare = ((unmoveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
+		    int flag = ((unmoveRepresentationInput & Constants.FLAG_MASK) >> 16);
+		    int pieceCaptured = ((unmoveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
+            int piecePromoted = ((unmoveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
+
 		    //Calculates bitboards for removing piece from start square and adding piece to destionation square
 		    //"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
 		    ulong startSquareBitboard = (0x1UL << startSquare);
@@ -265,16 +241,14 @@ namespace Chess_Engine {
             //Removes the bit corresponding to the destination square, and adds a bit corresponding with the start square (to unmake move)
             //Removes the int representing the piece from the destination square of the piece array, and adds an int representing the piece to the start square of the piece array (to unmake move)
             //If it was a promotion, then don't have to remove the pawn from the destination square
-            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH ||
-                flag == Constants.EN_PASSANT_CAPTURE
-                || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
-                        Board.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
-                        Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-                        Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                        Board.pieceArray[startSquare] = pieceMoved;
+            if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.EN_PASSANT_CAPTURE || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+                Board.arrayOfBitboards[pieceMoved - 1] &= (~destinationSquareBitboard);
+                Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
+                Board.pieceArray[destinationSquare] = Constants.EMPTY;
+                Board.pieceArray[startSquare] = pieceMoved;      
             } else {
-                       Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
-                       Board.pieceArray[startSquare] = pieceMoved;
+                Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
+                Board.pieceArray[startSquare] = pieceMoved;      
             }
 
             //If there was a capture, add to the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
@@ -325,47 +299,20 @@ namespace Chess_Engine {
                 }
             }
             //If there were promotions, update the promoted piece bitboard
-            else if (flag == Constants.KNIGHT_PROMOTION || flag == Constants.KNIGHT_PROMOTION_CAPTURE) {
+            else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_KNIGHT - 1] &= (~destinationSquareBitboard);
+                    Board.arrayOfBitboards[piecePromoted - 1] &= (~destinationSquareBitboard);
                     Board.pieceArray[destinationSquare] = Constants.EMPTY;
                 } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_KNIGHT - 1] &= (~destinationSquareBitboard);
+                    Board.arrayOfBitboards[piecePromoted - 1] &= (~destinationSquareBitboard);
                     Board.pieceArray[destinationSquare] = Constants.EMPTY;
                 }
-            } else if (flag == Constants.BISHOP_PROMOTION || flag == Constants.BISHOP_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                }  
-            } else if (flag == Constants.ROOK_PROMOTION || flag == Constants.ROOK_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_ROOK - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_ROOK - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                } 
-            } else if (flag == Constants.QUEEN_PROMOTION || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                }
-                else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1] &= (~destinationSquareBitboard);
-                    Board.pieceArray[destinationSquare] = Constants.EMPTY;
-                }
-            }
+            } 
 
-        
 
             //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
             //Also adds the captured piece back to the array
-	        if (flag == Constants.KNIGHT_PROMOTION_CAPTURE || flag == Constants.BISHOP_PROMOTION_CAPTURE ||
-	            flag == Constants.ROOK_PROMOTION_CAPTURE || flag == Constants.QUEEN_PROMOTION_CAPTURE) {
+	        if (flag == Constants.PROMOTION_CAPTURE) {
                 Board.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
                 Board.pieceArray[destinationSquare] = pieceCaptured;
 	        }
@@ -543,10 +490,10 @@ namespace Chess_Engine {
 						//Generates white pawn promotions
 						if ((singlePawnMovementFromIndex & Board.allPieces) == 0) {
 							int indexOfWhitePawnSingleMoveFromIndex = Constants.findFirstSet(singlePawnMovementFromIndex);
-							int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-							int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-							int moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-							int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+                            int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.WHITE_KNIGHT);
+                            int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.WHITE_BISHOP);
+                            int moveRepresentationRookPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.WHITE_ROOK);
+                            int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.WHITE_QUEEN);
 
 							listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotion;
                             listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotion;
@@ -564,10 +511,10 @@ namespace Chess_Engine {
                             int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPawnCapturesFromIndex);
                             pseudoLegalPawnCapturesFromIndex &= (pseudoLegalPawnCapturesFromIndex - 1);
 
-							int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+							int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.WHITE_KNIGHT);
+                            int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.WHITE_BISHOP);
+                            int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.WHITE_ROOK);
+                            int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.WHITE_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.WHITE_QUEEN);
 
 							listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotionCapture;
 							listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotionCapture;
@@ -817,10 +764,10 @@ namespace Chess_Engine {
 
 						if ((singlePawnMovementFromIndex & Board.allPieces) == 0) {
 							int indexOfBlackPawnSingleMoveFromIndex = Constants.findFirstSet(singlePawnMovementFromIndex);
-							int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.KNIGHT_PROMOTION, Constants.EMPTY);
-							int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.BISHOP_PROMOTION, Constants.EMPTY);
-							int moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.ROOK_PROMOTION, Constants.EMPTY);
-							int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.QUEEN_PROMOTION, Constants.EMPTY);
+							int moveRepresentationKnightPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.BLACK_KNIGHT);
+                            int moveRepresentationBishopPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.BLACK_BISHOP);
+                            int moveRepresentationRookPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.BLACK_ROOK);
+                            int moveRepresentationQueenPromotion = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, indexOfBlackPawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, Constants.BLACK_QUEEN);
 
                             listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotion;
                             listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotion;
@@ -836,10 +783,10 @@ namespace Chess_Engine {
                             int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPawnCapturesFromIndex);
                             pseudoLegalPawnCapturesFromIndex &= (pseudoLegalPawnCapturesFromIndex - 1);
 
-							int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.KNIGHT_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.BISHOP_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.ROOK_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
-							int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.QUEEN_PROMOTION_CAPTURE, pieceArray[pawnMoveIndex]);
+                            int moveRepresentationKnightPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.BLACK_KNIGHT);
+                            int moveRepresentationBishopPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.BLACK_BISHOP);
+                            int moveRepresentationRookPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.BLACK_ROOK);
+                            int moveRepresentationQueenPromotionCapture = Board.moveEncoder(Constants.BLACK_PAWN, pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], Constants.BLACK_QUEEN);
 
                             listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotionCapture;
                             listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotionCapture;
@@ -1260,7 +1207,11 @@ namespace Chess_Engine {
 		private static int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
 			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20));
             return moveRepresentation;
-		} 
+		}
+        private static int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted) {
+            int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
+            return moveRepresentation;
+        } 
 
         //Takes in board restore data and restores the board's instance variables (in the unmake move method)
         private static void restoreBoardState(int boardRestoreDataRepresentation) {

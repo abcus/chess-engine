@@ -536,35 +536,34 @@ namespace Chess_Engine {
 
 		//Extracts the piece moved from the integer that encodes the move
 		private static int getPieceMoved(int moveRepresentation) {
-			int pieceMoved = ((moveRepresentation & 0xF) >> 0);
+            int pieceMoved = ((moveRepresentation & Constants.PIECE_MOVED_MASK) >> 0);
 			return pieceMoved;
 		}
 		//Extracts the start square from the integer that encodes the move
 		private static int getStartSquare(int moveRepresentation) {
-			int startSquare = ((moveRepresentation & 0x3F0) >> 4);
+			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
 			return startSquare;
 		}
 		//Extracts the destination square from the integer that encodes the move
 		private static int getDestinationSquare(int moveRepresentation) {
-			int destinationSquare = ((moveRepresentation & 0xFC00) >> 10);
+			int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> 10);
 			return destinationSquare;
 		}
 		//Extracts the flag from the integer that encodes the move
 		private static int getFlag(int moveRepresentation) {
-			int flag = ((moveRepresentation & 0xF0000) >> 16);
+			int flag = ((moveRepresentation & Constants.FLAG_MASK) >> 16);
 			return flag;
 		}
 		//Extracts the piece captured from the integer that encodes the move
-		//If we extract 15, then we know that there was no piece captured and return 0
-		private static int getPieceCaptured(uint moveRepresentation) {
-			int pieceCaptured = (int)((moveRepresentation & 0xF00000) >> 20);
-
-			if (pieceCaptured == 15) {
-				return 0;
-			} else {
-				return pieceCaptured;
-			}
+		private static int getPieceCaptured(int moveRepresentation) {
+			int pieceCaptured = (moveRepresentation & Constants.PIECE_CAPTURED_MASK) >> 20;
+            return pieceCaptured;
 		}
+        //Extracts the piece promoted from the integer that encodes the move
+        private static int getPiecePromoted(int moveRepresentation) {
+            int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> 24;
+            return piecePromoted;
+        }
 
 		//prints out a move string from a move representation uint
         private static string printMoveStringFromMoveRepresentation(int moveRepresentation) {
@@ -586,15 +585,21 @@ namespace Chess_Engine {
                     moveString += startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE || getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
                     moveString += startSquare + "x" + destinationSquare;
-                } else if (getFlag(moveRepresentation) == Constants.KNIGHT_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=N";
-                } else if (getFlag(moveRepresentation) == Constants.BISHOP_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=B"; ;
-                } else if (getFlag(moveRepresentation) == Constants.ROOK_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=R";
-                } else if (getFlag(moveRepresentation) == Constants.QUEEN_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=Q";
-                }
+                } else if (getFlag(moveRepresentation) == Constants.PROMOTION) {
+                    switch (getPiecePromoted(moveRepresentation)) {
+                        case Constants.WHITE_KNIGHT: moveString += startSquare + destinationSquare + "=N"; break;
+                        case Constants.WHITE_BISHOP: moveString += startSquare + destinationSquare + "=B"; break;
+                        case Constants.WHITE_ROOK: moveString += startSquare + destinationSquare + "=R"; break;
+                        case Constants.WHITE_QUEEN: moveString += startSquare + destinationSquare + "=Q"; break;
+                    }
+                } else if (getFlag(moveRepresentation) == Constants.PROMOTION_CAPTURE) {
+                    switch (getPiecePromoted(moveRepresentation)) {
+                        case Constants.WHITE_KNIGHT: moveString += startSquare + "x" + destinationSquare + "=N"; break;
+                        case Constants.WHITE_BISHOP: moveString += startSquare + "x" + destinationSquare + "=B"; break;
+                        case Constants.WHITE_ROOK: moveString += startSquare + "x" + destinationSquare + "=R"; break;
+                        case Constants.WHITE_QUEEN: moveString += startSquare + "x" + destinationSquare + "=Q"; break;
+                    }
+                }     
             } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_KNIGHT) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "N" + startSquare + destinationSquare;
@@ -634,15 +639,21 @@ namespace Chess_Engine {
                     moveString += startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE || getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
                     moveString += startSquare + "x" + destinationSquare;
-                } else if (getFlag(moveRepresentation) == Constants.KNIGHT_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=n";
-                } else if (getFlag(moveRepresentation) == Constants.BISHOP_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=b"; 
-                } else if (getFlag(moveRepresentation) == Constants.ROOK_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=r";
-                } else if (getFlag(moveRepresentation) == Constants.QUEEN_PROMOTION) {
-                    moveString += startSquare + destinationSquare + "=q";
-                }
+                } else if (getFlag(moveRepresentation) == Constants.PROMOTION) {
+                    switch (getPiecePromoted(moveRepresentation)) {
+                        case Constants.BLACK_KNIGHT: moveString += startSquare + destinationSquare + "=n"; break;
+                        case Constants.BLACK_BISHOP: moveString += startSquare + destinationSquare + "=b"; break;
+                        case Constants.BLACK_ROOK: moveString += startSquare + destinationSquare + "=r"; break;
+                        case Constants.BLACK_QUEEN: moveString += startSquare + destinationSquare + "=q"; break;
+                    }
+                } else if (getFlag(moveRepresentation) == Constants.PROMOTION_CAPTURE) {
+                    switch (getPiecePromoted(moveRepresentation)) {
+                        case Constants.BLACK_KNIGHT: moveString += startSquare + "x" + destinationSquare + "=n"; break;
+                        case Constants.BLACK_BISHOP: moveString += startSquare + "x" + destinationSquare + "=b"; break;
+                        case Constants.BLACK_ROOK: moveString += startSquare + "x" + destinationSquare + "=r"; break;
+                        case Constants.BLACK_QUEEN: moveString += startSquare + "x" + destinationSquare + "=q"; break;
+                    }
+                }  
             } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_KNIGHT) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "n" + startSquare + destinationSquare;
@@ -692,8 +703,8 @@ namespace Chess_Engine {
 
                 while (pseudoLegalMoveList[index] != 0) {
                     int move = pseudoLegalMoveList[index];
-                    int flag = ((move & 0xF0000) >> 16);
-                    byte pieceMoved = (byte)((move & 0xF) >> 0);
+                    int flag = ((move & Constants.FLAG_MASK) >> 16);
+                    byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                     Board.makeMove(move);
                     if (isMoveLegal(flag, pieceMoved) == true) {
@@ -710,8 +721,8 @@ namespace Chess_Engine {
 
 				while (pseudoLegalMoveList[index] != 0) {
 				    int move = pseudoLegalMoveList[index];
-					int flag = ((move& 0xF0000) >> 16);
-                    byte pieceMoved = (byte)((move & 0xF) >> 0);
+                    int flag = ((move & Constants.FLAG_MASK) >> 16);
+                    byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                     Board.makeMove(move);
 				    if (isMoveLegal(flag, pieceMoved) == true) {
@@ -736,8 +747,8 @@ namespace Chess_Engine {
 
 			    int move = pseudoLegaloveList[index];
 				count++;
-				int flag = ((move & 0xF0000) >> 16);
-                byte pieceMoved = (byte)((move & 0xF) >> 0);
+				int flag = ((move & Constants.FLAG_MASK) >> 16);
+                byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                 Board.makeMove(move);
 			    if (isMoveLegal(flag, pieceMoved) == true) {

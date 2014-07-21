@@ -66,22 +66,26 @@ namespace Chess_Engine {
         
         
         //Enumerated type for types of moves
-        public const int 
+        public const int
             QUIET_MOVE = 0,
             DOUBLE_PAWN_PUSH = 1,
             SHORT_CASTLE = 2,
             LONG_CASTLE = 3,
             CAPTURE = 4,
             EN_PASSANT_CAPTURE = 5,
-            KNIGHT_PROMOTION = 6,
-            BISHOP_PROMOTION = 7,
-            ROOK_PROMOTION = 8,
-            QUEEN_PROMOTION = 9,
-            KNIGHT_PROMOTION_CAPTURE = 10,
-            BISHOP_PROMOTION_CAPTURE = 11,
-            ROOK_PROMOTION_CAPTURE = 12,
-            QUEEN_PROMOTION_CAPTURE = 13;
+            PROMOTION = 6,
+            PROMOTION_CAPTURE = 7;
         
+        //Move representation masks
+        public const int
+            PIECE_MOVED_MASK = 0xF,
+            START_SQUARE_MASK = 0x3F0,
+            DESTINATION_SQUARE_MASK = 0xFC00,
+            FLAG_MASK = 0xF0000,
+            PIECE_CAPTURED_MASK = 0xF00000,
+            PIECE_PROMOTED_MASK = 0xF000000;
+            
+
         //Enumerated types for pieces
         public const int
                EMPTY = 0,
