@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,21 +13,15 @@ namespace Chess_Engine {
         public static void run() {
             Constants.initializeConstants();
 
-	        Test.perftSuite();
-			
-			//string test = "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1";
-	        Board.FENToBoard(Constants.FEN_START);
+            //string test = "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1";
+	        Board.FENToBoard(Constants.FEN_RANDOM);
 	        InputOutput.drawBoard();
 	        Test.kingInCheckTest(Board.getSideToMove());
 
-            //Test.perftDivide(6, gameBoard);
+            //Test.perftSuite2();
 
-            Stopwatch s = Stopwatch.StartNew();
-            int numberOfNodes = Test.perft(6);
-            Console.WriteLine(numberOfNodes);
-	        Console.WriteLine(s.Elapsed);
-            Console.WriteLine("Nodes per second:" + (numberOfNodes)/(s.ElapsedMilliseconds/1000));
-
+            Test.printPerft(5);
+            Test.perftSuite1();
         }
     }
 }

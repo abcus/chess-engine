@@ -242,13 +242,11 @@ namespace Chess_Engine {
                 //If regular promotion, updates the pawn's bitboard, the promoted piece bitboard, and the piece array
             else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.whitePieces &= ~(Board.arrayOfBitboards[piecePromoted - 1]);
                     Board.arrayOfBitboards[piecePromoted - 1] |= destinationSquareBitboard;
                     Board.whitePieces |= Board.arrayOfBitboards[piecePromoted - 1];
 
                     Board.pieceArray[destinationSquare] = piecePromoted;
                 } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.blackPieces &= ~(Board.arrayOfBitboards[piecePromoted - 1]);
                     Board.arrayOfBitboards[piecePromoted - 1] |= destinationSquareBitboard;
                     Board.blackPieces |= Board.arrayOfBitboards[piecePromoted - 1];
 
@@ -284,8 +282,23 @@ namespace Chess_Engine {
         //Method that unmakes a move by restoring the board object's instance variables
         public static void unmakeMove(int unmoveRepresentationInput, int boardRestoreDataRepresentation) {
 
-            //restores the board instance variables
-	        restoreBoardState(boardRestoreDataRepresentation);
+            //Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
+            //Sets the repetition number, half-live clock (since last pawn push/capture), and move number from the integer encoding the restore board data
+            Board.sideToMove = ((boardRestoreDataRepresentation & 0x3) >> 0);
+            Board.whiteShortCastleRights = ((boardRestoreDataRepresentation & 0x4) >> 2);
+            Board.whiteLongCastleRights = ((boardRestoreDataRepresentation & 0x8) >> 3);
+            Board.blackShortCastleRights = ((boardRestoreDataRepresentation & 0x10) >> 4);
+            Board.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
+            Board.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
+            Board.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
+            Board.halfmoveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
+
+            //Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
+            if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 0) {
+                Board.enPassantSquare = 0x0UL;
+            } else {
+                Board.enPassantSquare = 0x1UL << ((boardRestoreDataRepresentation & 0xFC0) >> 6);
+            }
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
 		    int pieceMoved = ((unmoveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
@@ -323,13 +336,11 @@ namespace Chess_Engine {
                 }
             } else {
                 if (pieceMoved <= Constants.WHITE_KING) {
-                    Board.whitePieces &= ~(Board.arrayOfBitboards[pieceMoved - 1]);
                     Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
                     Board.whitePieces |= Board.arrayOfBitboards[pieceMoved - 1];
 
                     Board.pieceArray[startSquare] = pieceMoved;   
                 } else {
-                    Board.blackPieces &= ~(Board.arrayOfBitboards[pieceMoved - 1]);
                     Board.arrayOfBitboards[pieceMoved - 1] |= (startSquareBitboard);
                     Board.blackPieces |= Board.arrayOfBitboards[pieceMoved - 1];
 
@@ -341,13 +352,11 @@ namespace Chess_Engine {
             //Also re-add the captured piece to the array
             if (flag == Constants.CAPTURE) {
                 if (pieceMoved <= Constants.WHITE_KING) {
-                    Board.blackPieces &= ~(Board.arrayOfBitboards[pieceCaptured - 1]);
                     Board.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
                     Board.blackPieces |= Board.arrayOfBitboards[pieceCaptured - 1];
 
                     Board.pieceArray[destinationSquare] = pieceCaptured;
                 } else {
-                    Board.whitePieces &= ~(Board.arrayOfBitboards[pieceCaptured - 1]);
                     Board.arrayOfBitboards[pieceCaptured - 1] |= (destinationSquareBitboard);
                     Board.whitePieces |= Board.arrayOfBitboards[pieceCaptured - 1];
 
@@ -358,13 +367,11 @@ namespace Chess_Engine {
             //Also re-add teh captured pawn to the array 
             else if (flag == Constants.EN_PASSANT_CAPTURE) {
                 if (pieceMoved == Constants.WHITE_PAWN) {
-                    Board.blackPieces &= ~(Board.arrayOfBitboards[Constants.BLACK_PAWN- 1]);
                     Board.arrayOfBitboards[Constants.BLACK_PAWN - 1] |= (destinationSquareBitboard >> 8);
                     Board.blackPieces |= Board.arrayOfBitboards[Constants.BLACK_PAWN - 1];
 
                     Board.pieceArray[destinationSquare - 8] = Constants.BLACK_PAWN;
                 } else if (pieceMoved == Constants.BLACK_PAWN) {
-                    Board.whitePieces &= ~(Board.arrayOfBitboards[Constants.WHITE_PAWN - 1]);
                     Board.arrayOfBitboards[Constants.WHITE_PAWN - 1] |= (destinationSquareBitboard << 8);
                     Board.whitePieces |= Board.arrayOfBitboards[Constants.WHITE_PAWN - 1];
 
@@ -430,18 +437,15 @@ namespace Chess_Engine {
                 }
             } 
 
-
             //If there was a capture, add the bit corresponding to the square of the captured piece (destination square) from the appropriate bitboard
             //Also adds the captured piece back to the array
 	        if (flag == Constants.PROMOTION_CAPTURE) {
 	            if (pieceMoved <= Constants.WHITE_KING) {
-                    Board.blackPieces &= ~(Board.arrayOfBitboards[pieceCaptured - 1]);
                     Board.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
                     Board.blackPieces |= Board.arrayOfBitboards[pieceCaptured - 1];
 
                     Board.pieceArray[destinationSquare] = pieceCaptured;
 	            } else {
-                    Board.whitePieces &= ~(Board.arrayOfBitboards[pieceCaptured - 1]);
                     Board.arrayOfBitboards[pieceCaptured - 1] |= destinationSquareBitboard;
                     Board.whitePieces |= Board.arrayOfBitboards[pieceCaptured - 1];
 
@@ -536,6 +540,50 @@ namespace Chess_Engine {
 			}
 			return 0;
 		}
+
+        //Is move legal
+        public static bool isMoveLegal(int flag, int pieceMoved) {
+
+            bool isMoveLegal = false;
+
+            //White to move
+            if (pieceMoved <= Constants.WHITE_KING) {
+                int indexOfWhiteKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.WHITE_KING - 1]);
+
+                if (flag == Constants.SHORT_CASTLE) {
+                    if ((Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else if (flag == Constants.LONG_CASTLE) {
+                    if ((Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else {
+                    if (Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) {
+                        isMoveLegal = true;
+                    }
+                }
+            }
+                //Black to move
+           else if (pieceMoved >= Constants.BLACK_PAWN) {
+                int indexOfBlackKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.BLACK_KING - 1]);
+
+                if (flag == Constants.SHORT_CASTLE) {
+                    if ((Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && (Board.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0)) {
+                        isMoveLegal = true;
+                    }
+                } else if ((flag == Constants.LONG_CASTLE)) {
+                    if ((Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
+                        isMoveLegal = true;
+                    }
+                } else {
+                    if (Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) {
+                        isMoveLegal = true;
+                    }
+                }
+            }
+            return isMoveLegal;
+        }
 
 		//METHOD THAT GENERATES A LIST OF PSDUEO LEGAL MOVES FROM THE CURRENT BOARD POSITION------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
@@ -889,9 +937,7 @@ namespace Chess_Engine {
 							}
 						}
 					}
-
-
-					if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
+                    if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
 						ulong singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
 
 						if ((singlePawnMovementFromIndex & Board.allPieces) == 0) {
@@ -928,8 +974,6 @@ namespace Chess_Engine {
 					}
 
 				}
-
-				
 
 				//Generates black knight moves and captures
 				while (tempBlackKnightBitboard != 0) {
@@ -1097,6 +1141,51 @@ namespace Chess_Engine {
 			}
 			return null;
 		}
+
+
+        //METHOD THAT GENERATES A LIST OF ALMOST LEGAL MOVES FROM THE CURRENT BOARD POSITION------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------
+
+        public static int[] generateListOfAlmostLegalMoves() {
+
+            if (Board.sideToMove == Constants.WHITE) {
+                
+                //Gets the indices of all of the pieces
+                ulong tempWhitePawnBitboard = Board.arrayOfBitboards[Constants.WHITE_PAWN - 1];
+                ulong tempWhiteKnightBitboard = Board.arrayOfBitboards[Constants.WHITE_KNIGHT - 1];
+                ulong tempWhiteBishopBitboard = Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1];
+                ulong tehpWhiteRookBitboard = Board.arrayOfBitboards[Constants.WHITE_ROOK - 1];
+                ulong tempWhiteQueenBitboard = Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1];
+                ulong tempWhiteKingBitboard = Board.arrayOfBitboards[Constants.WHITE_KING - 1];
+
+                int[] listOfPseudoLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
+                int index = 0;
+
+                //Checks to see if the king is in check in the current position
+                int kingCheckStatus = Board.timesSquareIsAttacked(Constants.WHITE, Constants.findFirstSet(tempWhiteKingBitboard));
+            }
+
+            else {
+                //Indices of all the pieces
+                ulong tempBlackPawnBitboard = Board.arrayOfBitboards[Constants.BLACK_PAWN - 1];
+                ulong tempBlackKnightBitboard = Board.arrayOfBitboards[Constants.BLACK_KNIGHT - 1];
+                ulong tempBlackBishopBitboard = Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1];
+                ulong tempBlackRookBitboard = Board.arrayOfBitboards[Constants.BLACK_ROOK - 1];
+                ulong tempBlackQueenBitboard = Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1];
+                ulong tempBlackKingBitboard = Board.arrayOfBitboards[Constants.BLACK_KING - 1];
+
+                int[] listOfPseudoLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
+                int index = 0;
+
+                //Checks to see if the king is in check in the current position
+                int kingCheckStatus = Board.timesSquareIsAttacked(Constants.BLACK, Constants.findFirstSet(tempBlackKingBitboard));
+            }
+
+           
+            
+            return null;
+        }
 
 	    //OTHER METHODS----------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
@@ -1337,27 +1426,7 @@ namespace Chess_Engine {
             return moveRepresentation;
         } 
 
-        //Takes in board restore data and restores the board's instance variables (in the unmake move method)
-        private static void restoreBoardState(int boardRestoreDataRepresentation) {
-            //Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
-            //Sets the repetition number, half-live clock (since last pawn push/capture), and move number from the integer encoding the restore board data
-            Board.sideToMove = ((boardRestoreDataRepresentation & 0x3) >> 0);
-            Board.whiteShortCastleRights = ((boardRestoreDataRepresentation & 0x4) >> 2);
-            Board.whiteLongCastleRights = ((boardRestoreDataRepresentation & 0x8) >> 3);
-            Board.blackShortCastleRights = ((boardRestoreDataRepresentation & 0x10) >> 4);
-            Board.blackLongCastleRights = ((boardRestoreDataRepresentation & 0x20) >> 5);
-            Board.repetionOfPosition = ((boardRestoreDataRepresentation & 0x3000) >> 12);
-            Board.HalfMovesSincePawnMoveOrCapture = ((boardRestoreDataRepresentation & 0xFC000) >> 14);
-            Board.halfmoveNumber = ((boardRestoreDataRepresentation & 0x7FF00000) >> 20);
-
-            //Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
-            if (((boardRestoreDataRepresentation & 0xFC0) >> 6) == 0) {
-                Board.enPassantSquare = 0x0UL;
-            } else {
-                Board.enPassantSquare = 0x1UL << ((boardRestoreDataRepresentation & 0xFC0) >> 6);
-            }
-        }
-
+      
         //GET METHODS (FOR I/O)----------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------

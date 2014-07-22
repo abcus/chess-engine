@@ -1,6 +1,7 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Security.Policy;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 namespace Chess_Engine {
     
 	public sealed class Test {
+
 
         //Generates king moves from square H1 to A8
         public static void generateKingMoves() {
@@ -317,7 +319,12 @@ namespace Chess_Engine {
 
             for (int i = 0; i < 8; i++) {
 
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                if (i == 0) {
+                    Console.WriteLine("  ┌───┬───┬───┬───┬───┬───┬───┬───┐");
+                } else if (i >= 1) {
+                    Console.WriteLine("  ├───┼───┼───┼───┼───┼───┼───┼───┤");
+                }
+
                 Console.Write((i - i) + " ");
 
                 for (int j = 0; j < 8; j++) {
@@ -325,7 +332,7 @@ namespace Chess_Engine {
                 }
                 Console.WriteLine("|");
             }
-            Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+            Console.WriteLine("  └───┴───┴───┴───┴───┴───┴───┴───┘");
             Console.WriteLine("    A   B   C   D   E   F   G   H");
             Console.WriteLine("");
             Console.WriteLine("");
@@ -367,7 +374,12 @@ namespace Chess_Engine {
                 }
                 for (int i = 0; i < 8; i++) {
 
-                    Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                    if (i == 0) {
+                        Console.WriteLine("  ┌───┬───┬───┬───┬───┬───┬───┬───┐");
+                    } else if (i >= 1) {
+                        Console.WriteLine("  ├───┼───┼───┼───┼───┼───┼───┼───┤");
+                    }
+
                     Console.Write((8 - i) + " ");
                     
                     for (int j = 0; j < 8; j++) {
@@ -375,7 +387,7 @@ namespace Chess_Engine {
                     }
                     Console.WriteLine("|");
                 }
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+");
+                Console.WriteLine("  └───┴───┴───┴───┴───┴───┴───┴───┘");
                 Console.WriteLine("    A   B   C   D   E   F   G   H");
                 Console.WriteLine("");
                 Console.WriteLine("");
@@ -451,8 +463,13 @@ namespace Chess_Engine {
                 Console.WriteLine("  Occupancy Variation:\t\t\t  Moveset:");
 
                 for (int j = 0; j < 8; j++) {
-                    
-                    Console.WriteLine("  +---+---+---+---+---+---+---+---+\t  +---+---+---+---+---+---+---+---+");
+
+                    if (i == 0) {
+                        Console.WriteLine("  ┌───┬───┬───┬───┬───┬───┬───┬───┐\t  ┌───┬───┬───┬───┬───┬───┬───┬───┐");
+                    } else if (i >= 1) {
+                        Console.WriteLine("  ├───┼───┼───┼───┼───┼───┼───┼───┤\t  ├───┼───┼───┼───┼───┼───┼───┼───┤");
+                    }
+
                     Console.Write((8 - j) + " ");
 
                     for (int k = 0; k < 8; k++) {
@@ -465,7 +482,7 @@ namespace Chess_Engine {
                     }
                     Console.WriteLine("|");
                 }
-                Console.WriteLine("  +---+---+---+---+---+---+---+---+\t  +---+---+---+---+---+---+---+---+");
+                Console.WriteLine("  └───┴───┴───┴───┴───┴───┴───┴───┘\t  └───┴───┴───┴───┴───┴───┴───┴───┘");
                 Console.WriteLine("    A   B   C   D   E   F   G   H\t    A   B   C   D   E   F   G   H");
                 Console.WriteLine("");
             }
@@ -707,7 +724,7 @@ namespace Chess_Engine {
                     byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                     Board.makeMove(move);
-                    if (isMoveLegal(flag, pieceMoved) == true) {
+                    if (Board.isMoveLegal(flag, pieceMoved) == true) {
                         numberOfLegalMovesFromList ++;
                     }
                     Board.unmakeMove(move, boardRestoreData);
@@ -725,7 +742,7 @@ namespace Chess_Engine {
                     byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                     Board.makeMove(move);
-				    if (isMoveLegal(flag, pieceMoved) == true) {
+				    if (Board.isMoveLegal(flag, pieceMoved) == true) {
                         nodes += perft(depth - 1);
 				    }
 					Board.unmakeMove(move, boardRestoreData);
@@ -751,7 +768,7 @@ namespace Chess_Engine {
                 byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
 
                 Board.makeMove(move);
-			    if (isMoveLegal(flag, pieceMoved) == true) {
+			    if (Board.isMoveLegal(flag, pieceMoved) == true) {
                     Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
 			    }
 				Board.unmakeMove(move, boardRestoreData);
@@ -759,50 +776,20 @@ namespace Chess_Engine {
 			}
 		}
 
-	    public static bool isMoveLegal(int flag, byte pieceMoved) {
+	    public static void printPerft(int depth) {
+            Stopwatch s = Stopwatch.StartNew();
+            int numberOfNodes = Test.perft(depth);
+            string numberOfNodesString = numberOfNodes.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
-	        bool isMoveLegal = false;
-	        
-            //White to move
-            if (pieceMoved <= Constants.WHITE_KING) {
-                int indexOfWhiteKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.WHITE_KING - 1]);
-                
-                if (flag == Constants.SHORT_CASTLE) {
-                    if ((Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
-                        isMoveLegal = true;
-                    }
-                } else if (flag == Constants.LONG_CASTLE) {
-                    if ((Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
-                        isMoveLegal = true;
-                    }
-                } else {
-                    if (Board.timesSquareIsAttacked(Constants.WHITE, indexOfWhiteKing) == Constants.NOT_IN_CHECK) {
-                        isMoveLegal = true;
-                    }
-                }     
-	        }
-           //Black to move
-           else if (pieceMoved >= Constants.BLACK_PAWN) {
-               int indexOfBlackKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.BLACK_KING - 1]); 
-               
-               if (flag == Constants.SHORT_CASTLE) {
-                    if ((Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && (Board.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0)) {
-                        isMoveLegal = true;
-                    }
-                } else if ((flag == Constants.LONG_CASTLE)) {
-                    if ((Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) && Board.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
-                        isMoveLegal = true;
-                    }
-                } else {
-                    if (Board.timesSquareIsAttacked(Constants.BLACK, indexOfBlackKing) == Constants.NOT_IN_CHECK) {
-                        isMoveLegal = true;
-                    }
-                }     
-	        } 
-	        return isMoveLegal;
+            Console.WriteLine("Number Of Nodes: \t\t" + numberOfNodes.ToString(numberOfNodesString));
+            Console.WriteLine("Time: \t\t\t\t" + s.Elapsed);
+            long nodesPerSecond = (numberOfNodes) / (s.ElapsedMilliseconds / 1000);
+            string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+
+            Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
 	    }
-
-	    public static void perftSuite() {
+         
+        public static void perftSuite1() {
 			Board.FENToBoard("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1");
 	        int nodes = Test.perft(6);
 			Console.WriteLine(nodes);
@@ -901,5 +888,42 @@ namespace Chess_Engine {
             Console.WriteLine("Difference: " + (23527 - nodes));
 			Console.WriteLine("");
 	    }
+
+	    public static void perftSuite2() {
+	        
+            //Reads the perft suite into an array one line at a time
+            string[] fileInput = System.IO.File.ReadAllLines(@"C:\Users\Kevin\Desktop\chess\perftsuite.txt");
+	        
+            //Splits each line into FEN, and depth 1-6
+            string[][] delimitedFileInput = new string[fileInput.Length][];
+
+	        for (int i=0; i<fileInput.Length; i++) {
+	            string temp = fileInput[i];
+                string[] position = temp.Split('\t');
+	            delimitedFileInput[i] = position;
+	        }
+	        
+            Console.WriteLine("Depth 6 Perft test:");
+            Console.WriteLine("┌───────────────────────────────────────────────────────────┬──────────────┬──────────────┬───────────────┐");
+            Console.WriteLine("{0,-60}{1,-15}{2,-15}{3,-30}", "│FEN STRING:", "│EXPECTED:", "│ACTUAL:", "│EXP - ACT:     │");
+
+            Stopwatch s = Stopwatch.StartNew();
+	        for (int j = 0; j < fileInput.Length; j++) {
+                Board.FENToBoard(delimitedFileInput[j][0]);
+	            int perftDepth6ExpectedResult = Convert.ToInt32(delimitedFileInput[j][6]);
+	            int perftDepth6CalculatedResult = perft(6);
+
+                string perftDepth6ExpectedResultString = perftDepth6ExpectedResult.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+                string perftDepth6CalculatedResultString = perftDepth6CalculatedResult.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+
+                Console.WriteLine("├───────────────────────────────────────────────────────────┼──────────────┼──────────────┼───────────────┤");
+                Console.WriteLine("{0,-60}{1,-15}{2,-15}{3,-30}", "│" + delimitedFileInput[j][0], "│" + perftDepth6ExpectedResult.ToString(perftDepth6ExpectedResultString), "│" + perftDepth6CalculatedResult.ToString(perftDepth6CalculatedResultString), "│" + (perftDepth6ExpectedResult - perftDepth6CalculatedResult) + "              │");
+            }
+            Console.WriteLine("└───────────────────────────────────────────────────────────┴──────────────┴──────────────┴───────────────┘");
+            Console.WriteLine("Time:" + s.Elapsed);
+            long nodesPerSecond = (4387232996) / (s.ElapsedMilliseconds / 1000);
+            string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+            Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
+        }
     }
 }
