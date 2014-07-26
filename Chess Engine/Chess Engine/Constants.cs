@@ -102,6 +102,14 @@ namespace Chess_Engine {
                BLACK_QUEEN = 11,
                BLACK_KING = 12;
 
+        public const int
+            PAWN = 1,
+            KNIGHT = 2,
+            BISHOP = 3,
+            ROOK = 4,
+            QUEEN = 5,
+            KING = 6;
+
         //Enumerated type for side to move
         public const int WHITE = 0, BLACK = 1;
 

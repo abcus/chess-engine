@@ -8,6 +8,8 @@ using System.Security.Policy;
 using System.Text;
 using System.Threading.Tasks;
 
+using Bitboard = System.UInt64;
+
 namespace Chess_Engine {
     
 	public sealed class Test {
@@ -338,37 +340,17 @@ namespace Chess_Engine {
             Console.WriteLine("");
             Console.WriteLine("");
         }
-
+        
         //Prints out board showing moves from start square to end square for king and knight
-        public static void printArray(String piece) {
-            ulong temp = 0UL;
-
-            for (int a = 0; a <= 63; a++) {
-                if (piece == "King") {
-                    temp = Constants.kingMoves[a];
-                } else if (piece == "Knight") {
-                    temp = Constants.knightMoves[a];
-                } else if (piece == "WhitePawnMove") {
-                    temp = Constants.whiteSinglePawnMovesAndPromotionMoves[a];
-                } else if (piece == "BlackPawnMove") {
-                    temp = Constants.blackSinglePawnMovesAndPromotionMoves[a];
-                } else if (piece == "WhitePawnCapture") {
-                    temp = Constants.whiteCapturesAndCapturePromotions[a];
-                } else if (piece == "BlackPawnCapture") {
-                    temp = Constants.blackCapturesAndCapturePromotions[a];
-                } else if (piece == "RookOccupancyMask") {
-                    temp = Constants.rookOccupancyMask[a];
-                } else if (piece == "BishopOccupancyMask") {
-                    temp = Constants.bishopOccupancyMask[a];
-                }
-
-                //Note that the array goes from A8 to H1
+        public static void printBitboard(Bitboard inputBoard) {
+        
+            //Note that the array goes from A8 to H1
                 string[,] chessBoard = new string[8, 8];
                 for (int i = 0; i < 64; i++) {
                     chessBoard[i / 8, i % 8] = " ";
                 }
                 for (int i = 0; i < 64; i++) {
-                    if (((temp >> i) & 1L) == 1) {
+                    if (((inputBoard >> i) & 1L) == 1) {
                         chessBoard[7 - (i / 8), 7 - (i % 8)] = "X";
                     }
                 }
@@ -391,10 +373,47 @@ namespace Chess_Engine {
                 Console.WriteLine("    A   B   C   D   E   F   G   H");
                 Console.WriteLine("");
                 Console.WriteLine("");
-                Console.WriteLine("");
-
-            }
+                Console.WriteLine(""); 
         }
+
+        // prints king moves, white pawn moves, black pawn moves, white pawn captures, black pawn captures
+        // rook occupancy masks, bishop occupancy masks
+	    public static void printMoveAndMask() {
+
+            Console.WriteLine("King moves");
+	        for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.kingMoves[i]); 
+	        }
+            Console.WriteLine("Knight moves");
+	        for (int i = 0; i <= 63; i++) {
+	            Test.printBitboard(Constants.knightMoves[i]);
+	        }
+            Console.WriteLine("White pawn moves");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.whiteSinglePawnMovesAndPromotionMoves[i]);
+            }
+            Console.WriteLine("Black pawn moves");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.blackSinglePawnMovesAndPromotionMoves[i]);
+            }
+            Console.WriteLine("White pawn captures");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.whiteCapturesAndCapturePromotions[i]);
+            }
+            Console.WriteLine("Black pawn captures");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.blackCapturesAndCapturePromotions[i]);
+            }
+            Console.WriteLine("Rook occupancy mask");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.rookOccupancyMask[i]);
+            }
+            Console.WriteLine("Bishop occupancy mask");
+            for (int i = 0; i <= 63; i++) {
+                Test.printBitboard(Constants.bishopOccupancyMask[i]);
+            }
+	    }
+       
 
         //Prints out all occupancy variations and associated moves for a particular square
         public static void printOccupancyVariationAndMove(int square, String range, String piece) {
@@ -595,7 +614,7 @@ namespace Chess_Engine {
             string destinationSquare = (fileOfDestinationSquare + (1 + rowOfDestinationSquare).ToString() + " ");
 
             string moveString = "";
-
+            moveString += (startSquare + destinationSquare);
 
             if (getPieceMoved(moveRepresentation) == Constants.WHITE_PAWN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE || getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
@@ -721,10 +740,10 @@ namespace Chess_Engine {
                 while (pseudoLegalMoveList[index] != 0) {
                     int move = pseudoLegalMoveList[index];
                     int flag = ((move & Constants.FLAG_MASK) >> 16);
-                    byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
+                    int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
 
                     Board.makeMove(move);
-                    if (Board.isMoveLegal(flag, pieceMoved) == true) {
+                    if (Board.isMoveLegal(pieceMoved) == true) {
                         numberOfLegalMovesFromList ++;
                     }
                     Board.unmakeMove(move, boardRestoreData);
@@ -739,10 +758,10 @@ namespace Chess_Engine {
 				while (pseudoLegalMoveList[index] != 0) {
 				    int move = pseudoLegalMoveList[index];
                     int flag = ((move & Constants.FLAG_MASK) >> 16);
-                    byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
+                    int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
 
                     Board.makeMove(move);
-				    if (Board.isMoveLegal(flag, pieceMoved) == true) {
+				    if (Board.isMoveLegal(pieceMoved) == true) {
                         nodes += perft(depth - 1);
 				    }
 					Board.unmakeMove(move, boardRestoreData);
@@ -765,11 +784,15 @@ namespace Chess_Engine {
 			    int move = pseudoLegaloveList[index];
 				count++;
 				int flag = ((move & Constants.FLAG_MASK) >> 16);
-                byte pieceMoved = (byte)((move & Constants.PIECE_MOVED_MASK) >> 0);
+                int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
 
                 Board.makeMove(move);
-			    if (Board.isMoveLegal(flag, pieceMoved) == true) {
-                    Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
+			    if (Board.isMoveLegal(pieceMoved) == true) {
+			        if (depth > 1) {
+			            Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
+			        } else {
+                        Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t1"); 
+			        }
 			    }
 				Board.unmakeMove(move, boardRestoreData);
 			    index ++;

@@ -13,15 +13,16 @@ namespace Chess_Engine {
         public static void run() {
             Constants.initializeConstants();
 
-            //string test = "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1";
+            string test = "r4k1r/p1pNqpb1/Bn2pnp1/3P4/1p2P3/2N2Q1p/PPPB1PPP/R3K2R b KQ - 0 2";
 	        Board.FENToBoard(Constants.FEN_RANDOM);
 	        InputOutput.drawBoard();
 	        Test.kingInCheckTest(Board.getSideToMove());
 
-            //Test.perftSuite2();
-
             Test.printPerft(5);
             Test.perftSuite1();
+            //Test.perftSuite2();
+            
+            
         }
     }
 }
