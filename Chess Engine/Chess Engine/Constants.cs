@@ -111,7 +111,7 @@ namespace Chess_Engine {
             KING = 6;
 
         //Enumerated type for side to move
-        public const int WHITE = 0, BLACK = 1;
+        public const int WHITE = 0, BLACK = 1, ALL = 2;
 
         //Enumberated type for checks (multiple check is there because making a king move could result in it moving into multiple checks)
 	    public const int NOT_IN_CHECK = 0, CHECK = 1, DOUBLE_CHECK = 2, MULTIPLE_CHECK = 3;
