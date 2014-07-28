@@ -13,18 +13,22 @@ namespace Chess_Engine {
         public static void run() {
             Constants.initializeConstants();
 
-            string test = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -";
-	        Board.FENToBoard(test);
+            string test = "8/PP6/8/3k4/8/8/4Kppp/7Q b - - 0 3";
+	        Board.FENToBoard(Constants.FEN_RANDOM);
 	        InputOutput.drawBoard();
 	        Test.kingInCheckTest(Board.getSideToMove());
 
-            //Test.perftDivide(1);
+            Stopwatch s = Stopwatch.StartNew();
 
-            //Test.printPerft(7);
-            Test.perftSuite1();
+            
+           Console.WriteLine(Test.perft2(5));
+          
+            Console.WriteLine(s.Elapsed);
+
+            //Test.perftSuite1();
             //Test.perftSuite2();
-            
-            
+
+
         }
     }
 }

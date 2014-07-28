@@ -752,6 +752,592 @@ namespace Chess_Engine {
 			return null;
 		}
 
+        // Generates a list of almost legal moves
+        public static int[] generateListOfAlmostLegalMoves() {
+
+            if (Board.sideToMove == Constants.WHITE) {
+                
+                //Gets the indices of all of the pieces
+                Bitboard tempWhitePawnBitboard = Board.arrayOfBitboards[Constants.WHITE_PAWN - 1];
+                Bitboard tempWhiteKnightBitboard = Board.arrayOfBitboards[Constants.WHITE_KNIGHT - 1];
+                Bitboard tempWhiteBishopBitboard = Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1];
+                Bitboard tempWhiteRookBitboard = Board.arrayOfBitboards[Constants.WHITE_ROOK - 1];
+                Bitboard tempWhiteQueenBitboard = Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1];
+                Bitboard tempWhiteKingBitboard = Board.arrayOfBitboards[Constants.WHITE_KING - 1];
+                Bitboard tempAllPieceBitboard = Board.arrayOfAggregateBitboards[Constants.ALL];
+                Bitboard tempBlackRookAndQueenBitboard = (Board.arrayOfBitboards[Constants.BLACK_ROOK - 1] | Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
+                Bitboard tempBlackBishopAndQueenBitboard = (Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
+                int kingIndex = Constants.findFirstSet(tempWhiteKingBitboard);
+
+                int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
+                int index = 0;
+
+                // Finds rook moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
+                Bitboard potentiallyPinnedPiecesByRook = ((Board.generateRookMovesFromIndex(tempAllPieceBitboard, kingIndex)) & Board.arrayOfAggregateBitboards[Constants.WHITE]);
+
+               // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                // Intersect with black rook and queen to get bitboard of potential pinners
+                Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
+                Bitboard rookMovesFromIndexWithoutPinned = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, kingIndex);
+                Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempBlackRookAndQueenBitboard);
+
+              // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                while (potentialPinners != 0) {
+                    int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+
+                    // Removes the potential pinner from the bitboard
+                    potentialPinners &= (potentialPinners - 1);
+
+                    Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                    Bitboard rookMovesFromPinnerIndex = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, indexOfPotentialPinner);
+
+                    // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                    // Generates pin ray
+                    Bitboard pinnedPiece = (rookMovesFromPinnerIndex & potentiallyPinnedPiecesByRook);
+                    if (pinnedPiece != 0) {
+                        Bitboard pinRay = (rookMovesFromIndexWithoutPinned & (rookMovesFromPinnerIndex | pinner));
+                        
+                        int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                        int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                        // If the pinned piece is a white pawn, then generate single and double pushes along the pin ray
+                        
+                        if (pinnedPieceType == Constants.WHITE_PAWN) {
+
+                            //For pawns that are between the 2nd and 6th ranks, generate single pushes
+                            if (indexOfPinnedPiece >= Constants.H2 && indexOfPinnedPiece <= Constants.A6) {
+                                //Generates white pawn single moves
+                                Bitboard possiblePawnSingleMoves = (Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~Board.arrayOfAggregateBitboards[Constants.ALL]) & pinRay);
+                                index = Board.generatePawnMove(indexOfPinnedPiece, possiblePawnSingleMoves, listOfAlmostLegalMoves, index, Constants.WHITE);
+                            }
+                            //For pawns that are on the 2nd rank, generate double pawn pushes
+                            if (indexOfPinnedPiece >= Constants.H2 && indexOfPinnedPiece <= Constants.A2) {
+                                Bitboard singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece];
+                                Bitboard doublePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece + 8];
+                                Bitboard pseudoLegalDoubleMoveFromIndex = 0x0UL;
+
+                                if (((singlePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
+                                    pseudoLegalDoubleMoveFromIndex = (doublePawnMovementFromIndex & pinRay);
+                                }
+
+                                index = Board.generatePawnDoubleMove(indexOfPinnedPiece, pseudoLegalDoubleMoveFromIndex,listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                            }
+                            // Removes the white pawn from the list of white pawns
+                            tempWhitePawnBitboard &= (~pinnedPiece);
+                        }
+                        // If the pinned piece is a white rook, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.WHITE_ROOK) {
+                            Bitboard legalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
+                            index = Board.generateRookMoves(indexOfPinnedPiece, legalRookMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                            // Removes the white rook from the list of white rooks
+                            tempWhiteRookBitboard &= (~pinnedPiece);
+                        }
+                        // If the pinned piece is a white queen, then generate moves along the pin ray (only rook moves)
+                        else if (pinnedPieceType == Constants.WHITE_QUEEN) {
+                            Bitboard legalQueenMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
+                            index = Board.generateQueenMoves(indexOfPinnedPiece, legalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                            
+                            // Removes the white queen from the list of white queens
+                            tempWhiteQueenBitboard &= (~pinnedPiece);
+                        }
+                        // If pinned piece type is a white knight, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
+                            // Remove it from the knight list so that no night moves will be generated later on
+                            tempWhiteKnightBitboard &= (~pinnedPiece);
+                        }
+                        // If pinned piece type is a white bishop, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.WHITE_BISHOP) {
+                            // Remove it from the bishop list so that no bishop moves will be generated later on
+                            tempWhiteBishopBitboard &= (~pinnedPiece);
+                        }
+                        // Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
+                    }
+                    
+                }
+                // Finds bishop moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
+                Bitboard potentiallyPinnedPiecesByBishop = (Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex) & Board.arrayOfAggregateBitboards[Constants.WHITE]);
+
+               // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                // Intersect with black rook and queen to get bitboard of potential pinners
+                Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
+                Bitboard bishopMovesFromIndexWithoutPinned = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, kingIndex);
+                potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempBlackBishopAndQueenBitboard));
+
+                // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                while (potentialPinners != 0) {
+                    int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+                    // Removes the potential pinner from the black rook and queen bitboard
+                    potentialPinners &= (potentialPinners - 1);
+                    Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                    Bitboard bishopMovesFromPinnerIndex = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, indexOfPotentialPinner);
+
+                   // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                    // Generates pin ray
+                    Bitboard pinnedPiece = (bishopMovesFromPinnerIndex & potentiallyPinnedPiecesByBishop);
+                    if (pinnedPiece != 0) {
+                        Bitboard pinRay = (bishopMovesFromIndexWithoutPinned & (bishopMovesFromPinnerIndex | pinner));
+                        
+                        int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                        int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                        // If the pinned piece is a white pawn, then generate captures, en passant captures, and capture promotions
+                        if (pinnedPieceType == Constants.WHITE_PAWN) {
+
+                            //For pawns that are between the 2nd and 6th ranks, generate captures
+                            if (indexOfPinnedPiece >= Constants.H2 && indexOfPinnedPiece <= Constants.A6) {
+
+                                //Generates white pawn captures (will be a maximum of 1 along the pin ray)
+                                Bitboard legalPawnCapturesFromIndex = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
+                                index = Board.generatePawnCaptures(indexOfPinnedPiece, legalPawnCapturesFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                            }
+                            //For pawns that are on the 5th rank, generate en passant captures
+                            if ((Board.enPassantSquare & Constants.RANK_6) != 0) {
+                                if (indexOfPinnedPiece >= Constants.H5 && indexOfPinnedPiece <= Constants.A5) {
+                                    Bitboard legalEnPassantFromIndex = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.enPassantSquare & pinRay);
+                                    index = Board.generatePawnEnPassant(indexOfPinnedPiece, legalEnPassantFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                                    
+                                }
+                            }
+                            //For pawns on the 7th rank, generate promotion captures
+                            if (indexOfPinnedPiece >= Constants.H7 && indexOfPinnedPiece <= Constants.A7) {
+
+                                //Generates white pawn capture promotions
+                                Bitboard legalPawnCapturesFromIndex = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
+                                index = Board.generatePawnPromotionCapture(indexOfPinnedPiece, legalPawnCapturesFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                            }
+                            // Removes the white pawn from the list of white pawns
+                            tempWhitePawnBitboard &= (~pinnedPiece);
+                        }
+                        // If the pinned piece is a white bishop, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.WHITE_BISHOP) {
+
+                            Bitboard legalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
+                            index = Board.generateBishopMoves(indexOfPinnedPiece, legalBishopMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                            
+                            // Removes the white bishop from the list of white rooks
+                            tempWhiteBishopBitboard &= (~pinnedPiece);
+                        }
+                        // If the pinned piece is a white queen, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.WHITE_QUEEN) {
+
+                            Bitboard legalQueenMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
+                            index = Board.generateQueenMoves(indexOfPinnedPiece, legalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                            // Removes the white queen from the list of white queens
+                            tempWhiteQueenBitboard &= (~pinnedPiece);
+                        }
+                       // If pinned piece type is a white knight, then it isn't allowed to move
+                       else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
+                            // Remove it from the knight list so that no night moves will be generated later on
+                            tempWhiteKnightBitboard &= (~pinnedPiece);
+                        }
+                        // If pinned piece type is a white rook, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.WHITE_ROOK) {
+                            // Remove it from the bishop list so that no bishop moves will be generated later on
+                            tempWhiteRookBitboard &= (~pinnedPiece);
+                        }
+                       // Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
+                    }
+                     
+                }      
+                // Loops through all pawns and generates white pawn moves, captures, and promotions
+                while (tempWhitePawnBitboard != 0) {
+
+                    // Finds the index of the first white pawn, then removes it from the temporary pawn bitboard
+                    int pawnIndex = Constants.findFirstSet(tempWhitePawnBitboard);
+                    tempWhitePawnBitboard &= (tempWhitePawnBitboard - 1);
+
+                    //For pawns that are between the 2nd and 6th ranks, generate single pushes and captures
+                    if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A6) {
+
+                        // Passes a bitboard of possible pawn single moves to the generate move method (bitboard could be 0)
+                        // Method reads bitboard of possible moves, encodes them, adds them to the list, and increments the index by 1
+                        Bitboard possiblePawnSingleMoves = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~Board.arrayOfAggregateBitboards[Constants.ALL]);
+                        index = Board.generatePawnMove(pawnIndex, possiblePawnSingleMoves, listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                        // Passes a bitboard of possible pawn captures to the generate move method (bitboard could be 0)
+                        Bitboard possiblePawnCaptures = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (Board.arrayOfAggregateBitboards[Constants.BLACK]);
+                        index = Board.generatePawnCaptures(pawnIndex, possiblePawnCaptures, listOfAlmostLegalMoves, index, Constants.WHITE);
+                    }
+                    //For pawns that are on the 2nd rank, generate double pawn pushes
+                    if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
+                        Bitboard singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
+                        Bitboard doublePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex + 8];
+                        Bitboard pseudoLegalDoubleMoveFromIndex = 0x0UL;
+
+                        if (((singlePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
+                            pseudoLegalDoubleMoveFromIndex = doublePawnMovementFromIndex;
+                        }
+
+                        index = Board.generatePawnDoubleMove(pawnIndex, pseudoLegalDoubleMoveFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                    }
+                    //If en passant is possible, For pawns that are on the 5th rank, generate en passant captures
+                    if ((Board.enPassantSquare & Constants.RANK_6) != 0) {
+                        if (pawnIndex >= Constants.H5 && pawnIndex <= Constants.A5) {
+                            Bitboard pseudoLegalEnPassantFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & Board.enPassantSquare;
+                            index = Board.generatePawnEnPassant(pawnIndex, pseudoLegalEnPassantFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                        }
+                    }
+                    //For pawns on the 7th rank, generate promotions and promotion captures
+                    if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
+                        Bitboard pseudoLegalPromotionFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~Board.arrayOfAggregateBitboards[Constants.ALL]);
+                        index = Board.generatePawnPromotion(pawnIndex, pseudoLegalPromotionFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                        Bitboard pseudoLegalPromotionCaptureFromIndex = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (Board.arrayOfAggregateBitboards[Constants.BLACK]);
+                        index = Board.generatePawnPromotionCapture(pawnIndex, pseudoLegalPromotionCaptureFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                    }
+                }
+                //generates white knight moves and captures
+                while (tempWhiteKnightBitboard != 0) {
+                    int knightIndex = Constants.findFirstSet(tempWhiteKnightBitboard);
+                    tempWhiteKnightBitboard &= (tempWhiteKnightBitboard - 1);
+                    Bitboard pseudoLegalKnightMovementFromIndex = Constants.knightMoves[knightIndex] & (~Board.arrayOfAggregateBitboards[Constants.WHITE]);
+                    index = Board.generateKnightMoves(knightIndex, pseudoLegalKnightMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                }
+                //generates white bishop moves and captures
+                while (tempWhiteBishopBitboard != 0) {
+                    int bishopIndex = Constants.findFirstSet(tempWhiteBishopBitboard);
+                    tempWhiteBishopBitboard &= (tempWhiteBishopBitboard - 1);
+                    Bitboard pseudoLegalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]));
+                    index = Board.generateBishopMoves(bishopIndex, pseudoLegalBishopMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                }
+                //generates white rook moves and captures
+                while (tempWhiteRookBitboard != 0) {
+                    int rookIndex = Constants.findFirstSet(tempWhiteRookBitboard);
+                    tempWhiteRookBitboard &= (tempWhiteRookBitboard - 1);
+                    Bitboard pseudoLegalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]));
+                    index = Board.generateRookMoves(rookIndex, pseudoLegalRookMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                }
+                //generates white queen moves and captures
+                while (tempWhiteQueenBitboard != 0) {
+                    int queenIndex = Constants.findFirstSet(tempWhiteQueenBitboard);
+                    tempWhiteQueenBitboard &= (tempWhiteQueenBitboard - 1);
+                    Bitboard pseudoLegalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]));
+                    Bitboard pseudoLegalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~Board.arrayOfAggregateBitboards[Constants.WHITE]));
+                    Bitboard pseudoLegalQueenMovementFromIndex = pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex;
+                    index = Board.generateQueenMoves(queenIndex, pseudoLegalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+                }
+                //generates white king moves and captures
+                Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~Board.arrayOfAggregateBitboards[Constants.WHITE]);
+                index = Board.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex, listOfAlmostLegalMoves, index, Constants.WHITE);
+
+                //Generates white king castling moves (if the king is not in check)
+                if ((Board.whiteShortCastleRights == Constants.CAN_CASTLE) && ((Board.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+                    int moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
+
+                    if (Board.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
+                        listOfAlmostLegalMoves[index++] = moveRepresentation;
+                    }
+                }
+                if ((Board.whiteLongCastleRights == Constants.CAN_CASTLE) && ((Board.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+                    int moveRepresentation = Board.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
+
+                    if (Board.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
+                        listOfAlmostLegalMoves[index++] = moveRepresentation;
+                    }
+                }
+                return listOfAlmostLegalMoves;
+            }
+
+            else if (Board.sideToMove == Constants.BLACK) {
+
+                //Gets the indices of all of the pieces
+                Bitboard tempBlackPawnBitboard = Board.arrayOfBitboards[Constants.BLACK_PAWN - 1];
+                Bitboard tempBlackKnightBitboard = Board.arrayOfBitboards[Constants.BLACK_KNIGHT - 1];
+                Bitboard tempBlackBishopBitboard = Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1];
+                Bitboard tempBlackRookBitboard = Board.arrayOfBitboards[Constants.BLACK_ROOK - 1];
+                Bitboard tempBlackQueenBitboard = Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1];
+                Bitboard tempBlackKingBitboard = Board.arrayOfBitboards[Constants.BLACK_KING - 1];
+                Bitboard tempAllPieceBitboard = Board.arrayOfAggregateBitboards[Constants.ALL];
+                Bitboard tempWhiteRookAndQueenBitboard = (Board.arrayOfBitboards[Constants.WHITE_ROOK - 1] | Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
+                Bitboard tempWhiteBishopAndQueenBitboard = (Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
+                int kingIndex = Constants.findFirstSet(tempBlackKingBitboard);
+
+                int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
+                int index = 0;
+
+                // Finds rook moves from the king, and intersects with black (own) pieces to get bitboard of potentially pinned pieces
+                Bitboard potentiallyPinnedPiecesByRook = ((Board.generateRookMovesFromIndex(tempAllPieceBitboard, kingIndex)) & Board.arrayOfAggregateBitboards[Constants.BLACK]);
+
+                // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                // Intersect with white rook and queen to get bitboard of potential pinners
+                Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
+                Bitboard rookMovesFromIndexWithoutPinned = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, kingIndex);
+                Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempWhiteRookAndQueenBitboard);
+
+                // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                while (potentialPinners != 0) {
+                    int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+
+                    // Removes the potential pinner from the bitboard
+                    potentialPinners &= (potentialPinners - 1);
+
+                    Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                    Bitboard rookMovesFromPinnerIndex = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, indexOfPotentialPinner);
+
+                    // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                    // Generates pin ray
+                    Bitboard pinnedPiece = (rookMovesFromPinnerIndex & potentiallyPinnedPiecesByRook);
+                    if (pinnedPiece != 0) {
+                        Bitboard pinRay = (rookMovesFromIndexWithoutPinned & (rookMovesFromPinnerIndex | pinner));
+
+                        int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                        int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                        // If the pinned piece is a black pawn, then generate single and double pushes along the pin ray
+
+                        if (pinnedPieceType == Constants.BLACK_PAWN) {
+
+                            //For pawns that are between the 3rd and 7th ranks, generate single pushes
+                            if (indexOfPinnedPiece >= Constants.H3 && indexOfPinnedPiece <= Constants.A7) {
+                                //Generates black pawn single moves
+                                Bitboard possiblePawnSingleMoves = (Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~Board.arrayOfAggregateBitboards[Constants.ALL]) & pinRay);
+                                index = Board.generatePawnMove(indexOfPinnedPiece, possiblePawnSingleMoves, listOfAlmostLegalMoves, index, Constants.BLACK);
+                            }
+                            //For pawns that are on the 7th rank, generate double pawn pushes
+                            if (indexOfPinnedPiece >= Constants.H7 && indexOfPinnedPiece <= Constants.A7) {
+                                Bitboard singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece];
+                                Bitboard doublePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece - 8];
+                                Bitboard pseudoLegalDoubleMoveFromIndex = 0x0UL;
+
+                                if (((singlePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
+                                    pseudoLegalDoubleMoveFromIndex = (doublePawnMovementFromIndex & pinRay);
+                                }
+
+                                index = Board.generatePawnDoubleMove(indexOfPinnedPiece, pseudoLegalDoubleMoveFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                            }
+                            // Removes the black pawn from the list of white pawns
+                            tempBlackPawnBitboard &= (~pinnedPiece);
+                        }
+                            // If the pinned piece is a black rook, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.BLACK_ROOK) {
+                            Bitboard legalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
+                            index = Board.generateRookMoves(indexOfPinnedPiece, legalRookMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                            // Removes the black rook from the list of white rooks
+                            tempBlackRookBitboard &= (~pinnedPiece);
+                        }
+                            // If the pinned piece is a black queen, then generate moves along the pin ray (only rook moves)
+                        else if (pinnedPieceType == Constants.BLACK_QUEEN) {
+                            Bitboard legalQueenMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
+                            index = Board.generateQueenMoves(indexOfPinnedPiece, legalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                            // Removes the black queen from the list of white queens
+                            tempBlackQueenBitboard &= (~pinnedPiece);
+                        }
+                            // If pinned piece type is a black knight, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
+                            // Remove it from the knight list so that no night moves will be generated later on
+                            tempBlackKnightBitboard &= (~pinnedPiece);
+                        }
+                            // If pinned piece type is a black bishop, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.BLACK_BISHOP) {
+                            // Remove it from the bishop list so that no bishop moves will be generated later on
+                            tempBlackBishopBitboard &= (~pinnedPiece);
+                        }
+                        // Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
+                    }
+
+                }
+                // Finds bishop moves from the king, and intersects with black (own) pieces to get bitboard of potentially pinned pieces
+                Bitboard potentiallyPinnedPiecesByBishop = (Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex) & Board.arrayOfAggregateBitboards[Constants.BLACK]);
+
+                // Removes potentially pinned pieces from the all pieces bitboard, and generates bishop moves from king again
+                // Intersect with white bishop and queen to get bitboard of potential pinners
+                Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
+                Bitboard bishopMovesFromIndexWithoutPinned = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, kingIndex);
+                potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempWhiteBishopAndQueenBitboard));
+
+                // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                while (potentialPinners != 0) {
+                    int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+                    // Removes the potential pinner from the black rook and queen bitboard
+                    potentialPinners &= (potentialPinners - 1);
+                    Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                    Bitboard bishopMovesFromPinnerIndex = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, indexOfPotentialPinner);
+
+                    // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                    // Generates pin ray
+                    Bitboard pinnedPiece = (bishopMovesFromPinnerIndex & potentiallyPinnedPiecesByBishop);
+                    if (pinnedPiece != 0) {
+                        Bitboard pinRay = (bishopMovesFromIndexWithoutPinned & (bishopMovesFromPinnerIndex | pinner));
+
+                        int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                        int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                        // If the pinned piece is a black pawn, then generate captures, en passant captures, and capture promotions
+                        if (pinnedPieceType == Constants.BLACK_PAWN) {
+
+                            //For pawns that are between the 3rd and 7th ranks, generate captures
+                            if (indexOfPinnedPiece >= Constants.H3 && indexOfPinnedPiece <= Constants.A7) {
+
+                                //Generates black pawn captures (will be a maximum of 1 along the pin ray)
+                                Bitboard legalPawnCapturesFromIndex = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
+                                index = Board.generatePawnCaptures(indexOfPinnedPiece, legalPawnCapturesFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                            }
+                            //For pawns that are on the 4th rank, generate en passant captures
+                            if ((Board.enPassantSquare & Constants.RANK_3) != 0) {
+                                if (indexOfPinnedPiece >= Constants.H4 && indexOfPinnedPiece <= Constants.A4) {
+                                    Bitboard legalEnPassantFromIndex = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.enPassantSquare & pinRay);
+                                    index = Board.generatePawnEnPassant(indexOfPinnedPiece, legalEnPassantFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                                }
+                            }
+                            //For pawns on the 2nd rank, generate promotion captures
+                            if (indexOfPinnedPiece >= Constants.H2 && indexOfPinnedPiece <= Constants.A2) {
+
+                                //Generates black pawn capture promotions
+                                Bitboard legalPawnCapturesFromIndex = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & Board.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
+                                index = Board.generatePawnPromotionCapture(indexOfPinnedPiece, legalPawnCapturesFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                            }
+                            // Removes the black pawn from the list of white pawns
+                            tempBlackPawnBitboard &= (~pinnedPiece);
+                        }
+                            // If the pinned piece is a black bishop, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.BLACK_BISHOP) {
+
+                            Bitboard legalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
+                            index = Board.generateBishopMoves(indexOfPinnedPiece, legalBishopMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                            // Removes the white bishop from the list of white rooks
+                            tempBlackBishopBitboard &= (~pinnedPiece);
+                        }
+                            // If the pinned piece is a black queen, then generate moves along the pin ray
+                        else if (pinnedPieceType == Constants.BLACK_QUEEN) {
+
+                            Bitboard legalQueenMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
+                            index = Board.generateQueenMoves(indexOfPinnedPiece, legalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                            // Removes the blackqueen from the list of white queens
+                            tempBlackQueenBitboard &= (~pinnedPiece);
+                        }
+                            // If pinned piece type is a black knight, then it isn't allowed to move
+                       else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
+                            // Remove it from the knight list so that no night moves will be generated later on
+                            tempBlackKnightBitboard &= (~pinnedPiece);
+                        }
+                            // If pinned piece type is a black rook, then it isn't allowed to move
+                        else if (pinnedPieceType == Constants.BLACK_ROOK) {
+                            // Remove it from the bishop list so that no rook moves will be generated later on
+                            tempBlackRookBitboard &= (~pinnedPiece);
+                        }
+                        // Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
+                    }
+
+                }
+                //Generates black pawn moves
+                while (tempBlackPawnBitboard != 0) {
+                    int pawnIndex = Constants.findFirstSet(tempBlackPawnBitboard);
+                    tempBlackPawnBitboard &= (tempBlackPawnBitboard - 1);
+
+                    if (pawnIndex >= Constants.H3 && pawnIndex <= Constants.A7) {
+
+                        //Generates black pawn single moves
+                        Bitboard pseudoLegalSinglePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~Board.arrayOfAggregateBitboards[Constants.ALL]);
+                        index = Board.generatePawnMove(pawnIndex, pseudoLegalSinglePawnMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                        Bitboard pseudoLegalPawnCapturesFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (Board.arrayOfAggregateBitboards[Constants.WHITE]);
+                        index = Board.generatePawnCaptures(pawnIndex, pseudoLegalPawnCapturesFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                    }
+
+                    //Generates black pawn double moves
+                    if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
+                        Bitboard singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
+                        Bitboard doublePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex - 8];
+                        Bitboard pseudoLegalDoubleMoveFromIndex = 0x0UL;
+
+                        if (((singlePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & Board.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
+                            pseudoLegalDoubleMoveFromIndex = doublePawnMovementFromIndex;
+                        }
+                        index = Board.generatePawnDoubleMove(pawnIndex, pseudoLegalDoubleMoveFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                    }
+
+                    //Generates black pawn en passant captures
+                    if ((Board.enPassantSquare & Constants.RANK_3) != 0) {
+                        if (pawnIndex >= Constants.H4 && pawnIndex <= Constants.A4) {
+                            Bitboard pseudoLegalEnPassantFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex] & Board.enPassantSquare;
+                            index = Board.generatePawnEnPassant(pawnIndex, pseudoLegalEnPassantFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                        }
+                    }
+                    if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
+                        Bitboard pseudoLegalPromotionFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~Board.arrayOfAggregateBitboards[Constants.ALL]);
+                        index = Board.generatePawnPromotion(pawnIndex, pseudoLegalPromotionFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                        Bitboard pseudoLegalPromotionCaptureFromIndex = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (Board.arrayOfAggregateBitboards[Constants.WHITE]);
+                        index = Board.generatePawnPromotionCapture(pawnIndex, pseudoLegalPromotionCaptureFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                    }
+                }
+
+                //Generates black knight moves and captures
+                while (tempBlackKnightBitboard != 0) {
+
+                    int knightIndex = Constants.findFirstSet(tempBlackKnightBitboard);
+                    tempBlackKnightBitboard &= (tempBlackKnightBitboard - 1);
+                    Bitboard pseudoLegalKnightMovementFromIndex = Constants.knightMoves[knightIndex] & (~Board.arrayOfAggregateBitboards[Constants.BLACK]);
+                    index = Board.generateKnightMoves(knightIndex, pseudoLegalKnightMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                }
+
+                //generates black bishop moves and captures
+                while (tempBlackBishopBitboard != 0) {
+
+                    int bishopIndex = Constants.findFirstSet(tempBlackBishopBitboard);
+                    tempBlackBishopBitboard &= (tempBlackBishopBitboard - 1);
+                    Bitboard pseudoLegalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]));
+                    index = Board.generateBishopMoves(bishopIndex, pseudoLegalBishopMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                }
+                //generates black rook moves and captures
+                while (tempBlackRookBitboard != 0) {
+
+                    int rookIndex = Constants.findFirstSet(tempBlackRookBitboard);
+                    tempBlackRookBitboard &= (tempBlackRookBitboard - 1);
+                    Bitboard pseudoLegalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]));
+                    index = Board.generateRookMoves(rookIndex, pseudoLegalRookMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                }
+                //generates black queen moves and captures
+                while (tempBlackQueenBitboard != 0) {
+
+                    int queenIndex = Constants.findFirstSet(tempBlackQueenBitboard);
+                    tempBlackQueenBitboard &= (tempBlackQueenBitboard - 1);
+                    Bitboard pseudoLegalBishopMovementFromIndex = (Board.generateBishopMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]));
+                    Bitboard pseudoLegalRookMovementFromIndex = (Board.generateRookMovesFromIndex(Board.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~Board.arrayOfAggregateBitboards[Constants.BLACK]));
+                    Bitboard pseudoLegalQueenMovementFromIndex = pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex;
+                    index = Board.generateQueenMoves(queenIndex, pseudoLegalQueenMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+                }
+
+                //generates black king moves and captures
+                Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~Board.arrayOfAggregateBitboards[Constants.BLACK]);
+                index = Board.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex, listOfAlmostLegalMoves, index, Constants.BLACK);
+
+                //Generates black king castling moves (if the king is not in check)
+                if ((Board.blackShortCastleRights == Constants.CAN_CASTLE) && ((Board.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+                    int moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
+
+                    if (Board.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
+                        listOfAlmostLegalMoves[index++] = moveRepresentation;
+                    }
+                }
+
+                if ((Board.blackLongCastleRights == Constants.CAN_CASTLE) && ((Board.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+                    int moveRepresentation = Board.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
+
+                    if (Board.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
+                        listOfAlmostLegalMoves[index++] = moveRepresentation;
+                    }
+                }
+                    
+                
+                //returns the list of legal moves
+                return listOfAlmostLegalMoves;
+
+            }
+
+            return null;
+        }
+
         // Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
         private static int generatePawnMove(int pawnIndex, Bitboard pseudoLegalSinglePawnMoveFromIndex, int[] listOfPseudoLegalMoves, int index, int pieceColour) {
             
@@ -949,6 +1535,9 @@ namespace Chess_Engine {
             return Constants.bishopMoves[index][indexOfBishopMoveBitboard];
         }
 
+         
+
+        
 
 
         //CHECK EVASION------------------------------------------------------------------------------------
@@ -964,6 +1553,8 @@ namespace Chess_Engine {
                 Bitboard tempWhiteQueenBitboard = Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1];
                 Bitboard tempWhiteKingBitboard = Board.arrayOfBitboards[Constants.WHITE_KING - 1];
                 Bitboard tempAllPieceBitboard = Board.arrayOfAggregateBitboards[Constants.ALL];
+                Bitboard tempBlackRookAndQueenBitboard = (Board.arrayOfBitboards[Constants.BLACK_ROOK - 1] | Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
+                Bitboard tempBlackBishopAndQueenBitboard = (Board.arrayOfBitboards[Constants.BLACK_BISHOP - 1] | Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1]);
 
                 int kingIndex = Constants.findFirstSet(tempWhiteKingBitboard);
                 Bitboard bishopMovesFromKingPosition = Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex);
@@ -979,6 +1570,123 @@ namespace Chess_Engine {
 
                 // If the king is in check
                 if (kingCheckStatus == Constants.CHECK) {
+
+                    // Finds rook moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
+                    Bitboard potentiallyPinnedPiecesByRook = ((Board.generateRookMovesFromIndex(tempAllPieceBitboard, kingIndex)) & Board.arrayOfAggregateBitboards[Constants.WHITE]);
+
+                    // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                    // Intersect with black rook and queen to get bitboard of potential pinners
+                    Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
+                    Bitboard rookMovesFromIndexWithoutPinned = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, kingIndex);
+                    Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempBlackRookAndQueenBitboard);
+
+                    // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                    while (potentialPinners != 0) {
+                        int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+
+                        // Removes the potential pinner from the bitboard
+                        potentialPinners &= (potentialPinners - 1);
+
+                        Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                        Bitboard rookMovesFromPinnerIndex = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, indexOfPotentialPinner);
+
+                        // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                        // Generates pin ray
+                        Bitboard pinnedPiece = (rookMovesFromPinnerIndex & potentiallyPinnedPiecesByRook);
+                        if (pinnedPiece != 0) {
+                            Bitboard pinRay = (rookMovesFromIndexWithoutPinned & (rookMovesFromPinnerIndex | pinner));
+
+                            int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                            int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                            // If the pinned piece is a white pawn, then generate single and double pushes along the pin ray
+
+                            if (pinnedPieceType == Constants.WHITE_PAWN) {
+                                // Removes the white pawn from the list of white pawns
+                                tempWhitePawnBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a white rook, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.WHITE_ROOK) {
+                               // Removes the white rook from the list of white rooks
+                                tempWhiteRookBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a white queen, then generate moves along the pin ray (only rook moves)
+                            else if (pinnedPieceType == Constants.WHITE_QUEEN) {
+                               // Removes the white queen from the list of white queens
+                                tempWhiteQueenBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a white knight, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
+                                // Remove it from the knight list so that no night moves will be generated later on
+                                tempWhiteKnightBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a white bishop, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.WHITE_BISHOP) {
+                                // Remove it from the bishop list so that no bishop moves will be generated later on
+                                tempWhiteBishopBitboard &= (~pinnedPiece);
+                            }
+                            // Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
+                        }
+
+                    }
+                    // Finds bishop moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
+                    Bitboard potentiallyPinnedPiecesByBishop = (Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex) & Board.arrayOfAggregateBitboards[Constants.WHITE]);
+
+                    // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                    // Intersect with black rook and queen to get bitboard of potential pinners
+                    Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
+                    Bitboard bishopMovesFromIndexWithoutPinned = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, kingIndex);
+                    potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempBlackBishopAndQueenBitboard));
+
+                    // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                    while (potentialPinners != 0) {
+                        int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+                        // Removes the potential pinner from the black rook and queen bitboard
+                        potentialPinners &= (potentialPinners - 1);
+                        Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                        Bitboard bishopMovesFromPinnerIndex = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, indexOfPotentialPinner);
+
+                        // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                        // Generates pin ray
+                        Bitboard pinnedPiece = (bishopMovesFromPinnerIndex & potentiallyPinnedPiecesByBishop);
+                        if (pinnedPiece != 0) {
+                            Bitboard pinRay = (bishopMovesFromIndexWithoutPinned & (bishopMovesFromPinnerIndex | pinner));
+
+                            int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                            int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                            // If the pinned piece is a white pawn, then generate captures, en passant captures, and capture promotions
+                            if (pinnedPieceType == Constants.WHITE_PAWN) {
+
+                               // Removes the white pawn from the list of white pawns
+                                tempWhitePawnBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a white bishop, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.WHITE_BISHOP) {
+
+                              // Removes the white bishop from the list of white rooks
+                                tempWhiteBishopBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a white queen, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.WHITE_QUEEN) {
+
+                              // Removes the white queen from the list of white queens
+                                tempWhiteQueenBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a white knight, then it isn't allowed to move
+                           else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
+                                // Remove it from the knight list so that no night moves will be generated later on
+                                tempWhiteKnightBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a white rook, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.WHITE_ROOK) {
+                                // Remove it from the bishop list so that no bishop moves will be generated later on
+                                tempWhiteRookBitboard &= (~pinnedPiece);
+                            }
+                            // Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
+                        }
+
+                    }
 
                     //Calculates the squares that pieces can move to in order to capture or block the checking piece
                     Bitboard checkingPieceBitboard = Board.getBitboardOfAttackers(Constants.WHITE, kingIndex);
@@ -1117,6 +1825,8 @@ namespace Chess_Engine {
                 Bitboard tempBlackQueenBitboard = Board.arrayOfBitboards[Constants.BLACK_QUEEN - 1];
                 Bitboard tempBlackKingBitboard = Board.arrayOfBitboards[Constants.BLACK_KING - 1];
                 Bitboard tempAllPieceBitboard = Board.arrayOfAggregateBitboards[Constants.ALL];
+                Bitboard tempWhiteRookAndQueenBitboard = (Board.arrayOfBitboards[Constants.WHITE_ROOK - 1] | Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
+                Bitboard tempWhiteBishopAndQueenBitboard = (Board.arrayOfBitboards[Constants.WHITE_BISHOP - 1] | Board.arrayOfBitboards[Constants.WHITE_QUEEN - 1]);
 
                 int kingIndex = Constants.findFirstSet(tempBlackKingBitboard);
                 Bitboard bishopMovesFromKingPosition = Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex);
@@ -1131,6 +1841,127 @@ namespace Chess_Engine {
 
                 // If the king is in check
                 if (kingCheckStatus == Constants.CHECK) {
+
+                    // Finds rook moves from the king, and intersects with black (own) pieces to get bitboard of potentially pinned pieces
+                    Bitboard potentiallyPinnedPiecesByRook = ((Board.generateRookMovesFromIndex(tempAllPieceBitboard, kingIndex)) & Board.arrayOfAggregateBitboards[Constants.BLACK]);
+
+                    // Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
+                    // Intersect with white rook and queen to get bitboard of potential pinners
+                    Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
+                    Bitboard rookMovesFromIndexWithoutPinned = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, kingIndex);
+                    Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempWhiteRookAndQueenBitboard);
+
+                    // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                    while (potentialPinners != 0) {
+                        int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+
+                        // Removes the potential pinner from the bitboard
+                        potentialPinners &= (potentialPinners - 1);
+
+                        Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                        Bitboard rookMovesFromPinnerIndex = Board.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, indexOfPotentialPinner);
+
+                        // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                        // Generates pin ray
+                        Bitboard pinnedPiece = (rookMovesFromPinnerIndex & potentiallyPinnedPiecesByRook);
+                        if (pinnedPiece != 0) {
+                            Bitboard pinRay = (rookMovesFromIndexWithoutPinned & (rookMovesFromPinnerIndex | pinner));
+
+                            int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                            int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                            // If the pinned piece is a black pawn, then generate single and double pushes along the pin ray
+
+                            if (pinnedPieceType == Constants.BLACK_PAWN) {
+
+                                // Removes the black pawn from the list of white pawns
+                                tempBlackPawnBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a black rook, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.BLACK_ROOK) {
+                              // Removes the black rook from the list of white rooks
+                                tempBlackRookBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a black queen, then generate moves along the pin ray (only rook moves)
+                            else if (pinnedPieceType == Constants.BLACK_QUEEN) {
+                               
+                                // Removes the black queen from the list of white queens
+                                tempBlackQueenBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a black knight, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
+                                // Remove it from the knight list so that no night moves will be generated later on
+                                tempBlackKnightBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a black bishop, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.BLACK_BISHOP) {
+                                // Remove it from the bishop list so that no bishop moves will be generated later on
+                                tempBlackBishopBitboard &= (~pinnedPiece);
+                            }
+                            // Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
+                        }
+
+                    }
+                    // Finds bishop moves from the king, and intersects with black (own) pieces to get bitboard of potentially pinned pieces
+                    Bitboard potentiallyPinnedPiecesByBishop = (Board.generateBishopMovesFromIndex(tempAllPieceBitboard, kingIndex) & Board.arrayOfAggregateBitboards[Constants.BLACK]);
+
+                    // Removes potentially pinned pieces from the all pieces bitboard, and generates bishop moves from king again
+                    // Intersect with white bishop and queen to get bitboard of potential pinners
+                    Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
+                    Bitboard bishopMovesFromIndexWithoutPinned = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, kingIndex);
+                    potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempWhiteBishopAndQueenBitboard));
+
+                    // Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
+                    while (potentialPinners != 0) {
+                        int indexOfPotentialPinner = Constants.findFirstSet(potentialPinners);
+                        // Removes the potential pinner from the black rook and queen bitboard
+                        potentialPinners &= (potentialPinners - 1);
+                        Bitboard pinner = (0x1UL << indexOfPotentialPinner);
+                        Bitboard bishopMovesFromPinnerIndex = Board.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, indexOfPotentialPinner);
+
+                        // If intersection with potentially pinned pieces is not zero, then piece is pinned
+                        // Generates pin ray
+                        Bitboard pinnedPiece = (bishopMovesFromPinnerIndex & potentiallyPinnedPiecesByBishop);
+                        if (pinnedPiece != 0) {
+                            Bitboard pinRay = (bishopMovesFromIndexWithoutPinned & (bishopMovesFromPinnerIndex | pinner));
+
+                            int indexOfPinnedPiece = Constants.findFirstSet(pinnedPiece);
+                            int pinnedPieceType = Board.pieceArray[indexOfPinnedPiece];
+
+                            // If the pinned piece is a black pawn, then generate captures, en passant captures, and capture promotions
+                            if (pinnedPieceType == Constants.BLACK_PAWN) {
+                                
+                               // Removes the black pawn from the list of white pawns
+                                tempBlackPawnBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a black bishop, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.BLACK_BISHOP) {
+
+                              
+                                // Removes the white bishop from the list of white rooks
+                                tempBlackBishopBitboard &= (~pinnedPiece);
+                            }
+                                // If the pinned piece is a black queen, then generate moves along the pin ray
+                            else if (pinnedPieceType == Constants.BLACK_QUEEN) {
+
+                               
+                                // Removes the blackqueen from the list of white queens
+                                tempBlackQueenBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a black knight, then it isn't allowed to move
+                           else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
+                                // Remove it from the knight list so that no night moves will be generated later on
+                                tempBlackKnightBitboard &= (~pinnedPiece);
+                            }
+                                // If pinned piece type is a black rook, then it isn't allowed to move
+                            else if (pinnedPieceType == Constants.BLACK_ROOK) {
+                                // Remove it from the bishop list so that no rook moves will be generated later on
+                                tempBlackRookBitboard &= (~pinnedPiece);
+                            }
+                            // Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
+                        }
+
+                    }
 
                     //Calculates the squares that pieces can move to in order to capture or block the checking piece
                     Bitboard checkingPieceBitboard = Board.getBitboardOfAttackers(Constants.BLACK, kingIndex);

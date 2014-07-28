@@ -602,7 +602,7 @@ namespace Chess_Engine {
         }
 
 		//prints out a move string from a move representation uint
-        private static string printMoveStringFromMoveRepresentation(int moveRepresentation) {
+        public static string printMoveStringFromMoveRepresentation(int moveRepresentation) {
             int columnOfStartSquare = (getStartSquare(moveRepresentation) % 8);
             int rowOfStartSquare = (getStartSquare(moveRepresentation) / 8);
             char fileOfStartSquare = (char)('h' - columnOfStartSquare);
@@ -730,31 +730,42 @@ namespace Chess_Engine {
 
 		public static int perft(int depth) {
 			int nodes = 0;
-		    
-		    if (depth == 1) {
+
+		    if (depth == 0) {
+		        return 1;
+		    } else if (depth == 1) {
                 int boardRestoreData = Board.encodeBoardRestoreData();
-		        int[] pseudoLegalMoveList = null;
+		        int[] pseudoLegalMoveList;
                 
 		        if (Board.isInCheck() == false) {
-		            pseudoLegalMoveList = Board.generateListOfPsdueoLegalMoves();
+		            pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves();
 		        } else {
                     pseudoLegalMoveList = Board.checkEvasionGenerator();
 		        }
 
-                
-		        int numberOfLegalMovesFromList = 0;
+                int numberOfLegalMovesFromList = 0;
 		        int index = 0;
 
                 while (pseudoLegalMoveList[index] != 0) {
                     int move = pseudoLegalMoveList[index];
-                    int sideToMove = (((move & Constants.PIECE_MOVED_MASK) >> 0) <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+                    int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+                    int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+                    int flag = ((move& Constants.FLAG_MASK) >> 16);
 
-                    Board.makeMove(move);
-                    if (Board.isMoveLegal(sideToMove) == true) {
-                        numberOfLegalMovesFromList ++;
+                    if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
+                        Board.makeMove(move);
+                        if (Board.isMoveLegal(sideToMove) == true) {
+                            numberOfLegalMovesFromList++;
+                        }
+                        Board.unmakeMove(move, boardRestoreData);
+                        index++;
                     }
-                    Board.unmakeMove(move, boardRestoreData);
-                    index ++;
+                    else {
+                        numberOfLegalMovesFromList++;
+                        index ++;
+                    }
+
+                    
                 }
                 return numberOfLegalMovesFromList;
 		    } else {
@@ -762,7 +773,7 @@ namespace Chess_Engine {
                 int[] pseudoLegalMoveList = null;
                 
                 if (Board.isInCheck() == false) {
-                    pseudoLegalMoveList = Board.generateListOfPsdueoLegalMoves();
+                    pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves(); 
                 } else {
                     pseudoLegalMoveList = Board.checkEvasionGenerator();
                 }
@@ -771,13 +782,20 @@ namespace Chess_Engine {
 
 				while (pseudoLegalMoveList[index] != 0) {
 				    int move = pseudoLegalMoveList[index];
-                    int sideToMove = (((move & Constants.PIECE_MOVED_MASK) >> 0) <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+                    int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+                    int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+                    int flag = ((move & Constants.FLAG_MASK) >> 16);
 
                     Board.makeMove(move);
-				    if (Board.isMoveLegal(sideToMove) == true) {
-                        nodes += perft(depth - 1);
+
+				    if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
+                        if (Board.isMoveLegal(sideToMove) == true) {
+                            nodes += perft(depth - 1);
+                        }    
+				    } else {
+				        nodes += perft(depth - 1);
 				    }
-					Board.unmakeMove(move, boardRestoreData);
+                    Board.unmakeMove(move, boardRestoreData);
 				    index ++;
 				}
 				return nodes;
@@ -785,28 +803,28 @@ namespace Chess_Engine {
 		}
 
 		public static void perftDivide(int depth) {
-			
-			int[] pseudoLegaloveList = Board.generateListOfPsdueoLegalMoves();
+
+		    int[] pseudoLegalMoveList;
+            if (Board.isInCheck() == false) {
+                pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves(); 
+            } else {
+                pseudoLegalMoveList = Board.checkEvasionGenerator();
+            }
 		    int index = 0;
 
 			int count = 0;
             int boardRestoreData = Board.encodeBoardRestoreData();
 
-			while (pseudoLegaloveList[index] != 0) {
+			while (pseudoLegalMoveList[index] != 0) {
 
-			    int move = pseudoLegaloveList[index];
+			    int move = pseudoLegalMoveList[index];
 				count++;
-				int flag = ((move & Constants.FLAG_MASK) >> 16);
-                int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
+				int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
 			    int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 
                 Board.makeMove(move);
 			    if (Board.isMoveLegal(sideToMove) == true) {
-			        if (depth > 1) {
-			            Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
-			        } else {
-                        Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t1"); 
-			        }
+                    Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
 			    }
 				Board.unmakeMove(move, boardRestoreData);
 			    index ++;
