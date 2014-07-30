@@ -533,17 +533,17 @@ namespace Chess_Engine {
 		 */
 
         //Checks if the king is in check and prints out the result
-        public static void kingInCheckTest(int colourOfKingToCheck) {
+        public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
 
             int indexOfKing = 0;
 
             if (colourOfKingToCheck == Constants.WHITE) {
-                indexOfKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.WHITE_KING - 1]);
+                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.WHITE_KING - 1]);
             } else if (colourOfKingToCheck == Constants.BLACK) {
-                indexOfKing = Constants.findFirstSet(Board.arrayOfBitboards[Constants.BLACK_KING - 1]);
+                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.BLACK_KING - 1]);
             }
 
-            int checkStatus = Board.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
+            int checkStatus = inputBoard.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
 
             switch (checkStatus) {
                 case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
@@ -553,9 +553,10 @@ namespace Chess_Engine {
             }
         }
         //Prints out a list of legal moves
-        public static void printLegalMove()
+        // Have to test if the move is legal or not
+        public static void printLegalMove(Board inputBoard)
         {
-            int[] moveList = Board.generateListOfPsdueoLegalMoves();
+            int[] moveList = inputBoard.generateListOfAlmostLegalMoves();
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Length);
             int moveCount = 0;
@@ -728,19 +729,19 @@ namespace Chess_Engine {
             return moveString;
         }
 
-		public static int perft(int depth) {
+		public static int perft(Board inputBoard, int depth) {
 			int nodes = 0;
 
 		    if (depth == 0) {
 		        return 1;
 		    } else if (depth == 1) {
-                int boardRestoreData = Board.encodeBoardRestoreData();
+                int boardRestoreData = inputBoard.encodeBoardRestoreData();
 		        int[] pseudoLegalMoveList;
                 
-		        if (Board.isInCheck() == false) {
-		            pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves();
+		        if (inputBoard.isInCheck() == false) {
+		            pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves();
 		        } else {
-                    pseudoLegalMoveList = Board.checkEvasionGenerator();
+                    pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 		        }
 
                 int numberOfLegalMovesFromList = 0;
@@ -753,11 +754,11 @@ namespace Chess_Engine {
                     int flag = ((move& Constants.FLAG_MASK) >> 16);
 
                     if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
-                        Board.makeMove(move);
-                        if (Board.isMoveLegal(sideToMove) == true) {
+                        inputBoard.makeMove(move);
+                        if (inputBoard.isMoveLegal(sideToMove) == true) {
                             numberOfLegalMovesFromList++;
                         }
-                        Board.unmakeMove(move, boardRestoreData);
+                        inputBoard.unmakeMove(move, boardRestoreData);
                         index++;
                     }
                     else {
@@ -769,13 +770,13 @@ namespace Chess_Engine {
                 }
                 return numberOfLegalMovesFromList;
 		    } else {
-			    int boardRestoreData = Board.encodeBoardRestoreData();
+			    int boardRestoreData = inputBoard.encodeBoardRestoreData();
                 int[] pseudoLegalMoveList = null;
                 
-                if (Board.isInCheck() == false) {
-                    pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves(); 
+                if (inputBoard.isInCheck() == false) {
+                    pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves(); 
                 } else {
-                    pseudoLegalMoveList = Board.checkEvasionGenerator();
+                    pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
                 }
                 
                 int index = 0;
@@ -786,34 +787,34 @@ namespace Chess_Engine {
                     int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
                     int flag = ((move & Constants.FLAG_MASK) >> 16);
 
-                    Board.makeMove(move);
+                    inputBoard.makeMove(move);
 
 				    if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
-                        if (Board.isMoveLegal(sideToMove) == true) {
-                            nodes += perft(depth - 1);
+                        if (inputBoard.isMoveLegal(sideToMove) == true) {
+                            nodes += perft(inputBoard, depth - 1);
                         }    
 				    } else {
-				        nodes += perft(depth - 1);
+				        nodes += perft(inputBoard, depth - 1);
 				    }
-                    Board.unmakeMove(move, boardRestoreData);
+                    inputBoard.unmakeMove(move, boardRestoreData);
 				    index ++;
 				}
 				return nodes;
 			}
 		}
 
-		public static void perftDivide(int depth) {
+		public static void perftDivide(Board inputBoard, int depth) {
 
 		    int[] pseudoLegalMoveList;
-            if (Board.isInCheck() == false) {
-                pseudoLegalMoveList = Board.generateListOfAlmostLegalMoves(); 
+            if (inputBoard.isInCheck() == false) {
+                pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves(); 
             } else {
-                pseudoLegalMoveList = Board.checkEvasionGenerator();
+                pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
             }
 		    int index = 0;
 
 			int count = 0;
-            int boardRestoreData = Board.encodeBoardRestoreData();
+            int boardRestoreData = inputBoard.encodeBoardRestoreData();
 
 			while (pseudoLegalMoveList[index] != 0) {
 
@@ -822,18 +823,18 @@ namespace Chess_Engine {
 				int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
 			    int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 
-                Board.makeMove(move);
-			    if (Board.isMoveLegal(sideToMove) == true) {
-                    Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(depth - 1));
+                inputBoard.makeMove(move);
+			    if (inputBoard.isMoveLegal(sideToMove) == true) {
+                    Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(inputBoard, depth - 1));
 			    }
-				Board.unmakeMove(move, boardRestoreData);
+				inputBoard.unmakeMove(move, boardRestoreData);
 			    index ++;
 			}
 		}
 
-	    public static void printPerft(int depth) {
+	    public static void printPerft(Board inputBoard, int depth) {
             Stopwatch s = Stopwatch.StartNew();
-            int numberOfNodes = Test.perft(depth);
+            int numberOfNodes = Test.perft(inputBoard, depth);
             string numberOfNodesString = numberOfNodes.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
             Console.WriteLine("Number Of Nodes: \t\t" + numberOfNodes.ToString(numberOfNodesString));
@@ -844,156 +845,156 @@ namespace Chess_Engine {
             Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
 	    }
          
-        public static void perftSuite1() {
-            Board.FENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-            int nodes = Test.perft(6);
+        public static void perftSuite1(Board inputBoard) {
+            inputBoard.FENToBoard("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+            int nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
             Console.WriteLine("119,060,324 (actual value)");
             Console.WriteLine("Difference: " + (119060324 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
-            nodes = Test.perft(5);
+            inputBoard.FENToBoard("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+            nodes = Test.perft(inputBoard, 5);
             Console.WriteLine(nodes);
             Console.WriteLine("193,690,690 (actual value)");
             Console.WriteLine("Difference: " + (193690690 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
-            nodes = Test.perft(7);
+            inputBoard.FENToBoard("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -");
+            nodes = Test.perft(inputBoard, 7);
             Console.WriteLine(nodes);
             Console.WriteLine("178,633,661 (actual value)");
             Console.WriteLine("Difference: " + (178633661 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
-            nodes = Test.perft(5);
+            inputBoard.FENToBoard("r3k2r/Pppp1ppp/1b3nbN/nP6/BBP1P3/q4N2/Pp1P2PP/R2Q1RK1 w kq - 0 1");
+            nodes = Test.perft(inputBoard, 5);
             Console.WriteLine(nodes);
             Console.WriteLine("15,833,292 (actual value)");
             Console.WriteLine("Difference: " + (15833292 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
-            nodes = Test.perft(5);
+            inputBoard.FENToBoard("r2q1rk1/pP1p2pp/Q4n2/bbp1p3/Np6/1B3NBn/pPPP1PPP/R3K2R b KQ - 0 1");
+            nodes = Test.perft(inputBoard, 5);
             Console.WriteLine(nodes);
             Console.WriteLine("15,833,292 (actual value)");
             Console.WriteLine("Difference: " + (15833292 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("rnbqkb1r/pp1p1ppp/2p5/4P3/2B5/8/PPP1NnPP/RNBQK2R w KQkq - 0 6");
-            nodes = Test.perft(3);
+            inputBoard.FENToBoard("rnbqkb1r/pp1p1ppp/2p5/4P3/2B5/8/PPP1NnPP/RNBQK2R w KQkq - 0 6");
+            nodes = Test.perft(inputBoard, 3);
             Console.WriteLine(nodes);
             Console.WriteLine("53,392(actual value)");
             Console.WriteLine("Difference: " + (53392 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
-            nodes = Test.perft(5);
+            inputBoard.FENToBoard("r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10");
+            nodes = Test.perft(inputBoard, 5);
             Console.WriteLine(nodes);
             Console.WriteLine("164,075,551(actual value)");
             Console.WriteLine("Difference: " + (164075551 - nodes));
             Console.WriteLine("");
 
-            Board.FENToBoard("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1");
-	        nodes = Test.perft(6);
+            inputBoard.FENToBoard("3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
 			Console.WriteLine(nodes);
 		    Console.WriteLine("1134888 (actual value)");
             Console.WriteLine("Difference: " + (1134888 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1");
-			nodes = Test.perft(6);
+            inputBoard.FENToBoard("8/8/4k3/8/2p5/8/B2P2K1/8 w - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("1015133 (actual value)");
             Console.WriteLine("Difference: " + (1015133 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("1440467 (actual value)");
             Console.WriteLine("Difference: " + (1440467 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("5k2/8/8/8/8/8/8/4K2R w K - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("5k2/8/8/8/8/8/8/4K2R w K - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("661072 (actual value)");
             Console.WriteLine("Difference: " + (661072 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("3k4/8/8/8/8/8/8/R3K3 w Q - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("803711 (actual value)");
             Console.WriteLine("Difference: " + (803711 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1");
-            nodes = Test.perft(4);
+            inputBoard.FENToBoard("r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1");
+            nodes = Test.perft(inputBoard, 4);
             Console.WriteLine(nodes);
 			Console.WriteLine("1274206 (actual value)");
             Console.WriteLine("Difference: " + (1274206 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1");
-            nodes = Test.perft(4);
+            inputBoard.FENToBoard("r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1");
+            nodes = Test.perft(inputBoard, 4);
             Console.WriteLine(nodes);
 			Console.WriteLine("1720476 (actual value)");
             Console.WriteLine("Difference: " + (1720476 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("3821001 (actual value)");
             Console.WriteLine("Difference: " + (3821001 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1");
-            nodes = Test.perft(5);
+            inputBoard.FENToBoard("8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1");
+            nodes = Test.perft(inputBoard, 5);
             Console.WriteLine(nodes);
 			Console.WriteLine("1004658 (actual value)");
             Console.WriteLine("Difference: " + (1004658 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("4k3/1P6/8/8/8/8/K7/8 w - - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("4k3/1P6/8/8/8/8/K7/8 w - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("217342 (actual value)");
             Console.WriteLine("Difference: " + (217342 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/P1k5/K7/8/8/8/8/8 w - - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("8/P1k5/K7/8/8/8/8/8 w - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("92683 (actual value)");
             Console.WriteLine("Difference: " + (92683 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("K1k5/8/P7/8/8/8/8/8 w - - 0 1");
-            nodes = Test.perft(6);
+            inputBoard.FENToBoard("K1k5/8/P7/8/8/8/8/8 w - - 0 1");
+            nodes = Test.perft(inputBoard, 6);
             Console.WriteLine(nodes);
 			Console.WriteLine("2217 (actual value)");
             Console.WriteLine("Difference: " + (2217 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/k1P5/8/1K6/8/8/8/8 w - - 0 1");
-            nodes = Test.perft(7);
+            inputBoard.FENToBoard("8/k1P5/8/1K6/8/8/8/8 w - - 0 1");
+            nodes = Test.perft(inputBoard, 7);
             Console.WriteLine(nodes);
 			Console.WriteLine("567584 (actual value)");
             Console.WriteLine("Difference: " + (567584 - nodes));
 			Console.WriteLine("");
 
-            Board.FENToBoard("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
-            nodes = Test.perft(4);
+            inputBoard.FENToBoard("8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1");
+            nodes = Test.perft(inputBoard, 4);
             Console.WriteLine(nodes);
 			Console.WriteLine("23527 (actual value)");
             Console.WriteLine("Difference: " + (23527 - nodes));
 			Console.WriteLine("");
 	    }
 
-	    public static void perftSuite2() {
+	    public static void perftSuite2(Board inputBoard) {
 	        
             //Reads the perft suite into an array one line at a time
             string[] fileInput = System.IO.File.ReadAllLines(@"C:\Users\Kevin\Desktop\chess\perftsuite.txt");
@@ -1013,9 +1014,9 @@ namespace Chess_Engine {
 
             Stopwatch s = Stopwatch.StartNew();
 	        for (int j = 0; j < fileInput.Length; j++) {
-                Board.FENToBoard(delimitedFileInput[j][0]);
+                inputBoard.FENToBoard(delimitedFileInput[j][0]);
 	            int perftDepth6ExpectedResult = Convert.ToInt32(delimitedFileInput[j][6]);
-	            int perftDepth6CalculatedResult = perft(6);
+                int perftDepth6CalculatedResult = perft(inputBoard, 6);
 
                 string perftDepth6ExpectedResultString = perftDepth6ExpectedResult.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
                 string perftDepth6CalculatedResultString = perftDepth6CalculatedResult.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";

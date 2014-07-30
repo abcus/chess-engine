@@ -8,25 +8,24 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
     
-    public static class Engine {
-        
-        public static void run() {
+    public class Engine {
+
+        public Engine() {
+            
+        }
+
+        public void run() {
+            string test = "8/PP6/8/3k4/8/8/4Kppp/7Q b - - 0 3";
             Constants.initializeConstants();
 
-            string test = "8/PP6/8/3k4/8/8/4Kppp/7Q b - - 0 3";
-	        Board.FENToBoard(Constants.FEN_RANDOM);
-	        InputOutput.drawBoard();
-	        Test.kingInCheckTest(Board.getSideToMove());
+            Board position = new Board(Constants.FEN_RANDOM);
+            InputOutput.drawBoard(position);
+	        Test.kingInCheckTest(position, position.getSideToMove());
 
-            Stopwatch s = Stopwatch.StartNew();
+            //Test.printPerft(position, 5);
 
-            
-           Console.WriteLine(Test.perft2(5));
-          
-            Console.WriteLine(s.Elapsed);
-
-            //Test.perftSuite1();
-            //Test.perftSuite2();
+            //Test.perftSuite1(position);
+            Test.perftSuite2(position);
 
 
         }
