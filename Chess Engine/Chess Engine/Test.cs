@@ -538,9 +538,9 @@ namespace Chess_Engine {
             int indexOfKing = 0;
 
             if (colourOfKingToCheck == Constants.WHITE) {
-                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.WHITE_KING - 1]);
+                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.WHITE_KING]);
             } else if (colourOfKingToCheck == Constants.BLACK) {
-                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.BLACK_KING - 1]);
+                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.BLACK_KING]);
             }
 
             int checkStatus = inputBoard.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
@@ -732,11 +732,9 @@ namespace Chess_Engine {
 		public static int perft(Board inputBoard, int depth) {
 			int nodes = 0;
 
-		    if (depth == 0) {
-		        return 1;
-		    } else if (depth == 1) {
-                int boardRestoreData = inputBoard.encodeBoardRestoreData();
-		        int[] pseudoLegalMoveList;
+		    if (depth == 1) {
+                
+                int[] pseudoLegalMoveList;
                 
 		        if (inputBoard.isInCheck() == false) {
 		            pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves();
@@ -758,10 +756,9 @@ namespace Chess_Engine {
                         if (inputBoard.isMoveLegal(sideToMove) == true) {
                             numberOfLegalMovesFromList++;
                         }
-                        inputBoard.unmakeMove(move, boardRestoreData);
+                        inputBoard.unmakeMove(move);
                         index++;
-                    }
-                    else {
+                    } else {
                         numberOfLegalMovesFromList++;
                         index ++;
                     }
@@ -770,8 +767,8 @@ namespace Chess_Engine {
                 }
                 return numberOfLegalMovesFromList;
 		    } else {
-			    int boardRestoreData = inputBoard.encodeBoardRestoreData();
-                int[] pseudoLegalMoveList = null;
+                
+			    int[] pseudoLegalMoveList = null;
                 
                 if (inputBoard.isInCheck() == false) {
                     pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves(); 
@@ -788,7 +785,7 @@ namespace Chess_Engine {
                     int flag = ((move & Constants.FLAG_MASK) >> 16);
 
                     inputBoard.makeMove(move);
-
+				    
 				    if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
                         if (inputBoard.isMoveLegal(sideToMove) == true) {
                             nodes += perft(inputBoard, depth - 1);
@@ -796,13 +793,13 @@ namespace Chess_Engine {
 				    } else {
 				        nodes += perft(inputBoard, depth - 1);
 				    }
-                    inputBoard.unmakeMove(move, boardRestoreData);
+                    inputBoard.unmakeMove(move);
 				    index ++;
 				}
 				return nodes;
 			}
 		}
-
+        /*
 		public static void perftDivide(Board inputBoard, int depth) {
 
 		    int[] pseudoLegalMoveList;
@@ -831,7 +828,7 @@ namespace Chess_Engine {
 			    index ++;
 			}
 		}
-
+        */
 	    public static void printPerft(Board inputBoard, int depth) {
             Stopwatch s = Stopwatch.StartNew();
             int numberOfNodes = Test.perft(inputBoard, depth);

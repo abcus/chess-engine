@@ -7,4 +7,8 @@ using System.Threading.Tasks;
 namespace Chess_Engine {
     class Search {
     }
+
+    class MoveSorter {
+        
+    }
 }

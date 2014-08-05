@@ -32,19 +32,19 @@ namespace Chess_Engine {
             //gets the bitboards from the board object
             ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
 
-            ulong wPawn = arrayOfBitboards[0];
-            ulong wKnight = arrayOfBitboards[1];
-            ulong wBishop = arrayOfBitboards[2];
-            ulong wRook = arrayOfBitboards[3];
-            ulong wQueen = arrayOfBitboards[4];
-            ulong wKing = arrayOfBitboards[5];
+            ulong wPawn = arrayOfBitboards[1];
+            ulong wKnight = arrayOfBitboards[2];
+            ulong wBishop = arrayOfBitboards[3];
+            ulong wRook = arrayOfBitboards[4];
+            ulong wQueen = arrayOfBitboards[5];
+            ulong wKing = arrayOfBitboards[6];
 
-            ulong bPawn = arrayOfBitboards[6];
-            ulong bKnight = arrayOfBitboards[7];
-            ulong bBishop = arrayOfBitboards[8];
-            ulong bRook = arrayOfBitboards[9];
-            ulong bQueen = arrayOfBitboards[10];
-            ulong bKing = arrayOfBitboards[11];
+            ulong bPawn = arrayOfBitboards[7];
+            ulong bKnight = arrayOfBitboards[8];
+            ulong bBishop = arrayOfBitboards[9];
+            ulong bRook = arrayOfBitboards[10];
+            ulong bQueen = arrayOfBitboards[11];
+            ulong bKing = arrayOfBitboards[12];
 
             //creates a new 8x8 array of String and sets it all to spaces
             string[,] chessBoard = new string[8, 8];

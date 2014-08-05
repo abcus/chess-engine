@@ -16,18 +16,14 @@ namespace Chess_Engine {
         
         static void Main(string[] args) {
 
-            Console.BufferHeight = 2000 ;
+            var stream = Console.OpenStandardInput(8196);
+            Console.SetIn(new StreamReader(stream, Encoding.ASCII));
 
-            //Stream inputStream = Console.OpenStandardInput(8192);
-            //Console.SetIn(new StreamReader(inputStream, Encoding.ASCII, false, 8192));
-
+            CancellationTokenSource cts = new CancellationTokenSource();
+            
             Engine e = new Engine();
-            System.Threading.Thread t = new System.Threading.Thread(e.run);
-            t.Start();
-
-        }
-
+            e.run();
+        } 
     }
-
 }
 

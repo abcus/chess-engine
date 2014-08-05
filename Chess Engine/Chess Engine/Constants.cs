@@ -8,6 +8,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
+using Value = System.Int32;
+
 namespace Chess_Engine {
     
     internal abstract class Constants {
@@ -405,15 +407,278 @@ namespace Chess_Engine {
         //Starts at H1 and goes to A8
         public static ulong[][] bishopMoves = new ulong[64][];
 
-        
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        // EVALUATION CONSTANTS
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
 
+        // Values of draws, stalemates, and checkmates
+        public const Value DRAW = 0;
+        public const Value STALEMATE = 0;
+        public const Value CHECKMATE = 32000;
+
+        public const Value KING_VALUE = 10000;
+
+        // Material value for each piece in the middlegame
+        public const Value PAWN_VALUE_MG = 198;
+        public const Value KNIGHT_VALUE_MG = 817;
+        public const Value BISHOP_VALUE_MG = 836;
+        public const Value ROOK_VALUE_MG = 1270;
+        public const Value QUEEN_VALUE_MG = 2521;
+        
+        // Material value for each piece in the endgame
+        public const Value PAWN_VALUE_EG = 258;
+        public const Value KNIGHT_VALUE_EG = 846;
+        public const Value BISHOP_VALUE_EG = 857;
+        public const Value ROOK_VALUE_EG = 1278;
+        public const Value QUEEN_VALUE_EG = 2558;
+
+        // Array of piece values [piece]
+        public static Value[] arrayOfPieceValuesMG = new Value[13];
+        public static Value[] arrayOfPieceValuesEG = new Value[13];
+
+        // White piece square tables for the middlegame 
+        public static int[] wPawnMidgamePSQ = {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            -20, 0, 0, 0, 0, 0, 0, -20,
+            -20, 0, 10, 20, 20, 10, 0, -20,
+            -20, 0, 20, 40, 40, 20, 0, -20,
+            -20, 0, 10, 20, 20, 10, 0, -20,
+            -20, 0, 0, 0, 0, 0, 0, -20,
+            -20, 0, 0, 0, 0, 0, 0, -20,
+            0, 0, 0, 0, 0, 0, 0, 0,
+        };
+
+        public static int[] wKnightMidgamePSQ = {
+            -144, -109, -85, -73, -73, -85, -109, -144,
+            -88, -43, -19, -7, -7, -19, -43, -88,
+            -69, -24, 0, 12, 12, 0, -24, -69,
+            -28, 17, 41, 53, 53, 41, 17, -28,
+            -30, 15, 39, 51, 51, 39, 15, -30,
+            -10, 35, 59, 71, 71, 59, 35, -10,
+            -64, -19, 5, 17, 17, 5, -19, -64,
+            -200, -65, -41, -29, -29, -41, -65, -200,
+        };
+
+        public static int[] wBishopMidgamePSQ = {
+            -54, -27, -34, -43, -43, -34, -27, -54,
+            -29, 8, 1, -8, -8, 1, 8, -29,
+            -20, 17, 10, 1, 1, 10, 17, -20,
+            -19, 18, 11, 2, 2, 11, 18, -19,
+            -22, 15, 8, -1, -1, 8, 15, -22,
+            -28, 9, 2, -7, -7, 2, 9, -28,
+            -32, 5, -2, -11, -11, -2, 5, -32,
+            -49, -22, -29, -38, -38, -29, -22, -49
+        };
+
+        public static int[] wRookMidgamePSQ = {
+            -22, -17, -12, -8, -8, -12, -17, -22,
+            -22, -7, -2, 2, 2, -2, -7, -22,
+            -22, -7, -2, 2, 2, -2, -7, -22,
+            -22, -7, -2, 2, 2, -2, -7, -22,
+            -22, -7, -2, 2, 2, -2, -7, -22,
+            -22, -7, -2, 2, 2, -2, -7, -22,
+            -11, 4, 9, 13, 13, 9, 4, -11,
+            -22, -17, -12, -8, -8, -12, -17, -22
+        };
+
+        public static int[] wQueenMidgamePSQ = {
+            -2, -2, -2, -2, -2, -2, -2, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, 8, 8, 8, 8, 8, 8, -2,
+            -2, -2, -2, -2, -2, -2, -2, -2
+        };
+
+        public static int[] wKingMidgamePSQ = {
+            298, 332, 273, 225, 225, 273, 332, 298,
+            287, 321, 262, 214, 214, 262, 321, 287,
+            224, 258, 199, 151, 151, 199, 258, 224,
+            196, 230, 171, 123, 123, 171, 230, 196,
+            173, 207, 148, 100, 100, 148, 207, 173,
+            146, 180, 121, 73, 73, 121, 180, 146,
+            119, 153, 94, 46, 46, 94, 153, 119,
+            98, 132, 73, 25, 25, 73, 132, 98
+        };
+
+        // White piece square values for the endgame
+        public static int[] wPawnEndgamePSQ = {
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
+
+        public static int[] wKnightEndgamePSQ = {
+            -98, -83, -51, -16, -16, -51, -83, -98,
+            -68, -53, -21, 14, 14, -21, -53, -68,
+            -53, -38, -6, 29, 29, -6, -38, -53,
+            -42, -27, 5, 40, 40, 5, -27, -42,
+            -42, -27, 5, 40, 40, 5, -27, -42,
+            -53, -38, -6, 29, 29, -6, -38, -53,
+            -68, -53, -21, 14, 14, -21, -53, -68,
+            -98, -83, -51, -16, -16, -51, -83, -98
+        };
+
+        public static int[] wBishopEndgamePSQ = {
+            -65, -42, -44, -26, -26, -44, -42, -65,
+            -43, -20, -22, -4, -4, -22, -20, -43,
+            -33, -10, -12, 6, 6, -12, -10, -33,
+            -35, -12, -14, 4, 4, -14, -12, -35,
+            -35, -12, -14, 4, 4, -14, -12, -35,
+            -33, -10, -12, 6, 6, -12, -10, -33,
+            -43, -20, -22, -4, -4, -22, -20, -43,
+            -65, -42, -44, -26, -26, -44, -42, -6530
+        };
+
+        public static int[] wRookEndgamePSQ = {
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3
+        };
+
+        public static int[] wQueenEndgamePSQ = {
+            -80, -54, -42, -30, -30, -42, -54, -80,
+            -54, -30, -18, -6, -6, -18, -30, -54,
+            -42, -18, -6, 6, 6, -6, -18, -42,
+            -30, -6, 6, 18, 18, 6, -6, -30,
+            -30, -6, 6, 18, 18, 6, -6, -30,
+            -42, -18, -6, 6, 6, -6, -18, -42,
+            -54, -30, -18, -6, -6, -18, -30, -54,
+            -80, -54, -42, -30, -30, -42, -54, -80
+        };
+
+        public static int[] wKingEndgamePSQ = {
+            27, 81, 108, 116, 116, 108, 81, 27,
+            74, 128, 155, 163, 163, 155, 128, 74,
+            111, 165, 192, 200, 200, 192, 165, 111,
+            135, 189, 216, 224, 224, 216, 189, 135,
+            135, 189, 216, 224, 224, 216, 189, 135,
+            111, 165, 192, 200, 200, 192, 165, 111,
+            74, 128, 155, 163, 163, 155, 128, 74,
+            27, 81, 108, 116, 116, 108, 81, 27
+        };
+
+        // Black piece square tables for the middlegame
+        public static int[] bpawnMidgamePSQ = new int[64];
+        public static int[] bKnightMidgamePSQ = new int[64];
+        public static int[] bBishopMidgamePSQ = new int[64];
+        public static int[] bRookMidgamePSQ = new int[64];
+        public static int[] bQueenMidgamePSQ = new int[64];
+        public static int[] bKingMidgamePSQ = new int[64];
+
+        // Black piece square tables for the endgame
+        public static int[] bPawnEndgamePSQ = new int[64];
+        public static int[] bKnightEndgamePSQ = new int[64];
+        public static int[] bBishopEndgamePSQ = new int[64];
+        public static int[] bRookEndgamePSQ = new int[64];
+        public static int[] bQueenEndgamePSQ = new int[64];
+        public static int[] bKingEndgamePSQ = new int[64];
+
+        // Array of piece square tables [piece][square]
+        public static int[][] arrayOfPSQMidgame = new int[13][];
+        public static int[][] arrayOfPSQEndgame = new int[13][];
+
+        // Relative contribution that each piece makes when determining game phase
+        public const int pawnPhase = 0;
+        public const int knightPhase = 1;
+        public const int bishopPhase = 1;
+        public const int rookPhase = 2;
+        public const int queenPhase = 4;
+
+        public const int totalPhase = 16 * pawnPhase + 4 * knightPhase + 4 * bishopPhase + 4 * rookPhase + 2 * queenPhase;
+
+        // Initializes the evaluation constants
+        public static void initEvalConstants() {
+
+            arrayOfPieceValuesMG[1] = PAWN_VALUE_MG;
+            arrayOfPieceValuesMG[2] = KNIGHT_VALUE_MG;
+            arrayOfPieceValuesMG[3] = BISHOP_VALUE_MG;
+            arrayOfPieceValuesMG[4] = ROOK_VALUE_MG;
+            arrayOfPieceValuesMG[5] = QUEEN_VALUE_MG;
+            arrayOfPieceValuesMG[7] = PAWN_VALUE_MG;
+            arrayOfPieceValuesMG[8] = KNIGHT_VALUE_MG;
+            arrayOfPieceValuesMG[9] = BISHOP_VALUE_MG;
+            arrayOfPieceValuesMG[10] = ROOK_VALUE_MG;
+            arrayOfPieceValuesMG[11] = QUEEN_VALUE_MG;
+            
+            arrayOfPieceValuesEG[1] = PAWN_VALUE_EG;
+            arrayOfPieceValuesEG[2] = KNIGHT_VALUE_EG;
+            arrayOfPieceValuesEG[3] = BISHOP_VALUE_EG;
+            arrayOfPieceValuesEG[4] = ROOK_VALUE_EG;
+            arrayOfPieceValuesEG[5] = QUEEN_VALUE_EG;
+            arrayOfPieceValuesEG[7] = PAWN_VALUE_EG;
+            arrayOfPieceValuesEG[8] = KNIGHT_VALUE_EG;
+            arrayOfPieceValuesEG[9] = BISHOP_VALUE_EG;
+            arrayOfPieceValuesEG[10] = ROOK_VALUE_EG; 
+            arrayOfPieceValuesEG[11] = QUEEN_VALUE_EG;
+            
+            // Initializes the black piece square tables by flipping the corresponding white table about the midpoint
+            for (int i = 0; i < 64; i += 8) {
+                for (int j = 0; j < 8; j++) {
+                    bpawnMidgamePSQ[i + j] = wPawnMidgamePSQ[56 - i + j];
+                    bKnightMidgamePSQ[i + j] = wKnightMidgamePSQ[56 - i + j];
+                    bBishopMidgamePSQ[i + j] = wBishopMidgamePSQ[56 - i + j];
+                    bRookMidgamePSQ[i + j] = wRookMidgamePSQ[56 - i + j];
+                    bQueenMidgamePSQ[i + j] = wQueenMidgamePSQ[56 - i + j];
+                    bKingMidgamePSQ[i + j] = wKingMidgamePSQ[56 - i + j];
+                    bPawnEndgamePSQ[i + j] = wPawnEndgamePSQ[56 - i + j];
+                    bKnightEndgamePSQ[i + j] = wKnightEndgamePSQ[56 - i + j];
+                    bBishopEndgamePSQ[i + j] = wBishopEndgamePSQ[56 - i + j];
+                    bRookEndgamePSQ[i + j] = wRookEndgamePSQ[56 - i + j];
+                    bQueenEndgamePSQ[i + j] = wQueenEndgamePSQ[56 - i + j];
+                    bKingEndgamePSQ[i + j] = wKingEndgamePSQ[56 - i + j];
+                }
+            }
+            arrayOfPSQMidgame[1] = wPawnMidgamePSQ;
+            arrayOfPSQMidgame[2] = wKnightMidgamePSQ;
+            arrayOfPSQMidgame[3] = wBishopMidgamePSQ;
+            arrayOfPSQMidgame[4] = wRookMidgamePSQ;
+            arrayOfPSQMidgame[5] = wQueenMidgamePSQ;
+            arrayOfPSQMidgame[6] = wKingMidgamePSQ;
+
+            arrayOfPSQMidgame[7] = bpawnMidgamePSQ;
+            arrayOfPSQMidgame[8] = bKnightMidgamePSQ;
+            arrayOfPSQMidgame[9] = bBishopMidgamePSQ;
+            arrayOfPSQMidgame[10] = bRookMidgamePSQ;
+            arrayOfPSQMidgame[11] = bQueenMidgamePSQ;
+            arrayOfPSQMidgame[12] = bKingMidgamePSQ;
+
+            arrayOfPSQEndgame[1] = wPawnEndgamePSQ;
+            arrayOfPSQEndgame[2] = wKnightEndgamePSQ;
+            arrayOfPSQEndgame[3] = wBishopEndgamePSQ;
+            arrayOfPSQEndgame[4] = wRookEndgamePSQ;
+            arrayOfPSQEndgame[5] = wQueenEndgamePSQ;
+            arrayOfPSQEndgame[6] = wKingEndgamePSQ;
+
+            arrayOfPSQEndgame[7] = bPawnEndgamePSQ;
+            arrayOfPSQEndgame[8] = bKnightEndgamePSQ;
+            arrayOfPSQEndgame[9] = bBishopEndgamePSQ;
+            arrayOfPSQEndgame[10] = bRookEndgamePSQ;
+            arrayOfPSQEndgame[11] = bQueenEndgamePSQ;
+            arrayOfPSQEndgame[12] = bKingEndgamePSQ;
+
+        }
 
         //METHODS-------------------------------------------------------------------------------------
 
         //INITIALIZATION METHODS-----------------------------------------------------------------------
 
         //Populates the occupancy variation arrays and piece move arrays
-        public static void initializeConstants() {
+        public static void init() {
             populateRookOccupancyVariation(rookOccupancyVariations);
             populateBishopOccupancyVariation(bishopOccupancyVariations);
             populateRookMove(rookMoves);
@@ -620,27 +885,31 @@ namespace Chess_Engine {
             }
         }
 
-        //BIT MANIPULATION METHODS----------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //BIT MANIPULATION METHODS
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
 
-        //gets arraylist containing index of all 1s
+        // returns array list containing the indices of all 1s
         public static List<int> bitScan(ulong bitboard) {
-
             List<int> indices = new List<int>(28);
-            
             while (bitboard != 0) {
                 indices.Add(index64[((bitboard ^ (bitboard - 1))*deBruijn64) >> 58]);
+                
+                // removes the least significant bit
                 bitboard &= bitboard - 1;
             }
             return indices;
         }
 
-        //Gets the index of the first 1
+        // returns the index of the least significant 1
         public static int findFirstSet(ulong bitboard) {
-            return index64[((bitboard ^ (bitboard - 1))*deBruijn64) >> 58];
+            return index64[((bitboard ^ (bitboard - 1)) * deBruijn64) >> 58];
         }
 
-        //Finds the popcount (number of 1s in the bit)
-        //This method was copied directly from stockfish
+        // returns the popcount
+        // copied from stockfish
         public static int popcount(ulong bitboard) {
             bitboard -= (bitboard >> 1) & 0x5555555555555555UL;
             bitboard = ((bitboard >> 2) & 0x3333333333333333UL) + (bitboard & 0x3333333333333333UL);
