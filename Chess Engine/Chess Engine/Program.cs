@@ -19,8 +19,6 @@ namespace Chess_Engine {
             var stream = Console.OpenStandardInput(8196);
             Console.SetIn(new StreamReader(stream, Encoding.ASCII));
 
-            CancellationTokenSource cts = new CancellationTokenSource();
-            
             Engine e = new Engine();
             e.run();
         } 

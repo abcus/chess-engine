@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Bitboard = System.UInt64;
@@ -615,7 +616,6 @@ namespace Chess_Engine {
             string destinationSquare = (fileOfDestinationSquare + (1 + rowOfDestinationSquare).ToString() + " ");
 
             string moveString = "";
-            moveString += (startSquare + destinationSquare);
             
             if (getPieceMoved(moveRepresentation) == Constants.WHITE_PAWN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE || getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
@@ -1027,5 +1027,6 @@ namespace Chess_Engine {
             string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
             Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
         }
+
     }
 }

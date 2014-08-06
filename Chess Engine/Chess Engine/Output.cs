@@ -7,24 +7,7 @@ using System.Threading.Tasks;
 
 namespace Chess_Engine {
     
-    public sealed class InputOutput {
-
-        //CONSTRUCTOR----------------------------------------------------------------------------------------
-
-        public InputOutput() {
-            
-        }
-
-        //INPUT METHODS--------------------------------------------------------------------------------------
-
-        //Accepts an FEN string
-        public static string getFENString() {
-            Console.WriteLine("Enter an FEN String:");
-            string FENString = Console.ReadLine();
-            return FENString;
-        }
-
-        //OUTPUT METHODS---------------------------------------------------------------------------------------
+    public static class Output {
 
         //Draws the board on the console
         public static void drawBoard(Board inputBoard) {
@@ -149,8 +132,8 @@ namespace Chess_Engine {
 
             Console.WriteLine("Repetitions of this position: " + moveData[2]);
             Console.WriteLine("");
+
+            Test.kingInCheckTest(inputBoard, inputBoard.getSideToMove());
         }
-
-
     }
 }

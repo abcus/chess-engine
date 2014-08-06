@@ -11,22 +11,20 @@ namespace Chess_Engine {
     
     public class Engine {
 
-        public Engine() {
-            
+        // Constructor
+        public Engine() {  
         }
 
+        // Engine's run method
         public void run () {
-            
-            string test = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
             Constants.init();
             Constants.initEvalConstants();
 
-            Board position = new Board(Constants.FEN_RANDOM);
-            InputOutput.drawBoard(position);
-            Test.kingInCheckTest(position, position.getSideToMove());
+            Console.WriteLine("Spark v0.343 by John");
 
             while (true) {
-                if (UCIInput.processGUIMessages(position) == false) {
+                if (!UCIInput.processGUIMessages(50)) {
                     break;
                 }
             }
