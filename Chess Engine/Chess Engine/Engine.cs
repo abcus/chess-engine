@@ -18,13 +18,11 @@ namespace Chess_Engine {
         // Engine's run method
         public void run () {
 
-            Constants.init();
+            Constants.initConstants();
             Constants.initEvalConstants();
 
-            Console.WriteLine("Spark v0.343 by John");
-
-            while (true) {
-                if (!UCIInput.processGUIMessages(50)) {
+			while (true) {
+                if (!UCI_IO.processGUIMessages(50)) {
                     break;
                 }
             }

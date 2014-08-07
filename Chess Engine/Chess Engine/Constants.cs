@@ -417,7 +417,7 @@ namespace Chess_Engine {
         // Values of draws, stalemates, and checkmates
         public const Value DRAW = 0;
         public const Value STALEMATE = 0;
-        public const Value CHECKMATE = 32000;
+        public const Value CHECKMATE = LARGE_INT/2;
 
         public const Value KING_VALUE = 10000;
 
@@ -602,6 +602,8 @@ namespace Chess_Engine {
 
         public const int totalPhase = 16 * pawnPhase + 4 * knightPhase + 4 * bishopPhase + 4 * rookPhase + 2 * queenPhase;
 
+	    public const int LARGE_INT = Int32.MaxValue - 1;
+
         // Initializes the evaluation constants
         public static void initEvalConstants() {
 
@@ -679,7 +681,7 @@ namespace Chess_Engine {
         //INITIALIZATION METHODS-----------------------------------------------------------------------
 
         //Populates the occupancy variation arrays and piece move arrays
-        public static void init() {
+        public static void initConstants() {
             populateRookOccupancyVariation(rookOccupancyVariations);
             populateBishopOccupancyVariation(bishopOccupancyVariations);
             populateRookMove(rookMoves);

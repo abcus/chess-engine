@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,49 +7,94 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chess_Engine {
-    public class Search {
+    public static class Search {
 
-        static Random rnd = new Random();
+        private static Board cloneBoard;
 
-        public static int alphaBetaRoot(Board inputBoard, CancellationToken ct) {
-            
-            int[] pseudoLegalMoveList;
-            List<int> legalMoveList = new List<int>();
-    
-		    if (inputBoard.isInCheck() == false) {
-		        pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves();
-		    } else {
-                pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
+		public static moveAndEval runSearch (Board inputBoard, CancellationToken searchStopToken) {
+			
+			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
+			// Clones the inputboard and operates on the clone so that this problem won't occur
+			cloneBoard = new Board(inputBoard);
+			moveAndEval result = negaMaxRoot(cloneBoard, 6);
+			return result;
+	    }
+
+
+	    public static moveAndEval negaMaxRoot(Board inputBoard, int depth) {
+		    int alpha = -Constants.LARGE_INT;
+		    int beta = Constants.LARGE_INT;
+
+		    List<int> bestMoves = new List<int>();
+		    List<int> legalMoves = inputBoard.getLegalMove();
+
+			while (legalMoves.Count != 0) {
+			    inputBoard.makeMove(legalMoves[0]);
+				int boardScore = -negaMax(inputBoard, depth - 1, -beta, -alpha);
+				
+				inputBoard.unmakeMove(legalMoves[0]);
+				
+			    if (boardScore > alpha) {
+				    alpha = boardScore;
+				    bestMoves.Clear();
+				    bestMoves.Add(legalMoves[0]);
+			    }
+			    else if (boardScore == alpha) {
+				    bestMoves.Add(legalMoves[0]);
+			    }
+			    legalMoves.RemoveAt(0);
 		    }
-            
-            foreach (int move in pseudoLegalMoveList) {
-                int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
-                int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-                int flag = ((move & Constants.FLAG_MASK) >> 16);
+		    moveAndEval result = new moveAndEval();
+		    result.evaluationScore = alpha;
+		    result.move = bestMoves[0];
+		    return result;
+	    }
 
-                if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING ||
-                    pieceMoved == Constants.BLACK_KING) {
-                    inputBoard.makeMove(move);
-                    if (inputBoard.isMoveLegal(sideToMove) == true) {
-                        legalMoveList.Add(move);
-                    }
-                    inputBoard.unmakeMove(move);
-                } else {
-                    legalMoveList.Add(move);    
-                }
-            }
 
-            return legalMoveList[0];
-            
-            while (!ct.IsCancellationRequested) {
-               
-            }
-            
-        }
+	    public static int negaMax(Board inputBoard, int depth, int alpha, int beta) {
+		    
+		    if (depth == 0) {
+			    return Evaluate.evaluationFunction(inputBoard);
+		    } else {
+				List<int> legalMoves = inputBoard.getLegalMove();
 
+			    if (legalMoves.Count == 0) {
+				    if (inputBoard.isInCheck() == true) {
+					    return -Constants.CHECKMATE;
+				    } else {
+					    return Constants.STALEMATE;
+				    }
+			    }
+
+			    while (legalMoves.Count != 0) {
+				    inputBoard.makeMove(legalMoves[0]);
+				    int boardScore = -negaMax(inputBoard, depth - 1, -beta, -alpha);
+					inputBoard.unmakeMove(legalMoves[0]);
+				    if (boardScore >= beta) {
+					    return beta;
+				    }
+				    if (boardScore > alpha) {
+					    alpha = boardScore;
+				    }
+					legalMoves.RemoveAt(0);
+			    }
+			    return alpha;
+		    }
+	    }
     }
 
-    class MoveSorter {
-        
-    }
+	
+
+		
+			
+	    
+
+	 
+
+
+	public sealed class moveAndEval {
+		internal int move;
+		internal int evaluationScore;
+	}
+    
 }

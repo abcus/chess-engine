@@ -4,7 +4,11 @@ using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net;
+using System.Net.NetworkInformation;
+using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Bitboard = System.UInt64;
@@ -53,25 +57,10 @@ namespace Chess_Engine {
 
         //bitboards and array to hold bitboards
         internal Bitboard[] arrayOfBitboards = new Bitboard[13];
-        internal Bitboard wPawn = 0x0UL;
-        internal Bitboard wKnight = 0x0UL;
-        internal Bitboard wBishop = 0x0UL;
-        internal Bitboard wRook = 0x0UL;
-        internal Bitboard wQueen = 0x0UL;
-        internal Bitboard wKing = 0x0UL;
-        internal Bitboard bPawn = 0x0UL;
-        internal Bitboard bKnight = 0x0UL;
-        internal Bitboard bBishop = 0x0UL;
-        internal Bitboard bRook = 0x0UL;
-        internal Bitboard bQueen = 0x0UL;
-        internal Bitboard bKing = 0x0UL;
-
+        
         //aggregate bitboards and array to hold aggregate bitboards
         internal Bitboard[] arrayOfAggregateBitboards = new Bitboard[3];
-        internal Bitboard whitePieces = 0x0UL;
-        internal Bitboard blackPieces = 0x0UL;
-        internal Bitboard allPieces = 0x0UL;
-
+        
         //piece array that stores the pieces as integers in a 64-element array
         //Index 0 is H1, and element 63 is A8
         internal int[] pieceArray = new int[64];
@@ -105,128 +94,56 @@ namespace Chess_Engine {
         internal int[] midgamePSQ = new int[13];
         internal int[] endgamePSQ = new int[13];
         
-        internal int blackInCheckmate = 0;
-        internal int whiteInCheckmate = 0;
-        internal int stalemate = 0;
-
-        internal bool endGame = false;
-
-        internal uint lastMove = 0x0;
-
-        internal int evaluationFunctionValue = 0;
-
         internal ulong zobristKey = 0x0UL;
 
-        private Stack<stateVariables> restoreDataStack = new Stack<stateVariables>(20); 
+        private Stack<stateVariables> restoreDataStack = new Stack<stateVariables>(20);
 
-        //Constructor
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        // CONSTRUCTORS
+        //--------------------------------------------------------------------------------------------------------------------------------------------
+        //--------------------------------------------------------------------------------------------------------------------------------------------
 
+        // Main constructor
         public Board(string FENString) {
             this.FENToBoard(FENString);
             this.materialCount();
             this.pieceSquareValue();
         }
 
-        private void materialCount() {
-            this.pieceCount[Constants.WHITE_PAWN] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_PAWN]);
-            this.pieceCount[Constants.WHITE_KNIGHT] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_KNIGHT]);
-            this.pieceCount[Constants.WHITE_BISHOP] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_BISHOP]);
-            this.pieceCount[Constants.WHITE_ROOK] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_ROOK]);
-            this.pieceCount[Constants.WHITE_QUEEN] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_QUEEN]);
-            this.pieceCount[Constants.WHITE_KING] = Constants.popcount(this.arrayOfBitboards[Constants.WHITE_KING]);
+        // Copy constructor
+        // Stack isn't copied because it will always be empty at the time of copying (so deep copying would be a waste)
+        public Board(Board inputBoard) {
+            Array.Copy(inputBoard.arrayOfBitboards, this.arrayOfBitboards, inputBoard.arrayOfBitboards.Length);
+            Array.Copy(inputBoard.arrayOfAggregateBitboards, this.arrayOfAggregateBitboards, inputBoard.arrayOfAggregateBitboards.Length);
+            Array.Copy(inputBoard.pieceArray, this.pieceArray, inputBoard.pieceArray.Length);
 
-            this.pieceCount[Constants.BLACK_PAWN] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_PAWN]);
-            this.pieceCount[Constants.BLACK_KNIGHT] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_KNIGHT]);
-            this.pieceCount[Constants.BLACK_BISHOP] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_BISHOP]);
-            this.pieceCount[Constants.BLACK_ROOK] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_ROOK]);
-            this.pieceCount[Constants.BLACK_QUEEN] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_QUEEN]);
-            this.pieceCount[Constants.BLACK_KING] = Constants.popcount(this.arrayOfBitboards[Constants.BLACK_KING]);
+            this.sideToMove = inputBoard.sideToMove;
 
-            this.whiteMidgameMaterial += (this.pieceCount[Constants.WHITE_PAWN]) * Constants.PAWN_VALUE_MG
-                                         + (this.pieceCount[Constants.WHITE_KNIGHT]) * Constants.KNIGHT_VALUE_MG
-                                         + (this.pieceCount[Constants.WHITE_BISHOP]) * Constants.BISHOP_VALUE_MG
-                                         + (this.pieceCount[Constants.WHITE_ROOK]) * Constants.ROOK_VALUE_MG
-                                         + (this.pieceCount[Constants.WHITE_QUEEN]) * Constants.QUEEN_VALUE_MG;
+            this.whiteShortCastleRights = inputBoard.whiteShortCastleRights;
+            this.whiteLongCastleRights = inputBoard.whiteLongCastleRights;
+            this.blackShortCastleRights = inputBoard.blackShortCastleRights;
+            this.blackLongCastleRights = inputBoard.blackLongCastleRights;
 
-            this.blackMidgameMaterial += (this.pieceCount[Constants.BLACK_PAWN]) * Constants.PAWN_VALUE_MG
-                                         + (this.pieceCount[Constants.BLACK_KNIGHT]) * Constants.KNIGHT_VALUE_MG
-                                         + (this.pieceCount[Constants.BLACK_BISHOP]) * Constants.BISHOP_VALUE_MG
-                                         + (this.pieceCount[Constants.BLACK_ROOK]) * Constants.ROOK_VALUE_MG
-                                         + (this.pieceCount[Constants.BLACK_QUEEN]) * Constants.QUEEN_VALUE_MG;
+            this.enPassantSquare = inputBoard.enPassantSquare;
 
-            this.whiteEndgameMaterial += (this.pieceCount[Constants.WHITE_PAWN])*Constants.PAWN_VALUE_EG
-                                         + (this.pieceCount[Constants.WHITE_KNIGHT])*Constants.KNIGHT_VALUE_EG
-                                         + (this.pieceCount[Constants.WHITE_BISHOP])*Constants.BISHOP_VALUE_EG
-                                         + (this.pieceCount[Constants.WHITE_ROOK])*Constants.ROOK_VALUE_EG
-                                         + (this.pieceCount[Constants.WHITE_QUEEN])*Constants.QUEEN_VALUE_EG;
+            this.halfmoveNumber = inputBoard.halfmoveNumber;
+            this.fiftyMoveRule = inputBoard.fiftyMoveRule;
+            this.repetionOfPosition = inputBoard.repetionOfPosition;
 
-            this.blackEndgameMaterial += (this.pieceCount[Constants.BLACK_PAWN])*Constants.PAWN_VALUE_EG
-                                         + (this.pieceCount[Constants.BLACK_KNIGHT])*Constants.KNIGHT_VALUE_EG
-                                         + (this.pieceCount[Constants.BLACK_BISHOP])*Constants.BISHOP_VALUE_EG
-                                         + (this.pieceCount[Constants.BLACK_ROOK])*Constants.ROOK_VALUE_EG
-                                         + (this.pieceCount[Constants.BLACK_QUEEN])*Constants.QUEEN_VALUE_EG;
+            Array.Copy(inputBoard.pieceCount, this.pieceCount, inputBoard.pieceCount.Length);
 
-            for (int i = 0; i < 64; i++) {
-                switch (pieceArray[i]) {
-                    case Constants.WHITE_PAWN:
-                        this.midgamePSQ[Constants.WHITE_PAWN] += Constants.arrayOfPSQMidgame[Constants.WHITE_PAWN][i];
-                        this.endgamePSQ[Constants.WHITE_PAWN] += Constants.arrayOfPSQEndgame[Constants.WHITE_PAWN][i];
-                        break;
-                    case Constants.WHITE_KNIGHT:
-                        this.midgamePSQ[Constants.WHITE_KNIGHT] += Constants.arrayOfPSQMidgame[Constants.WHITE_KNIGHT][i];
-                        this.endgamePSQ[Constants.WHITE_KNIGHT] += Constants.arrayOfPSQEndgame[Constants.WHITE_KNIGHT][i];
-                        break;
-                    case Constants.WHITE_BISHOP:
-                        this.midgamePSQ[Constants.WHITE_BISHOP] += Constants.arrayOfPSQMidgame[Constants.WHITE_BISHOP][i];
-                        this.endgamePSQ[Constants.WHITE_BISHOP] += Constants.arrayOfPSQEndgame[Constants.WHITE_BISHOP][i];
-                        break;
-                    case Constants.WHITE_ROOK:
-                        this.midgamePSQ[Constants.WHITE_ROOK] += Constants.arrayOfPSQMidgame[Constants.WHITE_ROOK][i];
-                        this.endgamePSQ[Constants.WHITE_ROOK] += Constants.arrayOfPSQEndgame[Constants.WHITE_ROOK][i];
-                        break;
-                    case Constants.WHITE_QUEEN:
-                        this.midgamePSQ[Constants.WHITE_QUEEN] += Constants.arrayOfPSQMidgame[Constants.WHITE_QUEEN][i];
-                        this.endgamePSQ[Constants.WHITE_QUEEN] += Constants.arrayOfPSQEndgame[Constants.WHITE_QUEEN][i];
-                        break;
-                    case Constants.WHITE_KING:
-                        this.midgamePSQ[Constants.WHITE_KING] += Constants.arrayOfPSQMidgame[Constants.WHITE_KING][i];
-                        this.endgamePSQ[Constants.WHITE_KING] += Constants.arrayOfPSQEndgame[Constants.WHITE_KING][i];
-                        break;
+            this.whiteMidgameMaterial = inputBoard.whiteMidgameMaterial;
+            this.whiteEndgameMaterial = inputBoard.whiteEndgameMaterial;
+            this.blackMidgameMaterial = inputBoard.blackMidgameMaterial;
+            this.blackEndgameMaterial = inputBoard.blackEndgameMaterial;
 
-                    case Constants.BLACK_PAWN:
-                        this.midgamePSQ[Constants.BLACK_PAWN] += Constants.arrayOfPSQMidgame[Constants.BLACK_PAWN][i];
-                        this.endgamePSQ[Constants.BLACK_PAWN] += Constants.arrayOfPSQEndgame[Constants.BLACK_PAWN][i];
-                        break;
-                    case Constants.BLACK_KNIGHT:
-                        this.midgamePSQ[Constants.BLACK_KNIGHT] += Constants.arrayOfPSQMidgame[Constants.BLACK_KNIGHT][i];
-                        this.endgamePSQ[Constants.BLACK_KNIGHT] += Constants.arrayOfPSQEndgame[Constants.BLACK_KNIGHT][i];
-                        break;
-                    case Constants.BLACK_BISHOP:
-                        this.midgamePSQ[Constants.BLACK_BISHOP] += Constants.arrayOfPSQMidgame[Constants.BLACK_BISHOP][i];
-                        this.endgamePSQ[Constants.BLACK_BISHOP] += Constants.arrayOfPSQEndgame[Constants.BLACK_BISHOP][i];
-                        break;
-                    case Constants.BLACK_ROOK:
-                        this.midgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQMidgame[Constants.BLACK_ROOK][i];
-                        this.endgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQEndgame[Constants.BLACK_ROOK][i];
-                        break;
-                    case Constants.BLACK_QUEEN:
-                        this.midgamePSQ[Constants.BLACK_QUEEN] += Constants.arrayOfPSQMidgame[Constants.BLACK_QUEEN][i];
-                        this.endgamePSQ[Constants.BLACK_QUEEN] += Constants.arrayOfPSQEndgame[Constants.BLACK_QUEEN][i];
-                        break;
-                    case Constants.BLACK_KING:
-                        this.midgamePSQ[Constants.BLACK_KING] += Constants.arrayOfPSQMidgame[Constants.BLACK_KING][i];
-                        this.endgamePSQ[Constants.BLACK_KING] += Constants.arrayOfPSQEndgame[Constants.BLACK_KING][i];
-                        break;
-                }
-            }
+            Array.Copy(inputBoard.midgamePSQ, this.midgamePSQ, inputBoard.midgamePSQ.Length);
+            Array.Copy(inputBoard.endgamePSQ, this.endgamePSQ, inputBoard.endgamePSQ.Length);
+
+            this.zobristKey = inputBoard.zobristKey;
         }
-
-        private void pieceSquareValue() {
-            
-        }
-
         
-
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
 		// MAKE MOVE 
@@ -2049,6 +1966,39 @@ namespace Chess_Engine {
             return null;
         }
 
+		// Returns list of legal moves
+		public List<int> getLegalMove() {
+			int[] pseudoLegalMoveList;
+			List<int> legalMoveList = new List<int>();
+
+			if (this.isInCheck() == false) {
+				pseudoLegalMoveList = this.generateListOfAlmostLegalMoves();
+			} else {
+				pseudoLegalMoveList = this.checkEvasionGenerator();
+			}
+
+			foreach (int move in pseudoLegalMoveList) {
+
+				if (move != 0) {
+					int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+					int flag = ((move & Constants.FLAG_MASK) >> 16);
+
+					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING ||
+						pieceMoved == Constants.BLACK_KING) {
+						this.makeMove(move);
+						if (this.isMoveLegal(sideToMove) == true) {
+							legalMoveList.Add(move);
+						}
+						this.unmakeMove(move);
+					} else {
+						legalMoveList.Add(move);
+					}
+				}
+			}
+			return legalMoveList;
+		} 
+
         // Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
         private int generatePawnMove(int pawnIndex, Bitboard pseudoLegalSinglePawnMoveFromIndex, int[] listOfPseudoLegalMoves, int index, int pieceColour) {
             
@@ -2124,10 +2074,11 @@ namespace Chess_Engine {
                 int moveRepresentationRookPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.ROOK + 6 * pieceColour));
                 int moveRepresentationQueenPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.QUEEN + 6 * pieceColour));
 
+                listOfPseudoLegalMoves[index++] = moveRepresentationQueenPromotionCapture;
                 listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotionCapture;
                 listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotionCapture;
                 listOfPseudoLegalMoves[index++] = moveRepresentationRookPromotionCapture;
-                listOfPseudoLegalMoves[index++] = moveRepresentationQueenPromotionCapture;
+                
             }
             return index;
         }
@@ -2251,14 +2202,46 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 
+        // Calculates the material fields
+        private void materialCount() {
+
+            // Calculates the number of pieces
+            for (int i = Constants.WHITE_PAWN; i <= Constants.BLACK_KING; i++) {
+                this.pieceCount[i] = Constants.popcount(this.arrayOfBitboards[i]);
+            }
+
+            // Multiplies the number of pieces by the material value
+            for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_QUEEN; i++) {
+                this.whiteMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
+                this.whiteEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
+            }
+
+            for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_QUEEN; i++) {
+                this.blackMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
+                this.blackEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
+            }
+        }
+
+        // calculates the value of the piece square table
+        private void pieceSquareValue() {
+
+            // loops through every square and finds the piece on that square
+            // Sets the appropriate PSQ to the PSQ value for that square
+            for (int i = 0; i < 64; i++) {
+                int piece = pieceArray[i];
+
+                if (piece >= Constants.WHITE_PAWN && piece <= Constants.BLACK_KING) {
+                    this.midgamePSQ[piece] += Constants.arrayOfPSQMidgame[piece][i];
+                    this.endgamePSQ[piece] += Constants.arrayOfPSQEndgame[piece][i];
+                }
+            }
+        }
+
         //takes in a FEN string, resets the board, and then sets all the instance variables based on it  
         public void FENToBoard(string FEN) {
 
             this.arrayOfBitboards = new ulong[13];
-            this.wPawn = this.wKnight = this.wBishop = this.wRook = this.wQueen = this.wKing = 0x0UL;
-            this.bPawn = this.bKnight = this.bBishop = this.bRook = this.bQueen = this.bKing = 0x0UL;
-            this.whitePieces = this.blackPieces = this.allPieces = 0x0UL;
-            this.arrayOfAggregateBitboards[0] = this.arrayOfAggregateBitboards[1] = this.arrayOfAggregateBitboards[2] = 0;
+            this.arrayOfAggregateBitboards = new ulong[3];
             this.pieceArray = new int[64];
             this.sideToMove = 0;
             this.whiteShortCastleRights = this.whiteLongCastleRights = this.blackShortCastleRights = this.blackLongCastleRights = 0;
@@ -2266,12 +2249,6 @@ namespace Chess_Engine {
             this.halfmoveNumber = 0;
             this.fiftyMoveRule = 0;
             this.repetionOfPosition = 0;
-            this.blackInCheckmate = 0;
-            this.whiteInCheckmate = 0;
-            this.stalemate = 0;
-            this.endGame = false;
-            this.lastMove = 0x0;
-            this.evaluationFunctionValue = 0;
             this.zobristKey = 0x0UL;
 
             //Splits the FEN string into 6 fields
@@ -2297,18 +2274,18 @@ namespace Chess_Engine {
                     String binary = "00000000";
                     binary = binary.Substring(0, index) + "1" + binary.Substring(index + 1);
                     switch (c) {
-                        case 'P': this.wPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'N': this.wKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'B': this.wBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'R': this.wRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'Q': this.wQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'K': this.wKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'p': this.bPawn |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'n': this.bKnight |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'b': this.bBishop |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'r': this.bRook |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'q': this.bQueen |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
-						case 'k': this.bKing |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+                        case 'P': this.arrayOfBitboards[Constants.WHITE_PAWN] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'N': this.arrayOfBitboards[Constants.WHITE_KNIGHT]|= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'B': this.arrayOfBitboards[Constants.WHITE_BISHOP]|= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'R': this.arrayOfBitboards[Constants.WHITE_ROOK] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'Q': this.arrayOfBitboards[Constants.WHITE_QUEEN] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'K': this.arrayOfBitboards[Constants.WHITE_KING] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'p': this.arrayOfBitboards[Constants.BLACK_PAWN] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'n': this.arrayOfBitboards[Constants.BLACK_KNIGHT] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'b': this.arrayOfBitboards[Constants.BLACK_BISHOP] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'r': this.arrayOfBitboards[Constants.BLACK_ROOK] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'q': this.arrayOfBitboards[Constants.BLACK_QUEEN] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
+						case 'k': this.arrayOfBitboards[Constants.BLACK_KING] |= (Convert.ToUInt64(binary, 2) << (i * 8)); index++; break;
                         case '1': index += 1; break;
                         case '2': index += 2; break;
                         case '3': index += 3; break;
@@ -2320,20 +2297,6 @@ namespace Chess_Engine {
                     }
                 }
             }
-
-            //stores the bitboards in the array
-			this.arrayOfBitboards[1] = wPawn;
-			this.arrayOfBitboards[2] = wKnight;
-			this.arrayOfBitboards[3] = wBishop;
-			this.arrayOfBitboards[4] = wRook;
-			this.arrayOfBitboards[5] = wQueen;
-			this.arrayOfBitboards[6] = wKing;
-			this.arrayOfBitboards[7] = bPawn;
-			this.arrayOfBitboards[8] = bKnight;
-			this.arrayOfBitboards[9] = bBishop;
-			this.arrayOfBitboards[10] = bRook;
-			this.arrayOfBitboards[11] = bQueen;
-			this.arrayOfBitboards[12] = bKing;
 
             //sets the piece array
              //loops through each of the 8 strings representing the rows, from the bottom row to the top
@@ -2436,29 +2399,19 @@ namespace Chess_Engine {
 			this.repetionOfPosition = 0;
 
             //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
-			this.whitePieces = wPawn | wKnight | wBishop | wRook | wQueen | wKing;
-			this.blackPieces = bPawn | bKnight | bBishop | bRook | bQueen | bKing;
-			this.allPieces = whitePieces | blackPieces;
-
-            this.arrayOfAggregateBitboards[0] = this.whitePieces;
-            this.arrayOfAggregateBitboards[1] = this.blackPieces;
-            this.arrayOfAggregateBitboards[2] = this.allPieces;
+            for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_KING; i++) {
+                this.arrayOfAggregateBitboards[0] |= arrayOfBitboards[i];
+            }
+            for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_KING; i++) {
+                this.arrayOfAggregateBitboards[1] |= arrayOfBitboards[i];
+            }
+            
+            this.arrayOfAggregateBitboards[2] = this.arrayOfAggregateBitboards[0] | this.arrayOfAggregateBitboards[1];
 
             // Sets the piece counter
-            this.pieceCount[Constants.WHITE_PAWN] = Constants.popcount(wPawn);
-            this.pieceCount[Constants.WHITE_KNIGHT] = Constants.popcount(wKnight);
-            this.pieceCount[Constants.WHITE_BISHOP] = Constants.popcount(wBishop);
-            this.pieceCount[Constants.WHITE_ROOK] = Constants.popcount(wRook);
-            this.pieceCount[Constants.WHITE_QUEEN] = Constants.popcount(wQueen);
-            this.pieceCount[Constants.WHITE_KING] = Constants.popcount(wKing);
-
-            this.pieceCount[Constants.BLACK_PAWN] = Constants.popcount(bPawn);
-            this.pieceCount[Constants.BLACK_KNIGHT] = Constants.popcount(bKnight);
-            this.pieceCount[Constants.BLACK_BISHOP] = Constants.popcount(bBishop);
-            this.pieceCount[Constants.BLACK_ROOK] = Constants.popcount(bRook);
-            this.pieceCount[Constants.BLACK_QUEEN] = Constants.popcount(bQueen);
-            this.pieceCount[Constants.WHITE_KING] = Constants.popcount(bKing);
-
+            for (int i = Constants.WHITE_PAWN; i <= Constants.BLACK_KING; i++) {
+                this.pieceCount[i] = Constants.popcount(this.arrayOfBitboards[i]);
+            }
         }
 
         //Takes information on piece moved, start square, destination square, type of move, and piece captured

@@ -61,12 +61,11 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Evaluate.cs" />
-    <Compile Include="Output.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Search.cs" />
     <Compile Include="Test.cs" />
-    <Compile Include="UCIInput.cs" />
+    <Compile Include="UCI_IO.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
