@@ -91,6 +91,9 @@ namespace Chess_Engine {
         internal int blackMidgameMaterial = 0;
         internal int blackEndgameMaterial = 0;
 
+	    internal int checkmate = 0;
+	    internal int stalemate = 0;
+
         internal int[] midgamePSQ = new int[13];
         internal int[] endgamePSQ = new int[13];
         
@@ -137,6 +140,9 @@ namespace Chess_Engine {
             this.whiteEndgameMaterial = inputBoard.whiteEndgameMaterial;
             this.blackMidgameMaterial = inputBoard.blackMidgameMaterial;
             this.blackEndgameMaterial = inputBoard.blackEndgameMaterial;
+
+	        this.checkmate = inputBoard.checkmate;
+	        this.stalemate = inputBoard.stalemate;
 
             Array.Copy(inputBoard.midgamePSQ, this.midgamePSQ, inputBoard.midgamePSQ.Length);
             Array.Copy(inputBoard.endgamePSQ, this.endgamePSQ, inputBoard.endgamePSQ.Length);

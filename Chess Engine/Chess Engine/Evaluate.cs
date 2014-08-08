@@ -15,52 +15,17 @@ namespace Chess_Engine {
             int evaluationScoreEG = 0;
             int interpolatedScore = 0;
 
-			int[] pieceCount = new int[13];
-	        int whiteMidgameMaterial = 0;
-	        int whiteEndgameMaterial = 0;
-	        int blackMidgameMaterial = 0;
-	        int blackEndgameMaterial = 0;
-
-			int[] midgamePSQ = new int[13];
-			int[] endgamePSQ = new int[13];
-
-			// Calculates the number of pieces
-            for (int i = Constants.WHITE_PAWN; i <= Constants.BLACK_KING; i++) {
-                pieceCount[i] = Constants.popcount(inputBoard.arrayOfBitboards[i]);
-            }
-			// Multiplies the number of pieces by the material value
-            for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_QUEEN; i++) {
-                whiteMidgameMaterial += pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
-                whiteEndgameMaterial += pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
-            }
-
-            for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_QUEEN; i++) {
-                blackMidgameMaterial += pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
-                blackEndgameMaterial += pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
-            }
-
-			// loops through every square and finds the piece on that square
-            // Sets the appropriate PSQ to the PSQ value for that square
-            for (int i = 0; i < 64; i++) {
-                int piece = inputBoard.pieceArray[i];
-
-                if (piece >= Constants.WHITE_PAWN && piece <= Constants.BLACK_KING) {
-                    midgamePSQ[piece] += Constants.arrayOfPSQMidgame[piece][i];
-                    endgamePSQ[piece] += Constants.arrayOfPSQEndgame[piece][i];
-                }
-            }
-        
 			// Calculates the middlegame evaluation score
-           evaluationScoreMG += whiteMidgameMaterial - blackMidgameMaterial;
+           evaluationScoreMG += inputBoard.whiteMidgameMaterial - inputBoard.blackMidgameMaterial;
 	        
 	        // Piece square tables
             int pieceSquareTableMG = 0;
             for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_KING; i++) {
-                pieceSquareTableMG += midgamePSQ[i];
+                pieceSquareTableMG += inputBoard.midgamePSQ[i];
             }
 
             for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_KING; i++) {
-                pieceSquareTableMG -= midgamePSQ[i];
+                pieceSquareTableMG -= inputBoard.midgamePSQ[i];
             }
 
            evaluationScoreMG += pieceSquareTableMG;
@@ -68,28 +33,28 @@ namespace Chess_Engine {
             // Calculates the endgame evaluation score
 
             // Material
-            evaluationScoreEG += whiteEndgameMaterial - blackEndgameMaterial;
+            evaluationScoreEG += inputBoard.whiteEndgameMaterial - inputBoard.blackEndgameMaterial;
 
             // Piece square tables
             int pieceSquareTableEG = 0;
 
             for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_KING; i++) {
-                pieceSquareTableEG += endgamePSQ[i];
+                pieceSquareTableEG += inputBoard.endgamePSQ[i];
             }
 
             for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_KING; i++) {
-                pieceSquareTableEG -= endgamePSQ[i];
+                pieceSquareTableEG -= inputBoard.endgamePSQ[i];
             }
 
             evaluationScoreEG += pieceSquareTableEG;
 
 
             // Calculates the sum of the number of white pieces and black pieces for each piece type
-            int pawnSum = (pieceCount[Constants.WHITE_PAWN] + pieceCount[Constants.BLACK_PAWN]);
-            int knightSum = (pieceCount[Constants.WHITE_KNIGHT] + pieceCount[Constants.BLACK_KNIGHT]);
-            int bishopSum = (pieceCount[Constants.WHITE_BISHOP] + pieceCount[Constants.BLACK_BISHOP]);
-            int rookSum = (pieceCount[Constants.WHITE_ROOK] + pieceCount[Constants.BLACK_ROOK]);
-            int queenSum = (pieceCount[Constants.WHITE_QUEEN] + pieceCount[Constants.BLACK_QUEEN]);
+			int pawnSum = (inputBoard.pieceCount[Constants.WHITE_PAWN] + inputBoard.pieceCount[Constants.BLACK_PAWN]);
+			int knightSum = (inputBoard.pieceCount[Constants.WHITE_KNIGHT] + inputBoard.pieceCount[Constants.BLACK_KNIGHT]);
+			int bishopSum = (inputBoard.pieceCount[Constants.WHITE_BISHOP] + inputBoard.pieceCount[Constants.BLACK_BISHOP]);
+			int rookSum = (inputBoard.pieceCount[Constants.WHITE_ROOK] + inputBoard.pieceCount[Constants.BLACK_ROOK]);
+			int queenSum = (inputBoard.pieceCount[Constants.WHITE_QUEEN] + inputBoard.pieceCount[Constants.BLACK_QUEEN]);
 
             // Calculates the game phase (phase of 0 means opening, and phase of 64 means endgame)
             // Interpolates the score based on game phase
@@ -115,7 +80,6 @@ namespace Chess_Engine {
             } else {
                 return -interpolatedScore;
             }
-			 
         }	
     }
 }

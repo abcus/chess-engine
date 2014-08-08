@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,18 +12,28 @@ namespace Chess_Engine {
 
     public static class UCI_IO {
 
+		// Creates a board object and initializes to to the start position
         private static Board position = new Board(Constants.FEN_START);
-        private static CancellationTokenSource stopSearchObject = new CancellationTokenSource();
         
-        private static CancellationTokenSource stopPerft = new CancellationTokenSource();
-        private static Task<moveAndEval> search = null;
+		// Creates a background worker object for the search
+		internal static BackgroundWorker searchWorker;   
 
+	    static UCI_IO  () {
+			// Defining what method to call when the worker is started, what method to call when the worker completes
+			// Enables the worker to support cancellation
+			searchWorker = new BackgroundWorker();
+			searchWorker.DoWork += new DoWorkEventHandler(searchWorker_StartSearch);
+			searchWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(searchWorker_SearchCompleted);
+			searchWorker.WorkerSupportsCancellation = true;
+	    }
 
-        // Method that continuously accepts user input
+	    // Method that continuously accepts user input (it runs on the main thread)
         public static bool processGUIMessages(int waitTime) {
 
             string input = Console.ReadLine();
 
+			// If the input is non-zero in length, it passes it to the input handler
+			// Otherwise, it sleeps for a certain number of milliseconds (so that constant polling is not an issue) and returns true
             if (input.Length > 0) {
                 return inputHandler(input);
             } else if (waitTime > 0) {
@@ -30,6 +42,7 @@ namespace Chess_Engine {
             return true;  
         }
 
+		// Method that receives input and performs the appropriate action
         public static bool inputHandler(string input) {
 
             // Reads the input into an array, converts the array to a list, and gets the first element
@@ -37,56 +50,83 @@ namespace Chess_Engine {
             List<string> stringList = stringArray.ToList();
             string string0 = stringList[0];
             
-            if (string0 == "perft") {
+			// Takes various actions depending on what the first element is
+            
+			// Prints the perft of the current board to the specified depth
+			// Or prints the perft test suite
+			if (string0 == "perft") {
                 int depth = Convert.ToInt32(stringArray[1]);
-                Task perft = Task.Run(() => Test.printPerft(position, depth));
-                return true;
+                Test.printPerft(position, depth);
             } else if (string0 == "perftsuite") {
               Test.perftSuite1(position);
               Test.perftSuite2(position);
-            } else if (string0 == "print") {
+            } 
+			// Prints the board along with other state variables (castling rights, etc.)
+			else if (string0 == "print") {
                 UCI_IO.drawBoard(position);
-            } else if (string0 == "quit") {
+            } 
+			// Quits the program
+			else if (string0 == "quit") {
                 return false;
-            } else if (string0 == "uci") {
+            } 
+			// Prints the author, program name
+			else if (string0 == "uci") {
                 UCIInitialize();
-            } else if (string0 == "setoption") {
+            } 
+			// Doesn't do anything right now
+			else if (string0 == "setoption") {
                 stringList.RemoveAt(0);
                 setOption(stringList);
-            } else if (string0 == "isready") {
+            } 
+			// Prints "readyok"
+			else if (string0 == "isready") {
                 isReady();
-            } else if (string0 == "ucinewgame") {
+            } 
+			// Doesn't do anything right now
+			else if (string0 == "ucinewgame") {
                 UCINewGame();
-            } else if (string0 == "position") {
+            } 
+			// Sets the board to the position specified by the GUI
+			else if (string0 == "position") {
                 stringList.RemoveAt(0);
                 setPosition(stringList);
-            } else if (string0 == "go") {
-                startSearch();
-            } else if (string0 == "stop") {
-               stopSearch();
+            } 
+			// Starts the search
+			else if (string0 == "go") {
+				searchWorker.RunWorkerAsync();
+            } 
+			// Stops the search
+			else if (string0 == "stop") {
+	            if (searchWorker.IsBusy) {
+		            searchWorker.CancelAsync();
+	            }
             }
-            
             return true;
         }
 
+		// Method that prints out the engine name, author
         public static void UCIInitialize() {
             Console.WriteLine("id name Spark v0.343");
             Console.WriteLine("id author Avery Johnson");
             Console.WriteLine("uciok");
         }
 
+		// Doesn't do anything right now
         public static void setOption(List<string> inputStringList) {
             // set options
         }
 
+		// Prints "readyok"
         public static void isReady() {
             Console.WriteLine("readyok");
         }
 
+		// Doesn't do anything right now
         public static void UCINewGame() {
             //some shit
         }
 
+		// Sets the board to the position specified by the GUI
         public static void setPosition(List<string> inputStringList) {
             
             // Sets the board to the starting position
@@ -148,40 +188,45 @@ namespace Chess_Engine {
             } 
         }
 
-        public static void startSearch() {
-            UCI_IO.stopSearchObject = new CancellationTokenSource();
-	        search = Task.Run(() => Search.runSearch(position, UCI_IO.stopSearchObject.Token));
-	        moveAndEval result = search.Result;
-			Console.WriteLine("info depth 6 score cp " + result.evaluationScore);
-			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(result.move));
-			
+		// Starts the search 
+        public static void searchWorker_StartSearch(object sender, DoWorkEventArgs e) {
+            
+			// Creates a new search object
+	        Search searchObject = new Search(position, e);
+
         }
 
-        public static void stopSearch() {
-            UCI_IO.stopSearchObject.Cancel();
-            Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(search.Result.move));
-        }
+		// Prints out the results when the search has completed (or been stopped)
+	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
+			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (int)(Search.result.evaluationScore / 2.28));
+			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 
+		    string numberOfNodesString = Search.nodes.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+			ulong nodesPerSecond = ((Search.nodes)/(ulong)(Search.s.ElapsedMilliseconds) * 1000);
+			string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
+			Console.WriteLine("Number of nodes evaluated: " + Search.nodes.ToString(numberOfNodesString));
+			Console.WriteLine(" Elapsed time: " + Search.s.ElapsedMilliseconds);
+			Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
+	    }
 
-
-        //Extracts the start square from the integer that encodes the move
+        // Extracts the start square from the integer that encodes the move
         private static int getStartSquare(int moveRepresentation) {
             int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
             return startSquare;
         }
-        //Extracts the destination square from the integer that encodes the move
+        // Extracts the destination square from the integer that encodes the move
         private static int getDestinationSquare(int moveRepresentation) {
             int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> 10);
             return destinationSquare;
         }
-        //Extracts the piece promoted from the integer that encodes the move
+        // Extracts the piece promoted from the integer that encodes the move
         private static int getPiecePromoted(int moveRepresentation) {
             int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> 24;
             return piecePromoted;
         }
         
-        //prints out a move string from a move representation uint
+        // prints out a move string from a move representation uint
         public static string getMoveStringFromMoveRepresentation(int moveRepresentation) {
             int columnOfStartSquare = (getStartSquare(moveRepresentation) % 8);
             int rowOfStartSquare = (getStartSquare(moveRepresentation) / 8);
