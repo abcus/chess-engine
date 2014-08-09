@@ -12,11 +12,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 using Bitboard = System.UInt64;
+using Zobrist = System.UInt64;
+using Score = System.UInt32;
+using Move = System.UInt32;
 
 namespace Chess_Engine {
 
     // Class that stores the information necessary to restore the board back to its previous state after making a move
-    internal sealed class stateVariables {
+    public sealed class stateVariables {
         internal int sideToMove;
         internal int whiteShortCastleRights;
         internal int whiteLongCastleRights;
@@ -27,6 +30,7 @@ namespace Chess_Engine {
         internal int halfmoveNumber;
         internal int capturedPieceType;
         internal Bitboard enPassantSquare;
+	    internal Zobrist zobristKey;
 
         // Constructor that sets all of the stateVariable's instance variables
         public stateVariables (Board inputBoard) {
@@ -42,6 +46,8 @@ namespace Chess_Engine {
             this.halfmoveNumber = inputBoard.halfmoveNumber;
 
             this.enPassantSquare = inputBoard.enPassantSquare;
+
+	        this.zobristKey = inputBoard.zobristKey;
         } 
     }
 
@@ -97,11 +103,9 @@ namespace Chess_Engine {
         internal int[] midgamePSQ = new int[13];
         internal int[] endgamePSQ = new int[13];
         
-        internal ulong zobristKey = 0x0UL;
+        internal Zobrist zobristKey = 0x0UL;
 
-        private Stack<stateVariables> restoreDataStack = new Stack<stateVariables>(20);
-
-        //--------------------------------------------------------------------------------------------------------------------------------------------
+       //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         // CONSTRUCTORS
         //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -112,6 +116,7 @@ namespace Chess_Engine {
             this.FENToBoard(FENString);
             this.materialCount();
             this.pieceSquareValue();
+	        this.calculateZobristKey();
         }
 
         // Copy constructor
@@ -158,11 +163,6 @@ namespace Chess_Engine {
         //--------------------------------------------------------------------------------------------------------------------------------------------
         public void makeMove(int moveRepresentationInput) {
 
-            // Creates a state variable object, encodes the restore data, and pushes it onto the stack
-            // This is necessary so that the board can be restored to its original state during the unmake
-            stateVariables restoreData = new stateVariables(this);
-            this.restoreDataStack.Push(restoreData);
-
             // Extracts information (piece moved, start square, destination square,  flag, piece captured, piece promoted) from the int encoding the move
             int pieceMoved = ((moveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
 			int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
@@ -178,37 +178,73 @@ namespace Chess_Engine {
 
             // Sets the board's instance variables
             // sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
-            sideToMove ^= 1;
+            this.sideToMove ^= 1;
+	        this.zobristKey ^= Constants.sideToMoveZobrist[0];
 
             // If the move is anything but a double pawn push, sets the en passant square bitboard to 0x0UL;
-		    if (flag != Constants.DOUBLE_PAWN_PUSH) {
-                this.enPassantSquare = 0x0UL;
+		    if (flag != Constants.DOUBLE_PAWN_PUSH && this.enPassantSquare != 0x0UL) {
+			    zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
+				this.enPassantSquare = 0x0UL;
 		    }
             // Updates the en passant square instance variable if there was a double pawn push
 		    if (flag == Constants.DOUBLE_PAWN_PUSH) {
 		        if (pieceMoved == Constants.WHITE_PAWN) {
-		            enPassantSquare = (0x1UL << (destinationSquare - 8));
+			        
+					// If there was a previous en passant square, have to remove it from the zobrist key before adding in the new one
+					if (this.enPassantSquare != 0) {
+						this.zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
+			        }
+					this.enPassantSquare = (0x1UL << (destinationSquare - 8));
+					zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
 		        } else if (pieceMoved == Constants.BLACK_PAWN) {
-		            enPassantSquare = (0x1UL << (destinationSquare + 8));
+			        if (this.enPassantSquare != 0) {
+						zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
+			        }
+					this.enPassantSquare = (0x1UL << (destinationSquare + 8));
+					this.zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
 		        }
 		    }
             // If the king moved, then set the castling rights to false
             if (pieceMoved == Constants.WHITE_KING) {
-                this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
-                this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+
+	            if (this.whiteShortCastleRights != Constants.CANNOT_CASTLE) {
+		            this.zobristKey ^= Constants.castleZobrist[0];
+					this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
+	            } if (this.whiteLongCastleRights != Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[1];
+					this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+	            }
             } else if (pieceMoved == Constants.BLACK_KING) {
-                this.blackShortCastleRights = Constants.CANNOT_CASTLE;
-                this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+
+	            if (this.blackShortCastleRights != Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[2];
+					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+	            } if (this.blackLongCastleRights != Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[3];
+					this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+	            }
             }
 		    // If the start square or destination square is A1, H1, A8, or H8, then updates the castling rights
 		    if (startSquare == Constants.A1 || destinationSquare == Constants.A1) {
-                this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+			    if (this.whiteLongCastleRights == Constants.CANNOT_CASTLE) {
+				    this.zobristKey ^= Constants.castleZobrist[1];
+					this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
+			    }
             } if (startSquare == Constants.H1 || destinationSquare == Constants.H1) {
-                this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
+				if (this.whiteShortCastleRights == Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[0];
+					this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
+				}
             } if (startSquare == Constants.A8 || destinationSquare == Constants.A8) {
-                this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+				if (this.blackLongCastleRights == Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[3];
+					this.blackLongCastleRights = Constants.CANNOT_CASTLE;
+				}
             } if (startSquare == Constants.H8 || destinationSquare == Constants.H8) {
-                this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+				if (this.blackShortCastleRights == Constants.CANNOT_CASTLE) {
+					this.zobristKey ^= Constants.castleZobrist[2];
+					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
+				}
             }
 
             // Updates the piece count and material fields
@@ -262,7 +298,7 @@ namespace Chess_Engine {
                 }  
             } 
             
-            // Updates the piece square tables
+            // Updates the piece square tables and zobrist key
             if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.EN_PASSANT_CAPTURE || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
                 this.midgamePSQ[pieceMoved] -= Constants.arrayOfPSQMidgame[pieceMoved][startSquare];
                 this.midgamePSQ[pieceMoved] += Constants.arrayOfPSQMidgame[pieceMoved][destinationSquare];
@@ -270,25 +306,36 @@ namespace Chess_Engine {
                 this.endgamePSQ[pieceMoved] -= Constants.arrayOfPSQEndgame[pieceMoved][startSquare];
                 this.endgamePSQ[pieceMoved] += Constants.arrayOfPSQEndgame[pieceMoved][destinationSquare];
 
+	            this.zobristKey ^= Constants.pieceZobrist[pieceMoved, startSquare];
+	            this.zobristKey ^= Constants.pieceZobrist[pieceMoved, destinationSquare];
+
             } else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 this.midgamePSQ[pieceMoved] -= Constants.arrayOfPSQMidgame[pieceMoved][startSquare];
                 
                 this.endgamePSQ[pieceMoved] -= Constants.arrayOfPSQEndgame[pieceMoved][startSquare];
+
+				this.zobristKey ^= Constants.pieceZobrist[pieceMoved, startSquare];
             } 
 
             if (flag == Constants.CAPTURE) {
                 this.midgamePSQ[pieceCaptured] -= Constants.arrayOfPSQMidgame[pieceCaptured][destinationSquare];
                 
                 this.endgamePSQ[pieceCaptured] -= Constants.arrayOfPSQEndgame[pieceCaptured][destinationSquare];
+
+				this.zobristKey ^= Constants.pieceZobrist[pieceCaptured, destinationSquare];
             } else if (flag == Constants.EN_PASSANT_CAPTURE) {
                 if (pieceMoved == Constants.WHITE_PAWN) {
                     this.midgamePSQ[pieceCaptured] -= Constants.arrayOfPSQMidgame[pieceCaptured][destinationSquare - 8];
                     
                     this.endgamePSQ[pieceCaptured] -= Constants.arrayOfPSQEndgame[pieceCaptured][destinationSquare - 8];
+
+	                this.zobristKey ^= Constants.pieceZobrist[pieceCaptured, destinationSquare - 8];
                 } else {
                     this.midgamePSQ[pieceCaptured] -= Constants.arrayOfPSQMidgame[pieceCaptured][destinationSquare + 8];
                     
-                    this.endgamePSQ[pieceCaptured] -= Constants.arrayOfPSQEndgame[pieceCaptured][destinationSquare + 8];  
+                    this.endgamePSQ[pieceCaptured] -= Constants.arrayOfPSQEndgame[pieceCaptured][destinationSquare + 8];
+
+					this.zobristKey ^= Constants.pieceZobrist[pieceCaptured, destinationSquare + 8];
                 }
             } else if (flag == Constants.SHORT_CASTLE) {
                 if (pieceMoved == Constants.WHITE_KING) {
@@ -297,13 +344,19 @@ namespace Chess_Engine {
 
                     this.endgamePSQ[Constants.WHITE_ROOK] -= Constants.arrayOfPSQEndgame[Constants.WHITE_ROOK][Constants.H1];
                     this.endgamePSQ[Constants.WHITE_ROOK] += Constants.arrayOfPSQEndgame[Constants.WHITE_ROOK][Constants.F1];
+
+	                this.zobristKey ^= Constants.pieceZobrist[Constants.WHITE_ROOK, Constants.H1];
+	                this.zobristKey ^= Constants.pieceZobrist[Constants.WHITE_ROOK, Constants.F1];
                 } else {
                     this.midgamePSQ[Constants.BLACK_ROOK] -= Constants.arrayOfPSQMidgame[Constants.BLACK_ROOK][Constants.H8];
                     this.midgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQMidgame[Constants.BLACK_ROOK][Constants.F8];
 
                     this.endgamePSQ[Constants.BLACK_ROOK] -= Constants.arrayOfPSQEndgame[Constants.BLACK_ROOK][Constants.H8];
                     this.endgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQEndgame[Constants.BLACK_ROOK][Constants.F8];
-                }
+
+					this.zobristKey ^= Constants.pieceZobrist[Constants.BLACK_ROOK, Constants.H8];
+					this.zobristKey ^= Constants.pieceZobrist[Constants.BLACK_ROOK, Constants.F8];
+				}
             } else if (flag == Constants.LONG_CASTLE) {
                 if (pieceMoved == Constants.WHITE_KING) {
                     this.midgamePSQ[Constants.WHITE_ROOK] -= Constants.arrayOfPSQMidgame[Constants.WHITE_ROOK][Constants.A1];
@@ -311,22 +364,32 @@ namespace Chess_Engine {
 
                     this.endgamePSQ[Constants.WHITE_ROOK] -= Constants.arrayOfPSQEndgame[Constants.WHITE_ROOK][Constants.A1];
                     this.endgamePSQ[Constants.WHITE_ROOK] += Constants.arrayOfPSQEndgame[Constants.WHITE_ROOK][Constants.D1];
-                } else {
+
+					this.zobristKey ^= Constants.pieceZobrist[Constants.WHITE_ROOK, Constants.A1];
+					this.zobristKey ^= Constants.pieceZobrist[Constants.WHITE_ROOK, Constants.D1];
+				} else {
                     this.midgamePSQ[Constants.BLACK_ROOK] -= Constants.arrayOfPSQMidgame[Constants.BLACK_ROOK][Constants.A8];
                     this.midgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQMidgame[Constants.BLACK_ROOK][Constants.D8];
 
                     this.endgamePSQ[Constants.BLACK_ROOK] -= Constants.arrayOfPSQEndgame[Constants.BLACK_ROOK][Constants.A8];
                     this.endgamePSQ[Constants.BLACK_ROOK] += Constants.arrayOfPSQEndgame[Constants.BLACK_ROOK][Constants.D8];
-                }
+
+					this.zobristKey ^= Constants.pieceZobrist[Constants.BLACK_ROOK, Constants.A8];
+					this.zobristKey ^= Constants.pieceZobrist[Constants.BLACK_ROOK, Constants.D8];
+				}
             } else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 this.midgamePSQ[piecePromoted] += Constants.arrayOfPSQMidgame[piecePromoted][destinationSquare];
 
                 this.endgamePSQ[piecePromoted] += Constants.arrayOfPSQEndgame[piecePromoted][destinationSquare];
 
+	            this.zobristKey ^= Constants.pieceZobrist[piecePromoted, destinationSquare];
+
                 if (flag == Constants.PROMOTION_CAPTURE) {
                     this.midgamePSQ[pieceCaptured] -= Constants.arrayOfPSQMidgame[pieceCaptured][destinationSquare];
 
                     this.endgamePSQ[pieceCaptured] -= Constants.arrayOfPSQEndgame[pieceCaptured][destinationSquare];
+
+	                this.zobristKey ^= Constants.pieceZobrist[pieceCaptured, destinationSquare];
                 }
             }
 
@@ -444,11 +507,8 @@ namespace Chess_Engine {
         // takes an int representing a move and unmakes it
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
-        public void unmakeMove(int unmoveRepresentationInput) {
+        public void unmakeMove(int unmoveRepresentationInput, stateVariables restoreData) {
 
-            // Retrieves the restore data from the stack
-            stateVariables restoreData = this.restoreDataStack.Pop();
-            
             // Sets the side to move, white short/long castle rights, black short/long castle rights from the integer encoding the restore board data
             // Sets the repetition number, half-live clock (since last pawn push/capture), and move number from the integer encoding the restore board data
             this.sideToMove = restoreData.sideToMove;
@@ -459,6 +519,7 @@ namespace Chess_Engine {
             this.repetionOfPosition = restoreData.repetionOfPosition;
             this.fiftyMoveRule = restoreData.fiftyMoveRule;
             this.halfmoveNumber = restoreData.halfmoveNumber;
+	        this.zobristKey = restoreData.zobristKey;
 
             // Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
             this.enPassantSquare = restoreData.enPassantSquare;
@@ -1972,40 +2033,7 @@ namespace Chess_Engine {
             return null;
         }
 
-		// Returns list of legal moves
-		public List<int> getLegalMove() {
-			int[] pseudoLegalMoveList;
-			List<int> legalMoveList = new List<int>();
-
-			if (this.isInCheck() == false) {
-				pseudoLegalMoveList = this.generateListOfAlmostLegalMoves();
-			} else {
-				pseudoLegalMoveList = this.checkEvasionGenerator();
-			}
-
-			foreach (int move in pseudoLegalMoveList) {
-
-				if (move != 0) {
-					int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
-					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-					int flag = ((move & Constants.FLAG_MASK) >> 16);
-
-					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING ||
-						pieceMoved == Constants.BLACK_KING) {
-						this.makeMove(move);
-						if (this.isMoveLegal(sideToMove) == true) {
-							legalMoveList.Add(move);
-						}
-						this.unmakeMove(move);
-					} else {
-						legalMoveList.Add(move);
-					}
-				}
-			}
-			return legalMoveList;
-		} 
-
-        // Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
+		// Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
         private int generatePawnMove(int pawnIndex, Bitboard pseudoLegalSinglePawnMoveFromIndex, int[] listOfPseudoLegalMoves, int index, int pieceColour) {
             
             if (pseudoLegalSinglePawnMoveFromIndex != 0) {
@@ -2208,41 +2236,6 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 
-        // Calculates the material fields
-        private void materialCount() {
-
-            // Calculates the number of pieces
-            for (int i = Constants.WHITE_PAWN; i <= Constants.BLACK_KING; i++) {
-                this.pieceCount[i] = Constants.popcount(this.arrayOfBitboards[i]);
-            }
-
-            // Multiplies the number of pieces by the material value
-            for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_QUEEN; i++) {
-                this.whiteMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
-                this.whiteEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
-            }
-
-            for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_QUEEN; i++) {
-                this.blackMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
-                this.blackEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
-            }
-        }
-
-        // calculates the value of the piece square table
-        private void pieceSquareValue() {
-
-            // loops through every square and finds the piece on that square
-            // Sets the appropriate PSQ to the PSQ value for that square
-            for (int i = 0; i < 64; i++) {
-                int piece = pieceArray[i];
-
-                if (piece >= Constants.WHITE_PAWN && piece <= Constants.BLACK_KING) {
-                    this.midgamePSQ[piece] += Constants.arrayOfPSQMidgame[piece][i];
-                    this.endgamePSQ[piece] += Constants.arrayOfPSQEndgame[piece][i];
-                }
-            }
-        }
-
         //takes in a FEN string, resets the board, and then sets all the instance variables based on it  
         public void FENToBoard(string FEN) {
 
@@ -2420,14 +2413,79 @@ namespace Chess_Engine {
             }
         }
 
+		// Calculates the material fields
+		private void materialCount() {
+
+			// Calculates the number of pieces
+			for (int i = Constants.WHITE_PAWN; i <= Constants.BLACK_KING; i++) {
+				this.pieceCount[i] = Constants.popcount(this.arrayOfBitboards[i]);
+			}
+
+			// Multiplies the number of pieces by the material value
+			for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_QUEEN; i++) {
+				this.whiteMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
+				this.whiteEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
+			}
+
+			for (int i = Constants.BLACK_PAWN; i <= Constants.BLACK_QUEEN; i++) {
+				this.blackMidgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesMG[i];
+				this.blackEndgameMaterial += this.pieceCount[i] * Constants.arrayOfPieceValuesEG[i];
+			}
+		}
+
+		// calculates the value of the piece square table
+		private void pieceSquareValue() {
+
+			// loops through every square and finds the piece on that square
+			// Sets the appropriate PSQ to the PSQ value for that square
+			for (int i = 0; i < 64; i++) {
+				int piece = pieceArray[i];
+
+				if (piece >= Constants.WHITE_PAWN && piece <= Constants.BLACK_KING) {
+					this.midgamePSQ[piece] += Constants.arrayOfPSQMidgame[piece][i];
+					this.endgamePSQ[piece] += Constants.arrayOfPSQEndgame[piece][i];
+				}
+			}
+		}
+
+		// Calculates the zobrist key
+		private void calculateZobristKey() {
+			
+			// Updates the key with the piece locations
+			for (int i = 0; i < 64; i++) {
+				int pieceType = this.pieceArray[i];
+				if (pieceType != 0) {
+					this.zobristKey ^= Constants.pieceZobrist[pieceType, i];
+				}
+			}
+
+			// Updates the key with the en passant square
+			if (this.enPassantSquare != 0) {
+				this.zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
+			}
+
+			// Updates the key with the castling rights
+			if (this.whiteShortCastleRights == Constants.CAN_CASTLE) {
+				this.zobristKey ^= Constants.castleZobrist[0];
+			} if (this.whiteLongCastleRights == Constants.CAN_CASTLE) {
+				this.zobristKey ^= Constants.castleZobrist[1];
+			} if (this.blackShortCastleRights == Constants.CAN_CASTLE) {
+				this.zobristKey ^= Constants.castleZobrist[2];
+			} if (this.blackLongCastleRights == Constants.CAN_CASTLE) {
+				this.zobristKey ^= Constants.castleZobrist[3];
+			}
+
+			// Updates the key with the side to move
+			if (this.sideToMove == Constants.BLACK) {
+				this.zobristKey ^= Constants.sideToMoveZobrist[0];
+			}
+
+	    }
+
         //Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
-		private int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured) {
-			int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20));
-            return moveRepresentation;
-		}
-        private int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted) {
+		private int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted = 0x0) {
             int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
             return moveRepresentation;
         } 

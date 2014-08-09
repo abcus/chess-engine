@@ -4,54 +4,58 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Chess_Engine {
-    public class Search {
+    public static class Search {
 
+		internal static Board cloneBoard;
 		
-		internal Board cloneBoard;
+		internal static int[, ,] historyTable;
+		internal static int[,] killerTable;
+	    
+		internal static moveAndEval result;
+		internal static int initialDepth;
+		internal static ulong nodesEvaluated;
 
-		internal int[, ,] historyTable;
-		internal int[,] killerTable;
+	    internal static double failHigh;
+	    internal static double failHighFirst;
 
-		internal int ply;
-		internal int startTime;
-		internal int stopTime;
-		internal int depth;
-		internal int depthset;
-		internal int timeset;
-		internal int movesToGo;
-		internal int infinite;
-		internal static ulong nodes;
-		internal int quit;
-		internal int stopped;
+	    internal static int numOfSuccessfulZWS;
+	    
+		internal static Stopwatch s;
 
-		internal static moveAndEval result = new moveAndEval();
-
-	    internal static int initialDepth;
-
-		internal static Stopwatch s = Stopwatch.StartNew();
-
-		// Constructor
-	    public Search(Board inputBoard, DoWorkEventArgs e) {
+		// Resets all of the static search variables, then initializes the search
+		public static void initSearch(Board inputBoard, DoWorkEventArgs e) {
 		    cloneBoard = new Board(inputBoard);
+			
+			historyTable = new int[64,64,13];
+			killerTable = new int[2,42];
+
+			result =  new moveAndEval();
+		    initialDepth = 0;
+		    nodesEvaluated = 0;
+			failHigh = 0;
+			failHighFirst = 0;
+
+			numOfSuccessfulZWS = 0;
+			
+			s = Stopwatch.StartNew();
+
 			runSearch(e);
 	    }
 
 
-		public void runSearch (DoWorkEventArgs e) {
+		public static void runSearch (DoWorkEventArgs e) {
 			
 			result = new moveAndEval();
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			
-			
-
-			for (int i = 1; i <= 6; i++) {
+			for (int i = 1; i <= 7; i++) {
 
 				if (UCI_IO.searchWorker.CancellationPending) {
 					e.Cancel = true;
@@ -59,37 +63,42 @@ namespace Chess_Engine {
 				}
 
 				initialDepth = i;
-				result = negaMaxRoot(i);
+				result = PVSRoot(i);
 				result.depthAchieved = i;	
 			}
 	    }
 
 		// Negamax function called at the root 
 		// Returns both the best move and the evaluation score
-	    public moveAndEval negaMaxRoot(int depth) {
+	    public static moveAndEval PVSRoot(int depth) {
 		    int alpha = -Constants.LARGE_INT;
 		    int beta = Constants.LARGE_INT;
 
-			movePicker mPicker = new movePicker(this.cloneBoard);
+			movePicker mPicker = new movePicker(Search.cloneBoard);
+			List<int> bestMoves = new List<int>();
+			stateVariables restoreData = new stateVariables(Search.cloneBoard);
 
-		    List<int> bestMoves = new List<int>();
-			List<int> legalMoves = mPicker.legalMoveList;
+			while (true) {
 
-			while (legalMoves.Count != 0) {
-				this.cloneBoard.makeMove(legalMoves[0]);
-				int boardScore = -negaMax(depth - 1, -beta, -alpha);
+				int move = mPicker.getNextMove();
 
-				this.cloneBoard.unmakeMove(legalMoves[0]);
+				if (move == 0) {
+					break;
+				}
+
+				Search.cloneBoard.makeMove(move);
+				int boardScore = -PVS(depth - 1, -beta, -alpha);
+
+				Search.cloneBoard.unmakeMove(move, restoreData);
 				
 			    if (boardScore > alpha) {
 				    alpha = boardScore;
 				    bestMoves.Clear();
-				    bestMoves.Add(legalMoves[0]);
+				    bestMoves.Add(move);
 			    }
 			    else if (boardScore == alpha) {
-				    bestMoves.Add(legalMoves[0]);
+				    bestMoves.Add(move);
 			    }
-			    legalMoves.RemoveAt(0);
 		    }
 		    moveAndEval result = new moveAndEval();
 		    result.evaluationScore = alpha;
@@ -99,45 +108,86 @@ namespace Chess_Engine {
 
 		// Negamax function called from the root function
 		// Returns the evaluation score
-		public int negaMax(int depth, int alpha, int beta) {
+		// It is fail hard (if score > beta it returns beta, if score < alpha it returns alpha)
+		public static int PVS(int depth, int alpha, int beta) {
 		    
-		    if (depth == 0) {
-			    nodes ++;
-				return Evaluate.evaluationFunction(this.cloneBoard);
+		    if (depth <= 0) {
+			    nodesEvaluated ++;
+				return Evaluate.evaluationFunction(Search.cloneBoard);
+				// return quiescence(alpha, beta);
 		    } else {
 
-				movePicker mPicker = new movePicker(this.cloneBoard);
-				List<int> legalMoves = mPicker.legalMoveList;
-			    int movesMade = 0;
-
-			    while (legalMoves.Count != 0) {
-					this.cloneBoard.makeMove(legalMoves[0]);
-				    movesMade ++;
-				    int boardScore = -negaMax(depth - 1, -beta, -alpha);
-					this.cloneBoard.unmakeMove(legalMoves[0]);
-				    
-					if (boardScore >= beta) {
-					    return beta;
-				    }
-				    if (boardScore > alpha) {
-					    alpha = boardScore;
-				    }
-					legalMoves.RemoveAt(0);
-			    }
-
-				if (movesMade == 0) {
-					if (this.cloneBoard.isInCheck() == true) {
+				// Creates a move picker object
+				movePicker mPicker = new movePicker(Search.cloneBoard);
+				
+				// Backs up the board's instance variables (that are restored during the unmake move)
+				stateVariables restoreData = new stateVariables(Search.cloneBoard);
+				
+				// gets the first move from the move picker object
+				// The first move is searched with a full window search; subsequent moves are searched with a zero window search
+				int move = mPicker.getNextMove();
+				
+				// If the first move is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
+				if (move == 0) {
+					if (Search.cloneBoard.isInCheck() == true) {
+						// Returns the mate score - number of moves made from root to mate 
+						// Ensures that checkmates closer to the root will get a higher score, so that they will be played
 						return -Constants.CHECKMATE + (initialDepth - depth);
 					} else {
 						return Constants.STALEMATE;
 					}
 				}
 
-			    return alpha;
-		    }
-	    }
+				// Makes the first move and performs a full window search
+				Search.cloneBoard.makeMove(move);
+				int bestScore = -PVS(depth - 1, -beta, -alpha);
+				
+				// Unmakes the move and restores the board's instance variables back to its original state
+				Search.cloneBoard.unmakeMove(move, restoreData);
 
-	    private static int quiescence(int alpha, int beta) {
+				if (bestScore > alpha) {
+					// If the score was greater than beta, we have a beta cutoff (and move is too good to be played)
+					if (bestScore >= beta) {
+						failHighFirst++;
+						return beta; // return beta and not best score (fail-hard)
+					}
+					// If no beta cutoff but board score was higher than old alpha, then raise alpha
+					alpha = bestScore;
+				}
+				
+				// Loop through all other moves and perform zero window search
+				while (true) {
+					move = mPicker.getNextMove();
+					if (move == 0) {
+						break;
+					}
+
+					Search.cloneBoard.makeMove(move);
+				    int boardScore = -PVS(depth - 1, -alpha - 1, -alpha);
+					numOfSuccessfulZWS ++;
+
+				    if (boardScore > alpha && boardScore < beta) {
+					    numOfSuccessfulZWS --;
+						boardScore = -PVS(depth - 1, -beta, -alpha);
+					    if (boardScore > alpha) {
+						    alpha = boardScore;
+					    }
+				    }
+					Search.cloneBoard.unmakeMove(move, restoreData);
+
+					if (boardScore > bestScore) {
+						if (boardScore >= beta) {
+							failHigh++;
+							return beta; // return beta and not best score (fail-hard)
+						}
+						bestScore = boardScore;
+					}
+				}
+				return alpha; //return alpha whether it was raised or not (fail-hard)
+		    }
+		}
+
+		private static int quiescence(int alpha, int beta) {
 		    return 0;
 	    }
 
@@ -154,7 +204,6 @@ namespace Chess_Engine {
 
 		internal int[] pseudoLegalMoveList;
 		internal List<int> legalMoveList = new List<int>(); 
-		internal int index = 0;
 		internal Board board;
 
 		public movePicker(Board inputBoard) {
@@ -164,6 +213,8 @@ namespace Chess_Engine {
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
+
+			stateVariables restoreData = new stateVariables(inputBoard);
 
 			foreach (int move in pseudoLegalMoveList) {
 
@@ -178,7 +229,7 @@ namespace Chess_Engine {
 						if (inputBoard.isMoveLegal(sideToMove) == true) {
 							legalMoveList.Add(move);
 						}
-						inputBoard.unmakeMove(move);
+						inputBoard.unmakeMove(move, restoreData);
 					} else {
 						legalMoveList.Add(move);
 					}
@@ -189,7 +240,9 @@ namespace Chess_Engine {
 		public int getNextMove() {
 
 			if (legalMoveList.Count != 0) {
-				return legalMoveList[index++];
+				int move = legalMoveList[0];
+				legalMoveList.RemoveAt(0);
+				return move;
 			} else {
 				return 0;
 			}

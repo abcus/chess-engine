@@ -15,8 +15,7 @@ namespace Chess_Engine {
     
 	public sealed class Test {
 
-
-        //Generates king moves from square H1 to A8
+		//Generates king moves from square H1 to A8
         public static void generateKingMoves() {
             ulong[] array = new ulong[10];
             for (int i = 0; i <= 9; i++) {
@@ -745,6 +744,8 @@ namespace Chess_Engine {
                 int numberOfLegalMovesFromList = 0;
 		        int index = 0;
 
+				stateVariables restoreData = new stateVariables(inputBoard);
+
                 while (pseudoLegalMoveList[index] != 0) {
                     int move = pseudoLegalMoveList[index];
                     int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
@@ -756,7 +757,7 @@ namespace Chess_Engine {
                         if (inputBoard.isMoveLegal(sideToMove) == true) {
                             numberOfLegalMovesFromList++;
                         }
-                        inputBoard.unmakeMove(move);
+                        inputBoard.unmakeMove(move, restoreData);
                         index++;
                     } else {
                         numberOfLegalMovesFromList++;
@@ -778,6 +779,8 @@ namespace Chess_Engine {
                 
                 int index = 0;
 
+				stateVariables restoreData = new stateVariables(inputBoard);
+
 				while (pseudoLegalMoveList[index] != 0) {
 				    int move = pseudoLegalMoveList[index];
                     int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
@@ -793,7 +796,7 @@ namespace Chess_Engine {
 				    } else {
 				        nodes += perft(inputBoard, depth - 1);
 				    }
-                    inputBoard.unmakeMove(move);
+                    inputBoard.unmakeMove(move, restoreData);
 				    index ++;
 				}
 				return nodes;

@@ -20,6 +20,7 @@ namespace Chess_Engine {
 
             Constants.initConstants();
             Constants.initEvalConstants();
+	        Constants.initZobrist();
 
 			while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {

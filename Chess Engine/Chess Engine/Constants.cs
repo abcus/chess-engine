@@ -13,7 +13,13 @@ using Value = System.Int32;
 
 namespace Chess_Engine {
     
-    internal abstract class Constants {
+    internal static class Constants {
+
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		// BOARD CONSTANTS
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
 
         //File constants for masking
         public const ulong FILE_A = FILE_H << 7;
@@ -64,10 +70,8 @@ namespace Chess_Engine {
         public const string FEN_START = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
         //FEN for a random position
-        public const string FEN_RANDOM = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
+        public const string FEN_KIWIPETE = "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -";
 
-        
-        
         //Enumerated type for types of moves
         public const int
             QUIET_MOVE = 0,
@@ -88,8 +92,7 @@ namespace Chess_Engine {
             PIECE_CAPTURED_MASK = 0xF00000,
             PIECE_PROMOTED_MASK = 0xF000000;
             
-
-        //Enumerated types for pieces
+		//Enumerated types for pieces
         public const int
                EMPTY = 0,
                WHITE_PAWN = 1,
@@ -408,6 +411,207 @@ namespace Chess_Engine {
         //Starts at H1 and goes to A8
         public static ulong[][] bishopMoves = new ulong[64][];
 
+		//Populates the occupancy variation arrays and piece move arrays
+		public static void initConstants() {
+			populateRookOccupancyVariation(rookOccupancyVariations);
+			populateBishopOccupancyVariation(bishopOccupancyVariations);
+			populateRookMove(rookMoves);
+			populateBishopMove(bishopMoves);
+		}
+
+		//Generates all permutations for the "1 bits" of a binary number 
+		private static void generateBinaryPermutations(ulong inputBinaryNumber, List<int> remainingIndices, List<ulong> permutations) {
+
+			//If there are no more indices left to be swapped, it prints out the number
+			if (remainingIndices.Count == 0) {
+				permutations.Add(inputBinaryNumber);
+				//Console.WriteLine(Convert.ToString((long) inputBinaryNumber, 2));
+			} else {
+				string[] onOff = { "0", "1" };
+
+				//Sets the first "1" bit to either 0 or 1
+				foreach (string bit in onOff) {
+					if (bit == "0") {
+						inputBinaryNumber &= ~(0x1UL << remainingIndices[0]);
+					}
+					//removes the index of the first "1" bit and makes a recursive call to set the next "1" bit to either 0 or 1
+					int temp = remainingIndices[0];
+					remainingIndices.RemoveAt(0);
+					generateBinaryPermutations(inputBinaryNumber, remainingIndices, permutations);
+
+					//Unmakes move by re-inserting the index of the first "1" bit, and resetting the input binary number
+					remainingIndices.Insert(0, temp);
+					if (bit == "0") {
+						inputBinaryNumber |= (0x1UL << remainingIndices[0]);
+					}
+				}
+			}
+		}
+
+		//Populates the rook occupancy variation array for every square
+		public static void populateRookOccupancyVariation(ulong[][] rookOccupancyVariation) {
+
+			//loops over every square
+			for (int i = 0; i <= 63; i++) {
+
+				List<ulong> permutationsForParticularSquare = new List<ulong>();
+
+				//Takes in the rook occupancy mask for that particular square and generates all permutations/variations of the "1" bits, and stores it in array list
+				generateBinaryPermutations(rookOccupancyMask[i], bitScan(rookOccupancyMask[i]), permutationsForParticularSquare);
+
+				//Sorts the array list of permutations/variations, converts it to an array, and puts in the rook occupancy variations array
+				permutationsForParticularSquare.Sort();
+				ulong[] permutationForParticularSquareArray = permutationsForParticularSquare.ToArray();
+				rookOccupancyVariation[i] = permutationForParticularSquareArray;
+			}
+		}
+
+		//Populates the bishop occupancy variation array for every square
+		public static void populateBishopOccupancyVariation(ulong[][] bishopOccupancyVariation) {
+
+			for (int i = 0; i <= 63; i++) {
+
+				List<ulong> permutationsForParticularSquare = new List<ulong>();
+
+				generateBinaryPermutations(bishopOccupancyMask[i], bitScan(bishopOccupancyMask[i]), permutationsForParticularSquare);
+
+				permutationsForParticularSquare.Sort();
+				ulong[] permutationsForParticularSquareArray = permutationsForParticularSquare.ToArray();
+				bishopOccupancyVariation[i] = permutationsForParticularSquareArray;
+
+			}
+		}
+
+		//Populates the rook move array for every square 
+		public static void populateRookMove(ulong[][] rookMovesArray) {
+
+			//loops over every square in the rook occupancy variation array
+			for (int i = 0; i <= 63; i++) {
+
+				rookMovesArray[i] = new ulong[rookOccupancyVariations[i].Length];
+
+				for (int j = 0; j < rookOccupancyVariations[i].Length; j++) {
+
+					ulong rookMove = 0x0UL;
+					ulong square = 0x1UL << i;
+
+					//If (index/8 <= 6), shift up 7 - (index)/8 times (if in 7th rank or lower, shift up 8-rank times)
+					//If a "1" is encountered in the occupancy variation, break
+					if (i / 8 <= 6) {
+						for (int k = 0; k <= 7 - i / 8; k++) {
+
+							rookMove |= square << (8 * k);
+
+							//If a "1" is encountered in the corresponding occupancy variation, then break
+							if ((rookOccupancyVariations[i][j] & square << (8 * k)) == square << (8 * k)) {
+								break;
+							}
+						}
+					}
+					//If (index/8 >= 1) shift down 0 + (index/8) times (if in 2nd rank or higher, shift down rank - 1 times)
+					//If a "1" is encountered in the occupancy variation, break
+					if (i / 8 >= 1) {
+						for (int k = 0; k <= i / 8; k++) {
+							rookMove |= square >> (8 * k);
+							if ((rookOccupancyVariations[i][j] & square >> (8 * k)) == square >> (8 * k)) {
+								break;
+							}
+						}
+					}
+					//If (index %8 <= 6) shift left 7 - (index % 8) times (if in B file or higher, shift left file - 1 times)
+					//If a "1" is encountered in the occupancy variation, break
+					if (i % 8 <= 6) {
+						for (int k = 0; k <= 7 - (i % 8); k++) {
+							rookMove |= square << k;
+							if ((rookOccupancyVariations[i][j] & square << k) == square << k) {
+								break;
+							}
+						}
+					}
+					//If (index % 8 >= 1) shift right (index % 8) times
+					if (i % 8 >= 1) {
+						for (int k = 0; k <= (i % 8); k++) {
+							rookMove |= square >> k;
+							if ((rookOccupancyVariations[i][j] & square >> k) == square >> k) {
+								break;
+							}
+						}
+					}
+					rookMove &= ~square;
+
+					//Hash function that calculates the array index from the table of magic numbers and table of shifts
+					int arrayIndex = (int)((rookOccupancyVariations[i][j] * rookMagicNumbers[i]) >>
+									 (rookMagicShiftNumber[i]));
+
+					rookMovesArray[i][arrayIndex] = rookMove;
+				}
+			}
+		}
+
+		//Populates the bishop move array for every square 
+		public static void populateBishopMove(ulong[][] bishopMovesArray) {
+
+			//loops over every square in the bishop occupancy variation array
+			for (int i = 0; i <= 63; i++) {
+
+				bishopMovesArray[i] = new ulong[bishopOccupancyVariations[i].Length];
+
+				for (int j = 0; j < bishopOccupancyVariations[i].Length; j++) {
+
+					ulong bishopMove = 0x0UL;
+					ulong square = 0x1UL << i;
+
+					//If (index/8 <= 6) && (index % 8 <= 6), shift up-left 7-(index)/8 && 7 - (index % 8) times (min of the two)
+					if (i / 8 <= 6 && i % 8 <= 6) {
+						for (int k = 0; (k <= 7 - i / 8 && k <= 7 - (i % 8)); k++) {
+							bishopMove |= square << (9 * k);
+
+							//If a "1" is encountered in the corresponding occupancy variation, then break
+							if ((bishopOccupancyVariations[i][j] & square << (9 * k)) == square << (9 * k)) {
+								break;
+							}
+						}
+					}
+					//If (index/8 >= 1) && (index % 8 <= 6), shift down-right 0 + (index/8) &&  (index % 8) times (min of the two)
+					if (i / 8 >= 1 && i % 8 >= 1) {
+						for (int k = 0; (k <= (i / 8) && k <= (i % 8)); k++) {
+							bishopMove |= square >> (9 * k);
+							if ((bishopOccupancyVariations[i][j] & square >> (9 * k)) == square >> (9 * k)) {
+								break;
+							}
+						}
+					}
+					//If (index % 8 <= 6) and (index / 8 >= 1). shift down-left 7 - (index % 8) && (index/8) times (min of the two)
+					if (i / 8 >= 1 && i % 8 <= 6) {
+						for (int k = 0; (k <= (i / 8) && k <= 7 - (i % 8)); k++) {
+							bishopMove |= square >> (7 * k);
+							if ((bishopOccupancyVariations[i][j] & square >> (7 * k)) == square >> (7 * k)) {
+								break;
+							}
+						}
+					}
+					//If (index % 8 >= 1) and (index / 8 <= 6), shift up-right (index % 8) && (7-(index)/8) times (min ov the two)
+					if (i / 8 <= 6 && i % 8 >= 1) {
+						for (int k = 0; (k <= 7 - (i / 8) && k <= i % 8); k++) {
+							bishopMove |= square << (7 * k);
+							if ((bishopOccupancyVariations[i][j] & square << (7 * k)) == square << (7 * k)) {
+								break;
+							}
+						}
+					}
+
+					bishopMove &= ~square;
+
+					//Hash function that calculates the array index from the table of magic numbers and table of shifts
+					int arrayIndex = (int)((bishopOccupancyVariations[i][j] * bishopMagicNumbers[i]) >>
+									 (bishopMagicShiftNumber[i]));
+
+					bishopMovesArray[i][arrayIndex] = bishopMove;
+
+				}
+			}
+		}
+
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         // EVALUATION CONSTANTS
@@ -417,7 +621,7 @@ namespace Chess_Engine {
         // Values of draws, stalemates, and checkmates
         public const Value DRAW = 0;
         public const Value STALEMATE = 0;
-        public const Value CHECKMATE = LARGE_INT/2;
+        public const Value CHECKMATE = 10000000;
 
         public const Value KING_VALUE = 10000;
 
@@ -675,220 +879,57 @@ namespace Chess_Engine {
             arrayOfPSQEndgame[12] = bKingEndgamePSQ;
 
         }
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		// TRANSPOSITION TABLE CONSTANTS
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
+	    public const int TT_SIZE = 15485867;
 
-        //METHODS-------------------------------------------------------------------------------------
+	    public const int PV_NODE = 1;
+	    public const int CUT_NODE = 2;
+	    public const int ALL_NODE = 3;
 
-        //INITIALIZATION METHODS-----------------------------------------------------------------------
+		public static ulong[,] pieceZobrist = new ulong[13,64];
+		public static ulong[] enPassantZobrist = new ulong[64];
+		public static ulong[] castleZobrist = new ulong[4];
+		public static ulong[] sideToMoveZobrist = new ulong[1];
 
-        //Populates the occupancy variation arrays and piece move arrays
-        public static void initConstants() {
-            populateRookOccupancyVariation(rookOccupancyVariations);
-            populateBishopOccupancyVariation(bishopOccupancyVariations);
-            populateRookMove(rookMoves);
-            populateBishopMove(bishopMoves);
-        }
+	    private static int seed = 1;
+	    private static Random rnd = new Random(Constants.seed);
 
-        //Generates all permutations for the "1 bits" of a binary number 
-        private static void generateBinaryPermutations(ulong inputBinaryNumber, List<int> remainingIndices, List<ulong> permutations)
-        {
+		// Extension method that generates a random ulong
+	    public static UInt64 NextUInt64(this Random rnd) {
+		    var buffer = new byte[sizeof (UInt64)];
+			rnd.NextBytes(buffer);
+		    return BitConverter.ToUInt64(buffer, 0);
+	    }
 
-            //If there are no more indices left to be swapped, it prints out the number
-            if (remainingIndices.Count == 0)
-            {
-                permutations.Add(inputBinaryNumber);
-                //Console.WriteLine(Convert.ToString((long) inputBinaryNumber, 2));
-            }
-            else
-            {
-                string[] onOff = { "0", "1" };
+		// Initializes the zobrist random number arrays
+		public static void initZobrist() {
+			
+			// Populates the piece Zobrist array
+			for (int i = 1; i <= 12; i++) {
+				for (int j = 0; j < 64; j++) {
+					Constants.pieceZobrist[i, j] = rnd.NextUInt64();
+				}
+			}
+	
+			// Populates the en Passant Zobrist array
+			for (int i = 0; i < 64; i++) {
+				Constants.enPassantZobrist[i] = rnd.NextUInt64();
+			}
 
-                //Sets the first "1" bit to either 0 or 1
-                foreach (string bit in onOff)
-                {
-                    if (bit == "0")
-                    {
-                        inputBinaryNumber &= ~(0x1UL << remainingIndices[0]);
-                    }
-                    //removes the index of the first "1" bit and makes a recursive call to set the next "1" bit to either 0 or 1
-                    int temp = remainingIndices[0];
-                    remainingIndices.RemoveAt(0);
-                    generateBinaryPermutations(inputBinaryNumber, remainingIndices, permutations);
+			// Populates the castle Zobrist array
+			for (int i = 0; i < 4; i++) {
+				Constants.castleZobrist[i] = rnd.NextUInt64();
+			}
 
-                    //Unmakes move by re-inserting the index of the first "1" bit, and resetting the input binary number
-                    remainingIndices.Insert(0, temp);
-                    if (bit == "0")
-                    {
-                        inputBinaryNumber |= (0x1UL << remainingIndices[0]);
-                    }
-                }
-            }
-        }
+			// Populates the side to Move Zobrist array
+			Constants.sideToMoveZobrist[0] = rnd.NextUInt64();
+		}
 
-        //Populates the rook occupancy variation array for every square
-        public static void populateRookOccupancyVariation(ulong[][] rookOccupancyVariation) {
-
-            //loops over every square
-            for (int i = 0; i <= 63; i++) {
-
-                List<ulong> permutationsForParticularSquare = new List<ulong>();
-
-                //Takes in the rook occupancy mask for that particular square and generates all permutations/variations of the "1" bits, and stores it in array list
-                generateBinaryPermutations(rookOccupancyMask[i], bitScan(rookOccupancyMask[i]), permutationsForParticularSquare);
-
-                //Sorts the array list of permutations/variations, converts it to an array, and puts in the rook occupancy variations array
-                permutationsForParticularSquare.Sort();
-                ulong[] permutationForParticularSquareArray = permutationsForParticularSquare.ToArray();
-                rookOccupancyVariation[i] = permutationForParticularSquareArray;
-            }
-        }
-
-        //Populates the bishop occupancy variation array for every square
-        public static void populateBishopOccupancyVariation(ulong[][] bishopOccupancyVariation) {
-
-            for (int i = 0; i <= 63; i++) {
-                
-                List<ulong> permutationsForParticularSquare = new List<ulong>();
-
-                generateBinaryPermutations(bishopOccupancyMask[i], bitScan(bishopOccupancyMask[i]), permutationsForParticularSquare);
-
-                permutationsForParticularSquare.Sort();
-                ulong[] permutationsForParticularSquareArray = permutationsForParticularSquare.ToArray();
-                bishopOccupancyVariation[i] = permutationsForParticularSquareArray;
-
-            }
-        }
-
-        //Populates the rook move array for every square 
-        public static void populateRookMove(ulong[][] rookMovesArray) {
-
-            //loops over every square in the rook occupancy variation array
-            for (int i = 0; i <= 63; i++) {
-
-                rookMovesArray[i] = new ulong[rookOccupancyVariations[i].Length];
-
-                for (int j = 0; j < rookOccupancyVariations[i].Length; j++) {
-
-                    ulong rookMove = 0x0UL;
-                    ulong square = 0x1UL << i;
-
-                    //If (index/8 <= 6), shift up 7 - (index)/8 times (if in 7th rank or lower, shift up 8-rank times)
-                    //If a "1" is encountered in the occupancy variation, break
-                    if (i/8 <= 6) {
-                        for (int k = 0; k <= 7 - i/8; k++) {
-                           
-                            rookMove |= square << (8 * k);
-                            
-                            //If a "1" is encountered in the corresponding occupancy variation, then break
-                            if ((rookOccupancyVariations[i][j] & square << (8 * k)) == square << (8 * k)) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index/8 >= 1) shift down 0 + (index/8) times (if in 2nd rank or higher, shift down rank - 1 times)
-                    //If a "1" is encountered in the occupancy variation, break
-                    if (i/8 >= 1) {
-                        for (int k = 0; k <= i/8; k++) {
-                            rookMove |= square >> (8*k);
-                            if ((rookOccupancyVariations[i][j] & square >> (8 * k)) == square >> (8 * k)) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index %8 <= 6) shift left 7 - (index % 8) times (if in B file or higher, shift left file - 1 times)
-                    //If a "1" is encountered in the occupancy variation, break
-                    if (i%8 <= 6) {
-                        for (int k = 0; k <= 7 - (i%8); k++) {
-                            rookMove |= square << k;
-                            if ((rookOccupancyVariations[i][j] & square << k) == square << k) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index % 8 >= 1) shift right (index % 8) times
-                    if (i%8 >= 1) {
-                        for (int k = 0; k <= (i%8); k++) {
-                            rookMove |= square >> k;
-                            if ((rookOccupancyVariations[i][j] & square >> k) == square >> k) {
-                                break;
-                            }
-                        }
-                    }
-                    rookMove &= ~square;
-
-                    //Hash function that calculates the array index from the table of magic numbers and table of shifts
-                    int arrayIndex = (int) ((rookOccupancyVariations[i][j] * rookMagicNumbers[i]) >>
-                                     (rookMagicShiftNumber[i]));
-
-                    rookMovesArray[i][arrayIndex] = rookMove;
-                }
-            }
-        }
-
-         //Populates the bishop move array for every square 
-        public static void populateBishopMove(ulong[][] bishopMovesArray) {
-
-            //loops over every square in the bishop occupancy variation array
-            for (int i = 0; i <= 63; i++) {
-
-                bishopMovesArray[i] = new ulong[bishopOccupancyVariations[i].Length];
-
-                for (int j = 0; j < bishopOccupancyVariations[i].Length; j++) {
-
-                    ulong bishopMove = 0x0UL;
-                    ulong square = 0x1UL << i;
-
-                    //If (index/8 <= 6) && (index % 8 <= 6), shift up-left 7-(index)/8 && 7 - (index % 8) times (min of the two)
-                    if (i / 8 <= 6 && i % 8 <= 6) {
-                        for (int k = 0; (k <= 7 - i / 8 && k <= 7 - (i % 8)); k++) {
-                            bishopMove |= square << (9 * k);
-
-                            //If a "1" is encountered in the corresponding occupancy variation, then break
-                            if ((bishopOccupancyVariations[i][j] & square << (9 * k)) == square << (9 * k)) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index/8 >= 1) && (index % 8 <= 6), shift down-right 0 + (index/8) &&  (index % 8) times (min of the two)
-                    if (i / 8 >= 1 && i % 8 >= 1) {
-                        for (int k = 0; (k <= (i / 8)  && k <= (i % 8)); k++) {
-                            bishopMove |= square >> (9 * k);
-                            if ((bishopOccupancyVariations[i][j] & square >> (9 * k)) == square >> (9 * k)) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index % 8 <= 6) and (index / 8 >= 1). shift down-left 7 - (index % 8) && (index/8) times (min of the two)
-                    if (i / 8 >= 1 && i % 8 <= 6) {
-                        for (int k = 0; (k <= (i / 8)  && k <= 7 - (i % 8)); k++) {
-                            bishopMove |= square >> (7 * k);
-                            if ((bishopOccupancyVariations[i][j] & square >> (7 * k)) == square >> (7 * k)) {
-                                break;
-                            }
-                        }
-                    }
-                    //If (index % 8 >= 1) and (index / 8 <= 6), shift up-right (index % 8) && (7-(index)/8) times (min ov the two)
-                    if (i / 8 <= 6 && i % 8 >= 1) {
-                        for (int k = 0; (k <= 7 - (i / 8) && k <= i % 8); k++) {
-                            bishopMove |= square << (7 * k);
-                            if ((bishopOccupancyVariations[i][j] & square << (7 * k)) == square << (7 * k)) {
-                                break;
-                            }
-                        }
-                    }
-
-                    bishopMove &= ~square;
-
-                    //Hash function that calculates the array index from the table of magic numbers and table of shifts
-                    int arrayIndex = (int)((bishopOccupancyVariations[i][j] * bishopMagicNumbers[i]) >>
-                                     (bishopMagicShiftNumber[i]));
-
-                    bishopMovesArray[i][arrayIndex] = bishopMove;
-
-                }
-            }
-        }
-
-        //--------------------------------------------------------------------------------------------------------------------------------------------
+		//--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //BIT MANIPULATION METHODS
         //--------------------------------------------------------------------------------------------------------------------------------------------

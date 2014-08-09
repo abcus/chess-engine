@@ -14,7 +14,8 @@ namespace Chess_Engine {
 
 		// Creates a board object and initializes to to the start position
         private static Board position = new Board(Constants.FEN_START);
-        
+        private static TTable hashTable = new TTable();
+
 		// Creates a background worker object for the search
 		internal static BackgroundWorker searchWorker;   
 
@@ -106,8 +107,8 @@ namespace Chess_Engine {
 
 		// Method that prints out the engine name, author
         public static void UCIInitialize() {
-            Console.WriteLine("id name Spark v0.343");
-            Console.WriteLine("id author Avery Johnson");
+            Console.WriteLine("id name Spark v0.1");
+            Console.WriteLine("id author John");
             Console.WriteLine("uciok");
         }
 
@@ -134,7 +135,11 @@ namespace Chess_Engine {
                 inputStringList.RemoveAt(0);
                 position = new Board(Constants.FEN_START);
             } 
-            
+			// Sets the board to the "kiwipete" position
+			else if (inputStringList[0] == "kiwipete") {
+	            inputStringList.RemoveAt(0);
+	            position = new Board(Constants.FEN_KIWIPETE);
+            }
             // Sets the baord to the position specified by the FEN string
             else if (inputStringList[0] == "fen") {
                 inputStringList.RemoveAt(0);
@@ -192,23 +197,28 @@ namespace Chess_Engine {
         public static void searchWorker_StartSearch(object sender, DoWorkEventArgs e) {
             
 			// Creates a new search object
-	        Search searchObject = new Search(position, e);
+	        Search.initSearch(position, e);
 
         }
 
 		// Prints out the results when the search has completed (or been stopped)
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
-			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (int)(Search.result.evaluationScore / 2.28));
+			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (Search.result.evaluationScore));
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
+			Console.WriteLine("");
 
-		    string numberOfNodesString = Search.nodes.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
-			ulong nodesPerSecond = ((Search.nodes)/(ulong)(Search.s.ElapsedMilliseconds) * 1000);
+		    string numberOfNodesString = Search.nodesEvaluated.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
+			ulong nodesPerSecond = ((Search.nodesEvaluated)/(ulong)(Search.s.ElapsedMilliseconds) * 1000);
 			string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
-			Console.WriteLine("Number of nodes evaluated: " + Search.nodes.ToString(numberOfNodesString));
-			Console.WriteLine(" Elapsed time: " + Search.s.ElapsedMilliseconds);
+			Console.WriteLine("Number of nodes evaluated:\t" + Search.nodesEvaluated.ToString(numberOfNodesString));
+			Console.WriteLine("Elapsed time:\t\t\t" + Search.s.ElapsedMilliseconds);
 			Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
-	    }
+
+			Console.WriteLine("Percentage of fail high first:\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
+			
+			Console.WriteLine("Number of successful ZWS searches:\t" + (Search.numOfSuccessfulZWS));
+		}
 
         // Extracts the start square from the integer that encodes the move
         private static int getStartSquare(int moveRepresentation) {
@@ -379,7 +389,8 @@ namespace Chess_Engine {
             }
 
             Console.WriteLine("Repetitions of this position: " + moveData[2]);
-            Console.WriteLine("");
+            Console.WriteLine("Zobrist key: " + inputBoard.zobristKey);
+			Console.WriteLine("");
 
             Test.kingInCheckTest(inputBoard, inputBoard.getSideToMove());
         }
