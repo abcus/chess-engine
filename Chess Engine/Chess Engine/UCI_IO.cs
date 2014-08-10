@@ -13,8 +13,10 @@ namespace Chess_Engine {
     public static class UCI_IO {
 
 		// Creates a board object and initializes to to the start position
-        private static Board position = new Board(Constants.FEN_START);
-        private static TTable hashTable = new TTable();
+        internal static Board position = new Board(Constants.FEN_START);
+
+		// Creates a transposition table object (which is not cleared for the duration of the runtime of the program)
+        internal static TTable hashTable = new TTable();
 
 		// Creates a background worker object for the search
 		internal static BackgroundWorker searchWorker;   
@@ -203,19 +205,19 @@ namespace Chess_Engine {
 
 		// Prints out the results when the search has completed (or been stopped)
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
-			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (Search.result.evaluationScore));
+			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (int)((Search.result.evaluationScore)/2.28));
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 			Console.WriteLine("");
 
 		    string numberOfNodesString = Search.nodesEvaluated.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
-			ulong nodesPerSecond = ((Search.nodesEvaluated)/(ulong)(Search.s.ElapsedMilliseconds) * 1000);
+			double nodesPerSecond = ((Search.nodesEvaluated)/(double)(Search.s.ElapsedMilliseconds) * 1000);
 			string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
-			Console.WriteLine("Number of nodes evaluated:\t" + Search.nodesEvaluated.ToString(numberOfNodesString));
-			Console.WriteLine("Elapsed time:\t\t\t" + Search.s.ElapsedMilliseconds);
-			Console.WriteLine("Nodes per second: \t\t" + nodesPerSecond.ToString(nodesPerSecondString));
+			Console.WriteLine("Number of nodes evaluated:\t\t" + Search.nodesEvaluated.ToString(numberOfNodesString));
+			Console.WriteLine("Elapsed time:\t\t\t\t" + Search.s.ElapsedMilliseconds);
+			Console.WriteLine("Nodes per second: \t\t\t" + nodesPerSecond.ToString(nodesPerSecondString));
 
-			Console.WriteLine("Percentage of fail high first:\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
+			Console.WriteLine("Percentage of fail high first:\t\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
 			
 			Console.WriteLine("Number of successful ZWS searches:\t" + (Search.numOfSuccessfulZWS));
 		}

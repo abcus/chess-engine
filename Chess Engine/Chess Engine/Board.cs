@@ -186,6 +186,7 @@ namespace Chess_Engine {
 			    zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
 				this.enPassantSquare = 0x0UL;
 		    }
+
             // Updates the en passant square instance variable if there was a double pawn push
 		    if (flag == Constants.DOUBLE_PAWN_PUSH) {
 		        if (pieceMoved == Constants.WHITE_PAWN) {
@@ -226,22 +227,22 @@ namespace Chess_Engine {
             }
 		    // If the start square or destination square is A1, H1, A8, or H8, then updates the castling rights
 		    if (startSquare == Constants.A1 || destinationSquare == Constants.A1) {
-			    if (this.whiteLongCastleRights == Constants.CANNOT_CASTLE) {
+			    if (this.whiteLongCastleRights != Constants.CANNOT_CASTLE) {
 				    this.zobristKey ^= Constants.castleZobrist[1];
 					this.whiteLongCastleRights = Constants.CANNOT_CASTLE;
 			    }
             } if (startSquare == Constants.H1 || destinationSquare == Constants.H1) {
-				if (this.whiteShortCastleRights == Constants.CANNOT_CASTLE) {
+				if (this.whiteShortCastleRights != Constants.CANNOT_CASTLE) {
 					this.zobristKey ^= Constants.castleZobrist[0];
 					this.whiteShortCastleRights = Constants.CANNOT_CASTLE;
 				}
             } if (startSquare == Constants.A8 || destinationSquare == Constants.A8) {
-				if (this.blackLongCastleRights == Constants.CANNOT_CASTLE) {
+				if (this.blackLongCastleRights != Constants.CANNOT_CASTLE) {
 					this.zobristKey ^= Constants.castleZobrist[3];
 					this.blackLongCastleRights = Constants.CANNOT_CASTLE;
 				}
             } if (startSquare == Constants.H8 || destinationSquare == Constants.H8) {
-				if (this.blackShortCastleRights == Constants.CANNOT_CASTLE) {
+				if (this.blackShortCastleRights != Constants.CANNOT_CASTLE) {
 					this.zobristKey ^= Constants.castleZobrist[2];
 					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
 				}
