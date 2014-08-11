@@ -58,7 +58,7 @@ namespace Chess_Engine {
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			for (int i = 1; i <= 7; i++) {
+			for (int i = 1; i <= 1; i++) {
 
 				if (UCI_IO.searchWorker.CancellationPending) {
 					e.Cancel = true;
@@ -131,9 +131,9 @@ namespace Chess_Engine {
 			if (Search.cloneBoard.fiftyMoveRule >= 100) {
 				return 0;
 			}
-			if (Search.cloneBoard.getRepetitionNumber() > 1) {
-				return 0;
-			}
+			//if (Search.cloneBoard.getRepetitionNumber() > 1) {
+				//return 0;
+			//}
 
 			// At the leaf nodes
 		    if (depth <= 0) {

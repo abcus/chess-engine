@@ -411,9 +411,6 @@ namespace Chess_Engine {
         //Starts at H1 and goes to A8
         public static ulong[][] bishopMoves = new ulong[64][];
 
-		// Mask for the history hash table
-	    public const ulong historyHashMask = 0x3FFF;
-
 		//Populates the occupancy variation arrays and piece move arrays
 		public static void initConstants() {
 			populateRookOccupancyVariation(rookOccupancyVariations);
