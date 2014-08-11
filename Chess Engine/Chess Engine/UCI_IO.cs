@@ -213,6 +213,7 @@ namespace Chess_Engine {
 			double nodesPerSecond = ((Search.nodesEvaluated)/(double)(Search.s.ElapsedMilliseconds) * 1000);
 			string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
 
+			Console.WriteLine("score:" + Search.result.evaluationScore);
 			Console.WriteLine("Number of nodes evaluated:\t\t" + Search.nodesEvaluated.ToString(numberOfNodesString));
 			Console.WriteLine("Elapsed time:\t\t\t\t" + Search.s.ElapsedMilliseconds);
 			Console.WriteLine("Nodes per second: \t\t\t" + nodesPerSecond.ToString(nodesPerSecondString));
@@ -273,21 +274,20 @@ namespace Chess_Engine {
         public static void drawBoard(Board inputBoard) {
 
             //gets the bitboards from the board object
-            ulong[] arrayOfBitboards = inputBoard.getArrayOfPieceBitboards();
+            
+            ulong wPawn = inputBoard.arrayOfBitboards[1];
+			ulong wKnight = inputBoard.arrayOfBitboards[2];
+			ulong wBishop = inputBoard.arrayOfBitboards[3];
+			ulong wRook = inputBoard.arrayOfBitboards[4];
+			ulong wQueen = inputBoard.arrayOfBitboards[5];
+			ulong wKing = inputBoard.arrayOfBitboards[6];
 
-            ulong wPawn = arrayOfBitboards[1];
-            ulong wKnight = arrayOfBitboards[2];
-            ulong wBishop = arrayOfBitboards[3];
-            ulong wRook = arrayOfBitboards[4];
-            ulong wQueen = arrayOfBitboards[5];
-            ulong wKing = arrayOfBitboards[6];
-
-            ulong bPawn = arrayOfBitboards[7];
-            ulong bKnight = arrayOfBitboards[8];
-            ulong bBishop = arrayOfBitboards[9];
-            ulong bRook = arrayOfBitboards[10];
-            ulong bQueen = arrayOfBitboards[11];
-            ulong bKing = arrayOfBitboards[12];
+			ulong bPawn = inputBoard.arrayOfBitboards[7];
+			ulong bKnight = inputBoard.arrayOfBitboards[8];
+			ulong bBishop = inputBoard.arrayOfBitboards[9];
+			ulong bRook = inputBoard.arrayOfBitboards[10];
+			ulong bQueen = inputBoard.arrayOfBitboards[11];
+			ulong bKing = inputBoard.arrayOfBitboards[12];
 
             //creates a new 8x8 array of String and sets it all to spaces
             string[,] chessBoard = new string[8, 8];
@@ -350,19 +350,23 @@ namespace Chess_Engine {
             //Prints out the side to move, castling rights, en-pessant square, halfmoves since capture/pawn advance, and fullmove number
 
             //side to move
-            int sideToMove = inputBoard.getSideToMove();
+            int sideToMove = inputBoard.sideToMove;
             String colour = (sideToMove == Constants.WHITE) ? "WHITE" : "BLACK";
             Console.WriteLine("Side to move: " + colour);
 
             //castle rights
-            int[] castleRights = inputBoard.getCastleRights();
-            Console.WriteLine("White Short Castle Rights: " + castleRights[0]);
-            Console.WriteLine("White Long Castle Rights: " + castleRights[1]);
-            Console.WriteLine("Black Short Castle Rights: " + castleRights[2]);
-            Console.WriteLine("Black Long Castle Rights: " + castleRights[3]);
+	        int whiteShortCastleRights = inputBoard.whiteShortCastleRights;
+			int whiteLongCastleRights = inputBoard.whiteLongCastleRights;
+			int blackShortCastleRights = inputBoard.blackShortCastleRights;
+			int blackLongCastleRights = inputBoard.blackLongCastleRights;
+
+            Console.WriteLine("White Short Castle Rights: " + whiteShortCastleRights);
+            Console.WriteLine("White Long Castle Rights: " + whiteLongCastleRights);
+            Console.WriteLine("Black Short Castle Rights: " + blackShortCastleRights);
+            Console.WriteLine("Black Long Castle Rights: " + blackLongCastleRights);
 
             //en passant square
-            ulong enPassantSquareBitboard = inputBoard.getEnPassant();
+            ulong enPassantSquareBitboard = inputBoard.enPassantSquare;
 
 
             if (enPassantSquareBitboard != 0) {
@@ -377,24 +381,29 @@ namespace Chess_Engine {
 
             //prints move data (fullmove number, half-moves since last pawn push/capture, repetitions of position)
             //If no move number data or halfmove clock data, then prints N/A
-            int[] moveData = inputBoard.getMoveData();
-            if (moveData[0] != -1) {
-                Console.WriteLine("Fullmove number: " + moveData[0]);
-            } else {
-                Console.WriteLine("Fullmove number: N/A");
-            }
+            int fullMoveNumber = inputBoard.fullMoveNumber;
+            Console.WriteLine("Fullmove number: " + fullMoveNumber);
 
-            if (moveData[1] != -1) {
-                Console.WriteLine("Half moves since last pawn push/capture: " + moveData[1]);
-            } else {
-                Console.WriteLine("Half moves since last pawn push/capture: N/A");
-            }
+	        int fiftyMoveRule = inputBoard.fiftyMoveRule;
+            Console.WriteLine("Half moves since last pawn push/capture: " + fiftyMoveRule);
 
-            Console.WriteLine("Repetitions of this position: " + moveData[2]);
+	        int repetitionOfPosition = 0;
+			
+	        for (int i = inputBoard.gameHistory.Count - 1 - inputBoard.fiftyMoveRule; i < inputBoard.gameHistory.Count; i++) {
+		        if (inputBoard.zobristKey == inputBoard.gameHistory[i]) {
+			        repetitionOfPosition ++;
+		        }
+	        }
+
+			Console.WriteLine("Repetitions of this position: " + repetitionOfPosition);
+	        if (repetitionOfPosition >= 3) {
+		        Console.WriteLine("Draw by threefold repetition");
+	        }
+
             Console.WriteLine("Zobrist key: " + inputBoard.zobristKey);
 			Console.WriteLine("");
 
-            Test.kingInCheckTest(inputBoard, inputBoard.getSideToMove());
+            Test.kingInCheckTest(inputBoard, inputBoard.sideToMove);
         }
     }
 }

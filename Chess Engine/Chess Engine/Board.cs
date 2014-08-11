@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,18 +20,24 @@ using Move = System.UInt32;
 namespace Chess_Engine {
 
     // Class that stores the information necessary to restore the board back to its previous state after making a move
+	// Other information stored by primitive types (e.g. zobrist key, material) is copied, while arrays are not (too slow)
     public sealed class stateVariables {
         internal int sideToMove;
         internal int whiteShortCastleRights;
         internal int whiteLongCastleRights;
         internal int blackShortCastleRights;
         internal int blackLongCastleRights;
-        internal int repetionOfPosition;
         internal int fiftyMoveRule;
-        internal int halfmoveNumber;
+        internal int fullMoveNumber;
         internal int capturedPieceType;
         internal Bitboard enPassantSquare;
 	    internal Zobrist zobristKey;
+
+	    internal int whiteMidgameMaterial;
+	    internal int whiteEndgameMaterial;
+	    internal int blackMidgameMaterial;
+	    internal int blackEndgameMaterial;
+
 
         // Constructor that sets all of the stateVariable's instance variables
         public stateVariables (Board inputBoard) {
@@ -41,13 +48,17 @@ namespace Chess_Engine {
             this.blackShortCastleRights = inputBoard.blackShortCastleRights;
             this.blackLongCastleRights = inputBoard.blackLongCastleRights;
 
-            this.repetionOfPosition = inputBoard.repetionOfPosition;
             this.fiftyMoveRule = inputBoard.fiftyMoveRule;
-            this.halfmoveNumber = inputBoard.halfmoveNumber;
+            this.fullMoveNumber = inputBoard.fullMoveNumber;
 
             this.enPassantSquare = inputBoard.enPassantSquare;
 
 	        this.zobristKey = inputBoard.zobristKey;
+
+	        this.whiteMidgameMaterial = inputBoard.whiteMidgameMaterial;
+	        this.whiteEndgameMaterial = inputBoard.whiteEndgameMaterial;
+	        this.blackMidgameMaterial = inputBoard.blackMidgameMaterial;
+	        this.blackEndgameMaterial = inputBoard.blackEndgameMaterial;
         } 
     }
 
@@ -84,10 +95,9 @@ namespace Chess_Engine {
         internal ulong enPassantSquare = 0x0UL;
         
         //move data
-        internal int halfmoveNumber = 0;
+        internal int fullMoveNumber = 1;
         internal int fiftyMoveRule = 0;
-        internal int repetionOfPosition = 0;
-
+        
         //Variables that can be calculated
 
         internal int[] pieceCount = new int[13];
@@ -97,15 +107,14 @@ namespace Chess_Engine {
         internal int blackMidgameMaterial = 0;
         internal int blackEndgameMaterial = 0;
 
-	    internal int checkmate = 0;
-	    internal int stalemate = 0;
-
-        internal int[] midgamePSQ = new int[13];
+		internal int[] midgamePSQ = new int[13];
         internal int[] endgamePSQ = new int[13];
         
         internal Zobrist zobristKey = 0x0UL;
 
-       //--------------------------------------------------------------------------------------------------------------------------------------------
+	    internal List<Zobrist> gameHistory = new List<Zobrist>();
+
+        //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         // CONSTRUCTORS
         //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -120,7 +129,6 @@ namespace Chess_Engine {
         }
 
         // Copy constructor
-        // Stack isn't copied because it will always be empty at the time of copying (so deep copying would be a waste)
         public Board(Board inputBoard) {
             Array.Copy(inputBoard.arrayOfBitboards, this.arrayOfBitboards, inputBoard.arrayOfBitboards.Length);
             Array.Copy(inputBoard.arrayOfAggregateBitboards, this.arrayOfAggregateBitboards, inputBoard.arrayOfAggregateBitboards.Length);
@@ -135,10 +143,9 @@ namespace Chess_Engine {
 
             this.enPassantSquare = inputBoard.enPassantSquare;
 
-            this.halfmoveNumber = inputBoard.halfmoveNumber;
+            this.fullMoveNumber = inputBoard.fullMoveNumber;
             this.fiftyMoveRule = inputBoard.fiftyMoveRule;
-            this.repetionOfPosition = inputBoard.repetionOfPosition;
-
+            
             Array.Copy(inputBoard.pieceCount, this.pieceCount, inputBoard.pieceCount.Length);
 
             this.whiteMidgameMaterial = inputBoard.whiteMidgameMaterial;
@@ -146,13 +153,13 @@ namespace Chess_Engine {
             this.blackMidgameMaterial = inputBoard.blackMidgameMaterial;
             this.blackEndgameMaterial = inputBoard.blackEndgameMaterial;
 
-	        this.checkmate = inputBoard.checkmate;
-	        this.stalemate = inputBoard.stalemate;
-
-            Array.Copy(inputBoard.midgamePSQ, this.midgamePSQ, inputBoard.midgamePSQ.Length);
+	        Array.Copy(inputBoard.midgamePSQ, this.midgamePSQ, inputBoard.midgamePSQ.Length);
             Array.Copy(inputBoard.endgamePSQ, this.endgamePSQ, inputBoard.endgamePSQ.Length);
 
-            this.zobristKey = inputBoard.zobristKey;
+			this.zobristKey = inputBoard.zobristKey;
+
+			// Copies the game history array list
+	        this.gameHistory.AddRange(inputBoard.gameHistory);
         }
         
         //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -247,6 +254,20 @@ namespace Chess_Engine {
 					this.blackShortCastleRights = Constants.CANNOT_CASTLE;
 				}
             }
+
+			// Increments the fullmove number (if it is black's turn to move)
+	        if (this.sideToMove == Constants.BLACK) {
+				this.fullMoveNumber++;
+	        }
+
+			// Increments the fifty move rule counter (actually counts plies and not moves)
+	        this.fiftyMoveRule ++;
+
+	        if (flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE || flag == Constants.EN_PASSANT_CAPTURE) {
+		        this.fiftyMoveRule = 0;
+	        } if (flag == Constants.QUIET_MOVE && (pieceMoved == Constants.WHITE_PAWN || pieceMoved == Constants.BLACK_PAWN)) {
+		        this.fiftyMoveRule = 0;
+	        }
 
             // Updates the piece count and material fields
             if (flag == Constants.CAPTURE) {
@@ -394,6 +415,9 @@ namespace Chess_Engine {
                 }
             }
 
+			// Adds the zobrist key to the game history array list
+			this.gameHistory.Add(this.zobristKey);
+
             // Updates the bitboards and arrays
 
             //If is any move except a promotion, then add a piece to the destination square
@@ -517,13 +541,17 @@ namespace Chess_Engine {
             this.whiteLongCastleRights = restoreData.whiteLongCastleRights;
             this.blackShortCastleRights = restoreData.blackShortCastleRights;
             this.blackLongCastleRights = restoreData.blackLongCastleRights;
-            this.repetionOfPosition = restoreData.repetionOfPosition;
             this.fiftyMoveRule = restoreData.fiftyMoveRule;
-            this.halfmoveNumber = restoreData.halfmoveNumber;
+            this.fullMoveNumber = restoreData.fullMoveNumber;
 	        this.zobristKey = restoreData.zobristKey;
 
             // Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
             this.enPassantSquare = restoreData.enPassantSquare;
+
+	        this.whiteMidgameMaterial = restoreData.whiteMidgameMaterial;
+	        this.whiteEndgameMaterial = restoreData.whiteEndgameMaterial;
+	        this.blackMidgameMaterial = restoreData.blackMidgameMaterial;
+	        this.blackEndgameMaterial = restoreData.blackEndgameMaterial;
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
 		    int pieceMoved = ((unmoveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
@@ -541,55 +569,22 @@ namespace Chess_Engine {
             // Updates the piece count and material fields
             if (flag == Constants.CAPTURE) {
                 this.pieceCount[pieceCaptured]++;
-
-                if (pieceMoved <= Constants.WHITE_KING) {
-                    this.blackMidgameMaterial += Constants.arrayOfPieceValuesMG[pieceCaptured];
-                    this.blackEndgameMaterial += Constants.arrayOfPieceValuesEG[pieceCaptured];
-                } else {
-                    this.whiteMidgameMaterial += Constants.arrayOfPieceValuesMG[pieceCaptured];
-                    this.whiteEndgameMaterial += Constants.arrayOfPieceValuesEG[pieceCaptured];
-                }
             } else if (flag == Constants.EN_PASSANT_CAPTURE) {
                 this.pieceCount[pieceCaptured]++;
 
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    this.blackMidgameMaterial += Constants.arrayOfPieceValuesMG[Constants.BLACK_PAWN];
-                    this.blackEndgameMaterial += Constants.arrayOfPieceValuesEG[Constants.BLACK_PAWN];
-                } else {
-                    this.whiteMidgameMaterial += Constants.arrayOfPieceValuesMG[Constants.WHITE_PAWN];
-                    this.whiteEndgameMaterial += Constants.arrayOfPieceValuesEG[Constants.WHITE_PAWN];
-                }
             } else if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
                 this.pieceCount[pieceMoved]++;
                 this.pieceCount[piecePromoted]--;
 
-                if (pieceMoved == Constants.WHITE_PAWN) {
-                    this.whiteMidgameMaterial += Constants.arrayOfPieceValuesMG[Constants.WHITE_PAWN];
-                    this.whiteMidgameMaterial -= Constants.arrayOfPieceValuesMG[piecePromoted];
-
-                    this.whiteEndgameMaterial += Constants.arrayOfPieceValuesEG[Constants.WHITE_PAWN];
-                    this.whiteEndgameMaterial -= Constants.arrayOfPieceValuesEG[piecePromoted];
-                } else {
-                    this.blackMidgameMaterial += Constants.arrayOfPieceValuesMG[Constants.BLACK_PAWN];
-                    this.blackMidgameMaterial -= Constants.arrayOfPieceValuesMG[piecePromoted];
-
-                    this.blackEndgameMaterial += Constants.arrayOfPieceValuesEG[Constants.BLACK_PAWN];
-                    this.blackEndgameMaterial -= Constants.arrayOfPieceValuesEG[piecePromoted];
-                }
                 if (flag == Constants.PROMOTION_CAPTURE) {
                     this.pieceCount[pieceCaptured]++;
-
-                    if (pieceMoved == Constants.WHITE_PAWN) {
-                        this.blackMidgameMaterial += Constants.arrayOfPieceValuesMG[pieceCaptured];
-                        this.blackEndgameMaterial += Constants.arrayOfPieceValuesEG[pieceCaptured];
-                    } else {
-                        this.whiteMidgameMaterial += Constants.arrayOfPieceValuesMG[pieceCaptured];
-                        this.whiteEndgameMaterial += Constants.arrayOfPieceValuesEG[pieceCaptured];
-                    }
                 }
             }
 
-            // Updates the piece square tables
+			// Removes the last element of the game history list
+			this.gameHistory.RemoveAt(this.gameHistory.Count-1);
+
+            // Updates the piece square tables (faster to recalculate than to copy into the state variable object and copy back)
             if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.EN_PASSANT_CAPTURE || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
                 this.midgamePSQ[pieceMoved] -= Constants.arrayOfPSQMidgame[pieceMoved][destinationSquare];
                 this.midgamePSQ[pieceMoved] += Constants.arrayOfPSQMidgame[pieceMoved][startSquare];
@@ -2246,10 +2241,21 @@ namespace Chess_Engine {
             this.sideToMove = 0;
             this.whiteShortCastleRights = this.whiteLongCastleRights = this.blackShortCastleRights = this.blackLongCastleRights = 0;
             this.enPassantSquare = 0x0UL;
-            this.halfmoveNumber = 0;
+            this.fullMoveNumber = 1;
             this.fiftyMoveRule = 0;
-            this.repetionOfPosition = 0;
+            
+			this.pieceCount = new int[13];
+
+	        this.whiteMidgameMaterial = 0;
+	        this.whiteEndgameMaterial = 0;
+	        this.blackMidgameMaterial = 0;
+	        this.blackEndgameMaterial = 0;
+
+			this.midgamePSQ = new int[13];
+			this.endgamePSQ = new int[13];
+
             this.zobristKey = 0x0UL;
+			this.gameHistory.Clear();
 
             //Splits the FEN string into 6 fields
             string[] FENfields = FEN.Split(' ');
@@ -2388,17 +2394,14 @@ namespace Chess_Engine {
                 }
                 //sets the move number
                 foreach (char c in FENfields[5]) {
-					this.halfmoveNumber = (int)Char.GetNumericValue(c);
+					this.fullMoveNumber = (int)Char.GetNumericValue(c);
                 }
             } else {
 				this.fiftyMoveRule = 0;
-				this.halfmoveNumber = 0;
+				this.fullMoveNumber = 1;
             }
 
-            //Sets the repetition number variable
-			this.repetionOfPosition = 0;
-
-            //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
+           //Computes the white pieces, black pieces, and occupied bitboard by using "or" on all the individual pieces
             for (int i = Constants.WHITE_PAWN; i <= Constants.WHITE_KING; i++) {
                 this.arrayOfAggregateBitboards[0] |= arrayOfBitboards[i];
             }
@@ -2480,9 +2483,9 @@ namespace Chess_Engine {
 			if (this.sideToMove == Constants.BLACK) {
 				this.zobristKey ^= Constants.sideToMoveZobrist[0];
 			}
-
+			this.gameHistory.Add(this.zobristKey);
 	    }
-
+		
         //Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
@@ -2490,59 +2493,5 @@ namespace Chess_Engine {
             int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
             return moveRepresentation;
         } 
-
-      
-        //GET METHODS (FOR I/O)----------------------------------------------------------------------------------------
-		//--------------------------------------------------------------------------------------------------------
-		//--------------------------------------------------------------------------------------------------------
-
-        //gets the array of piece bitboards (returns an array of 12 bitboards)
-        //element 0 = white pawn, 1 = white knight, 2 = white bishop, 3 = white rook, 4 = white queen, 5 = white king
-        //element 6 = black pawn, 7 = black knight, 8 = black bishop, 9 = black rook, 10 = black queen, 11 = black king
-        public ulong[] getArrayOfPieceBitboards() {
-			return this.arrayOfBitboards;
-        }
-        //gets the array of aggregate piece bitboards (returns an array of 3 bitboards)
-        //element 0 = white pieces, element 1 = black pieces, element 2 = all pieces
-        public ulong[] getArrayOfAggregatePieceBitboards() {
-            return this.arrayOfAggregateBitboards;
-        }
-        //gets the array of pieces
-        public int[] getPieceArray() {
-			return this.pieceArray;
-        }
-        //gets the side to move
-        public int getSideToMove() {
-			return this.sideToMove;
-        }
-        //gets the castling rights (returns an array of 4 bools)
-        //element 0 = white short castle rights, 1 = white long castle rights
-        //2 = black short castle rights, 3 = black long castle rights
-        public int[] getCastleRights() {
-           int[] castleRights = new int[4];
-
-			castleRights[0] = this.whiteShortCastleRights;
-			castleRights[1] = this.whiteLongCastleRights;
-			castleRights[2] = this.blackShortCastleRights;
-			castleRights[3] = this.blackLongCastleRights;
-
-            return castleRights;
-        }
-        //gets the En Passant colour and square
-        //element 0 = en passant colour, and element 1 = en passant square
-        public ulong getEnPassant() {
-			return this.enPassantSquare;
-        }
-        //gets the move data
-        //element 0 = move number, 1 = half moves since pawn move or capture, 2 = repetition of position
-        public int[] getMoveData() {
-           int[] moveData = new int[3];
-
-			moveData[0] = this.halfmoveNumber;
-			moveData[1] = this.fiftyMoveRule;
-			moveData[2] = this.repetionOfPosition;
-
-            return moveData;
-        }
     }
 }

@@ -132,18 +132,18 @@ namespace Chess_Engine {
 
 				// Probe the hash table, and if a match is found then return the score
 				// (validate the key to prevent type 2 collision)
-			    Zobrist zobristKey = Search.cloneBoard.zobristKey;
+			    /*Zobrist zobristKey = Search.cloneBoard.zobristKey;
 				TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
 				// If we set it to depth >= 0, then get a slightly different result???
 				if (entry.key == zobristKey && entry.depth == 0) {
 					nodesEvaluated++;
 					return entry.evaluationScore;
-			    }
+			    }*/
 
 				// Otherwise, find the evaluation and store it in the table for future use
 				int evaluationScore = Evaluate.evaluationFunction(Search.cloneBoard);
-				TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
-				UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+				//TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
+				//UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
 
 				nodesEvaluated++;
 			    return evaluationScore;
