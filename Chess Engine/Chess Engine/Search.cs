@@ -58,7 +58,7 @@ namespace Chess_Engine {
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			for (int i = 1; i <= 1; i++) {
+			for (int i = 1; i <= 6; i++) {
 
 				if (UCI_IO.searchWorker.CancellationPending) {
 					e.Cancel = true;
@@ -67,7 +67,13 @@ namespace Chess_Engine {
 
 				initialDepth = i;
 				result = PVSRoot(i);
-				result.depthAchieved = i;	
+				result.depthAchieved = i;
+
+				List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
+				foreach (string move in PVLine) {
+					Console.Write(move + " ");
+				}
+				Console.WriteLine("");
 			}
 	    }
 
@@ -127,14 +133,6 @@ namespace Chess_Engine {
 		// It is fail hard (if score > beta it returns beta, if score < alpha it returns alpha)
 		public static int PVS(int depth, int alpha, int beta) {
 		    
-			// return 0 if repetition or draw
-			if (Search.cloneBoard.fiftyMoveRule >= 100) {
-				return 0;
-			}
-			//if (Search.cloneBoard.getRepetitionNumber() > 1) {
-				//return 0;
-			//}
-
 			// At the leaf nodes
 		    if (depth <= 0) {
 
@@ -159,142 +157,151 @@ namespace Chess_Engine {
 			    return evaluationScore;
 
 			    // return quiescence(alpha, beta);
-		    } 
+		    }
+
+			// return 0 if repetition or draw
+			if (Search.cloneBoard.fiftyMoveRule >= 100) {
+				return 0;
+			}
+			//if (Search.cloneBoard.getRepetitionNumber() > 1) {
+				//return 0;
+			//}
+
 			// At the interior nodes
-			else {
+			// Probe the hash table and if the entry's depth is greater than or equal to current depth:
+			Zobrist zobristKey = Search.cloneBoard.zobristKey;
+			TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
 
-				// Probe the hash table and if the entry's depth is greater than or equal to current depth:
-			    Zobrist zobristKey = Search.cloneBoard.zobristKey;
-			    TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
+			// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
+			if (entry.key == zobristKey && entry.depth == depth) {
+				// If it is a PV node, see if it is greater than beta (if so return beta), less than alpha (if so return alpha), or in between (if so return the exact score)
+				// If it is a CUT node, see if this lower bound is greater than beta (if so return beta)
+				// If it is an ALL node, see if this upper bound is less than alpha (is so return alpha)
+				// Using a fail-hard here so need those extra conditions instead of just returning the score
+				if (entry.flag == Constants.PV_NODE) {
+					int evaluationScore = entry.evaluationScore;
 
-				// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
-				if (entry.key == zobristKey && entry.depth == depth) {
-					// If it is a PV node, see if it is greater than beta (if so return beta), less than alpha (if so return alpha), or in between (if so return the exact score)
-					// If it is a CUT node, see if this lower bound is greater than beta (if so return beta)
-					// If it is an ALL node, see if this upper bound is less than alpha (is so return alpha)
-					// Using a fail-hard here so need those extra conditions instead of just returning the score
-					if (entry.flag == Constants.PV_NODE) {
-					    int evaluationScore = entry.evaluationScore;
-
-						if (evaluationScore == -Constants.CHECKMATE) {
-							return -Constants.CHECKMATE + (initialDepth - depth);
-						} else if (evaluationScore == Constants.STALEMATE) {
-							return Constants.STALEMATE;
-						}
-
-						if (evaluationScore >= beta) {
-						    return beta;
-					    } else if (evaluationScore <= alpha) {				    
-						    return alpha;
-					    } else if (evaluationScore > alpha && evaluationScore < beta) {
-						    return evaluationScore;
-					    }
-				    } if (entry.flag == Constants.CUT_NODE) {
-					    int evaluationScore = entry.evaluationScore;
-					    if (evaluationScore >= beta) {
-							return beta;
-					    }
-				    } else if (entry.flag == Constants.ALL_NODE) {
-						int evaluationScore = entry.evaluationScore;
-						if (evaluationScore <= alpha) {
-							return alpha;
-					    }
-				    } 
-			    }
-
-				// Creates a move picker object
-				movePicker mPicker = new movePicker(Search.cloneBoard);
-
-			    int bestMove = 0;
-
-				// Backs up the board's instance variables (that are restored during the unmake move)
-				stateVariables restoreData = new stateVariables(Search.cloneBoard);
-				
-				// gets the first move from the move picker object
-				// The first move is searched with a full window search; subsequent moves are searched with a zero window search
-				int move = mPicker.getNextMove();
-				
-				// If the first move is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
-				if (move == 0) {
-					if (Search.cloneBoard.isInCheck() == true) {
-						// Returns the mate score - number of moves made from root to mate 
-						// Ensures that checkmates closer to the root will get a higher score, so that they will be played
-						TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, -Constants.CHECKMATE);
-						UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					if (evaluationScore == -Constants.CHECKMATE) {
 						return -Constants.CHECKMATE + (initialDepth - depth);
-					} else {
-						TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, Constants.STALEMATE);
-						UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					} else if (evaluationScore == Constants.STALEMATE) {
 						return Constants.STALEMATE;
 					}
-				}
-				// Keeps track to see whether or not alpha was raised (to see if we failed low or not)
-				// Necessary when storing entries in the transpositino table
-			    bool raisedAlpha = false;
 
-				// Performs a full window search
+					if (evaluationScore >= beta) {
+						return beta;
+					} else if (evaluationScore <= alpha) {
+						return alpha;
+					} else if (evaluationScore > alpha && evaluationScore < beta) {
+						return evaluationScore;
+					}
+				} if (entry.flag == Constants.CUT_NODE) {
+					int evaluationScore = entry.evaluationScore;
+					if (evaluationScore >= beta) {
+						return beta;
+					}
+				} else if (entry.flag == Constants.ALL_NODE) {
+					int evaluationScore = entry.evaluationScore;
+					if (evaluationScore <= alpha) {
+						return alpha;
+					}
+				}
+			}
+
+			// Creates a move picker object
+			movePicker mPicker = new movePicker(Search.cloneBoard);
+
+			int bestMove = 0;
+
+			// Backs up the board's instance variables (that are restored during the unmake move)
+			stateVariables restoreData = new stateVariables(Search.cloneBoard);
+
+			// gets the first move from the move picker object
+			// The first move is searched with a full window search; subsequent moves are searched with a zero window search
+			int move = mPicker.getNextMove();
+
+			// If the first move is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
+			if (move == 0) {
+				if (Search.cloneBoard.isInCheck() == true) {
+					// Returns the mate score - number of moves made from root to mate 
+					// Ensures that checkmates closer to the root will get a higher score, so that they will be played
+					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, -Constants.CHECKMATE);
+					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					return -Constants.CHECKMATE + (initialDepth - depth);
+				} else {
+					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, Constants.STALEMATE);
+					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					return Constants.STALEMATE;
+				}
+			}
+			// Keeps track to see whether or not alpha was raised (to see if we failed low or not)
+			// Necessary when storing entries in the transpositino table
+			bool raisedAlpha = false;
+
+			// Performs a full window search
+			Search.cloneBoard.makeMove(move);
+			int boardScore = -PVS(depth - 1, -beta, -alpha);
+			Search.cloneBoard.unmakeMove(move, restoreData);
+
+			if (boardScore > alpha) {
+				raisedAlpha = true;
+
+				// If the score was greater than beta, we have a beta cutoff (and move is too good to be played)
+				if (boardScore >= beta) {
+
+					// Store the value in the transposition table
+					TTEntry newEntry = new TTEntry(zobristKey, Constants.CUT_NODE, depth, beta, move);
+					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+
+					failHighFirst++;
+					return beta; // return beta and not best score (fail-hard)
+				}
+				// If no beta cutoff but board score was higher than old alpha, then raise alpha
+				bestMove = move;
+				alpha = boardScore;
+			}
+
+			// Loop through all other moves and perform zero window search
+			while (true) {
+				move = mPicker.getNextMove();
+				if (move == 0) {
+					break;
+				}
+
 				Search.cloneBoard.makeMove(move);
-				int boardScore = -PVS(depth - 1, -beta, -alpha);
+				boardScore = -PVS(depth - 1, -alpha - 1, -alpha);
+				numOfSuccessfulZWS++;
+
+				if (boardScore > alpha) {
+					numOfSuccessfulZWS--;
+					boardScore = -PVS(depth - 1, -beta, -alpha);
+				}
 				Search.cloneBoard.unmakeMove(move, restoreData);
 
 				if (boardScore > alpha) {
 					raisedAlpha = true;
-					
-					// If the score was greater than beta, we have a beta cutoff (and move is too good to be played)
-					if (boardScore >= beta) {
 
-						// Store the value in the transposition table
+					if (boardScore >= beta) {
 						TTEntry newEntry = new TTEntry(zobristKey, Constants.CUT_NODE, depth, beta, move);
 						UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
-						
-						failHighFirst++;
+
+						failHigh++;
 						return beta; // return beta and not best score (fail-hard)
 					}
-					// If no beta cutoff but board score was higher than old alpha, then raise alpha
 					bestMove = move;
 					alpha = boardScore;
 				}
+			}
+			if (raisedAlpha == true) {
+				TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMove);
+				UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+			} else if (raisedAlpha == false) {
+				TTEntry newEntry = new TTEntry(zobristKey, Constants.ALL_NODE, depth, alpha);
+				UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+			}
+			return alpha; //return alpha whether it was raised or not (fail-hard)
+
 				
-				// Loop through all other moves and perform zero window search
-				while (true) {
-					move = mPicker.getNextMove();
-					if (move == 0) {
-						break;
-					}
-
-					Search.cloneBoard.makeMove(move);
-				    boardScore = -PVS(depth - 1, -alpha - 1, -alpha);
-					numOfSuccessfulZWS ++;
-
-				    if (boardScore > alpha) {
-					    numOfSuccessfulZWS --;
-						boardScore = -PVS(depth - 1, -beta, -alpha);
-				    }
-					Search.cloneBoard.unmakeMove(move, restoreData);
-
-					if (boardScore > alpha) {
-						raisedAlpha = true;
-
-						if (boardScore >= beta) {
-							TTEntry newEntry = new TTEntry(zobristKey, Constants.CUT_NODE, depth, beta, move);
-							UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
-
-							failHigh++;
-							return beta; // return beta and not best score (fail-hard)
-						}
-						bestMove = move;
-						alpha = boardScore;
-					}
-				}
-			    if (raisedAlpha == true) {
-					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMove);
-					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
-			    } else if (raisedAlpha == false) {
-					TTEntry newEntry = new TTEntry(zobristKey, Constants.ALL_NODE, depth, alpha);
-					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
-			    }
-				return alpha; //return alpha whether it was raised or not (fail-hard)
-		    }
+		    
 		}
 
 		private static int quiescence(int alpha, int beta) {
@@ -305,6 +312,7 @@ namespace Chess_Engine {
 	    private static void checkUp() {
 		    
 	    }
+
     }
 
 

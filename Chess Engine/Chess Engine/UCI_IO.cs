@@ -158,11 +158,11 @@ namespace Chess_Engine {
                 for (int i = 0; i <= index; i++) {
                     FEN += (inputStringList[0]);
                     inputStringList.RemoveAt(0);
-                    if (i != index - 1) {
+                    if (i != index) { // fixed off by 1 issue that was causing crashes
                         FEN += " ";
                     }
                 }
-                position = new Board(FEN);
+				position = new Board(FEN);
             }
 
             // Makes any moves

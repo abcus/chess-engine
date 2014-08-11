@@ -114,6 +114,8 @@ namespace Chess_Engine {
 
 	    internal List<Zobrist> gameHistory = new List<Zobrist>();
 
+		internal int[] historyHash = new int[16381];
+
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         // CONSTRUCTORS
@@ -161,6 +163,8 @@ namespace Chess_Engine {
 			// Copies the game history array list
 	        this.gameHistory.AddRange(inputBoard.gameHistory);
 
+			// Copies the history hash table
+			Array.Copy(inputBoard.historyHash, this.historyHash, inputBoard.historyHash.Length);
         }
         
         //--------------------------------------------------------------------------------------------------------------------------------------------
@@ -420,7 +424,18 @@ namespace Chess_Engine {
 			// Adds the zobrist key to the game history array list
 			this.gameHistory.Add(this.zobristKey);
 
-	       // Updates the bitboards and arrays
+	        // Have a history hash of 2^14 = 16384 elements
+			// Take the least significant 14 bits of the zobrist key to get an index, and increment the corresponding element in the history hash by 1
+			// When checking for repetitions, convert the zobrist of the current position to an index and check the history hash 
+			// if the element is 1, then no need to check for repetition 
+			// If element is greater than 1, it could be that the position was seen before, or another position (which hashed to the same index) was seen before
+			// If this is the case, then have to loop through the game history array list to check 
+			// This hash table will never produce a false negative, but may produce a false positive
+			// It saves a lot of unnecessary searching through the history list when there is no chance of a repetition
+
+	        this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)] ++;
+
+            // Updates the bitboards and arrays
 
             //If is any move except a promotion, then add a piece to the destination square
             //If it is a promotion don't add piece (pawn) to the destination square
@@ -547,7 +562,10 @@ namespace Chess_Engine {
             this.fullMoveNumber = restoreData.fullMoveNumber;
 	        this.zobristKey = restoreData.zobristKey;
 
-			// Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
+			// Restores the history hash to its original value
+			this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)]--;
+
+            // Sets the en passant square bitboard from the integer encoding the restore board data (have to convert an int index to a ulong bitboard)
             this.enPassantSquare = restoreData.enPassantSquare;
 
 	        this.whiteMidgameMaterial = restoreData.whiteMidgameMaterial;
@@ -2259,7 +2277,8 @@ namespace Chess_Engine {
             this.zobristKey = 0x0UL;
 			this.gameHistory.Clear();
 
-			
+			this.historyHash = new int[16381];
+
             //Splits the FEN string into 6 fields
             string[] FENfields = FEN.Split(' ');
 
@@ -2388,17 +2407,15 @@ namespace Chess_Engine {
 				this.enPassantSquare = 0x1UL << (baseOfEPSquare + factorOfEPSquare * 8);
             }
             
-            //Checks to see if there is a halfmove clock or move number in the FEN string
+			//Checks to see if there is a halfmove clock or move number in the FEN string
             //If there isn't, then it sets the halfmove number clock and move number to 999;
             if (FENfields.Length >= 5) {
                 //sets the halfmove clock since last capture or pawn move
-                foreach (char c in FENfields[4]) {
-					this.fiftyMoveRule = (int)Char.GetNumericValue(c);
-                }
+				this.fiftyMoveRule = Convert.ToInt32(FENfields[4]);
+				
                 //sets the move number
-                foreach (char c in FENfields[5]) {
-					this.fullMoveNumber = (int)Char.GetNumericValue(c);
-                }
+	            this.fullMoveNumber = Convert.ToInt32(FENfields[5]);
+
             } else {
 				this.fiftyMoveRule = 0;
 				this.fullMoveNumber = 1;
@@ -2490,7 +2507,9 @@ namespace Chess_Engine {
 			// Adds the initial position to the game history
 			this.gameHistory.Add(this.zobristKey);
 
-		}
+			// Adds the initial position to the history hash
+			this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)]++;
+	    }
 		
         //Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
@@ -2503,16 +2522,20 @@ namespace Chess_Engine {
 		// Returns the number of times a given position has been repeated
 		internal int getRepetitionNumber() {
 
-			int repetitionOfPosition = 0;
-
-			for (int i = this.gameHistory.Count - 1 - this.fiftyMoveRule; i <= this.gameHistory.Count - 1; i += 2) {
-				if (this.zobristKey == this.gameHistory[i]) {
-					repetitionOfPosition++;
-				}
-			}
-			return repetitionOfPosition;
-				
+			int possibleRepetitions = this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)];
 			
+			if (possibleRepetitions > 1) {
+				int repetitionOfPosition = 0;
+
+				for (int i = this.gameHistory.Count - 1 - this.fiftyMoveRule; i <= this.gameHistory.Count - 1; i += 2) {
+					if (this.zobristKey == this.gameHistory[i]) {
+						repetitionOfPosition++;
+					}
+				}
+				return repetitionOfPosition;
+			} else {
+				return 1;
+			}
 		}
 	}
 }

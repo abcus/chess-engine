@@ -29,6 +29,34 @@ namespace Chess_Engine {
 			int index = (int)(key % Constants.TT_SIZE);
 			return hashTable[index];
 		}
+
+		// Method that returns an array of integers containing the principal variation
+		public List<string> getPVLine(Board inputBoard, int maxDepth) {
+
+			Board cloneBoard = new Board(inputBoard);
+			List<string> PVLine = new List<string>();
+			int depth = 1;
+
+			while (true) {
+				TTEntry PVNode = this.probeTTable(cloneBoard.zobristKey);
+				int move = PVNode.move;
+				
+				// If we have reached max depth, then break out of the array
+				if (depth++ > maxDepth) {
+					break;
+				}
+				// If no move found, then break out of the array
+				if (move == 0) {
+					break;
+				}
+				cloneBoard.makeMove(move);
+				if (cloneBoard.isMoveLegal(cloneBoard.sideToMove ^ 1) == false) {
+					break;
+				}
+				PVLine.Add(UCI_IO.getMoveStringFromMoveRepresentation(move));
+			}
+			return PVLine;
+		}
 	}
 
 
