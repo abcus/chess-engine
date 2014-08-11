@@ -58,7 +58,7 @@ namespace Chess_Engine {
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			for (int i = 1; i <= 6; i++) {
+			for (int i = 1; i <= 7; i++) {
 
 				if (UCI_IO.searchWorker.CancellationPending) {
 					e.Cancel = true;
@@ -127,8 +127,18 @@ namespace Chess_Engine {
 		// It is fail hard (if score > beta it returns beta, if score < alpha it returns alpha)
 		public static int PVS(int depth, int alpha, int beta) {
 		    
+			// return 0 if repetition or draw
+			if (Search.cloneBoard.fiftyMoveRule >= 100) {
+				return 0;
+			}
+			if (Search.cloneBoard.getRepetitionNumber() > 1) {
+				return 0;
+			}
+
 			// At the leaf nodes
 		    if (depth <= 0) {
+
+				// Probing hash table at leaves results in a slower search, so won't do it
 
 				// Probe the hash table, and if a match is found then return the score
 				// (validate the key to prevent type 2 collision)

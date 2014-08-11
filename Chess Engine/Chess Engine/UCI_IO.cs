@@ -387,14 +387,8 @@ namespace Chess_Engine {
 	        int fiftyMoveRule = inputBoard.fiftyMoveRule;
             Console.WriteLine("Half moves since last pawn push/capture: " + fiftyMoveRule);
 
-	        int repetitionOfPosition = 0;
+	        int repetitionOfPosition = inputBoard.getRepetitionNumber();
 			
-	        for (int i = inputBoard.gameHistory.Count - 1 - inputBoard.fiftyMoveRule; i < inputBoard.gameHistory.Count; i++) {
-		        if (inputBoard.zobristKey == inputBoard.gameHistory[i]) {
-			        repetitionOfPosition ++;
-		        }
-	        }
-
 			Console.WriteLine("Repetitions of this position: " + repetitionOfPosition);
 	        if (repetitionOfPosition >= 3) {
 		        Console.WriteLine("Draw by threefold repetition");
