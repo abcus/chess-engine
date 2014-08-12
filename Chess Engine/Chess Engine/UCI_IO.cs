@@ -205,23 +205,23 @@ namespace Chess_Engine {
 
 		// Prints out the results when the search has completed (or been stopped)
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
-			Console.WriteLine("info depth " + Search.result.depthAchieved + " score cp " + (int)((Search.result.evaluationScore)/2.28));
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 			Console.WriteLine("");
 
-		    string numberOfNodesString = Search.nodesEvaluated.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
-			double nodesPerSecond = ((Search.nodesEvaluated)/(double)(Search.s.ElapsedMilliseconds) * 1000);
-			string nodesPerSecondString = nodesPerSecond.ToString().IndexOf(NumberFormatInfo.CurrentInfo.NumberDecimalSeparator) >= 0 ? "#,##0.00" : "#,##0";
-
-			Console.WriteLine("score:" + Search.result.evaluationScore);
-			Console.WriteLine("Number of nodes evaluated:\t\t" + Search.nodesEvaluated.ToString(numberOfNodesString));
-			Console.WriteLine("Elapsed time:\t\t\t\t" + Search.s.ElapsedMilliseconds);
-			Console.WriteLine("Nodes per second: \t\t\t" + nodesPerSecond.ToString(nodesPerSecondString));
-
+			Console.WriteLine("score in stockfish units:" + Search.result.evaluationScore);
+			
 			Console.WriteLine("Percentage of fail high first:\t\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
 			
-			Console.WriteLine("Number of successful ZWS searches:\t" + (Search.numOfSuccessfulZWS));
 		}
+
+		// Prints out information during iterative deepening
+	    public static void printInfo(List<string> PVLine, int depth) {
+			Console.Write("info score cp " + (int)((Search.result.evaluationScore) / 2.28) + " depth " + depth + " nodes " + Search.result.nodesEvaluated + " time " + Search.result.time + " pv ");
+			foreach (string move in PVLine) {
+				Console.Write(move + " ");
+			}
+			Console.WriteLine("");
+	    }
 
         // Extracts the start square from the integer that encodes the move
         private static int getStartSquare(int moveRepresentation) {

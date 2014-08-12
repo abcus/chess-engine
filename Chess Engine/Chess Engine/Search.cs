@@ -46,8 +46,6 @@ namespace Chess_Engine {
 
 			numOfSuccessfulZWS = 0;
 			
-			s = Stopwatch.StartNew();
-
 			runSearch(e);
 	    }
 
@@ -58,22 +56,25 @@ namespace Chess_Engine {
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			for (int i = 1; i <= 6; i++) {
+			for (int i = 1; i <= 8; i++) {
+
+				// sets the initial depth (for mate score calculation)
+				initialDepth = i;
+				nodesEvaluated = 0;
 
 				if (UCI_IO.searchWorker.CancellationPending) {
 					e.Cancel = true;
 					return;
 				}
 
-				initialDepth = i;
+				Stopwatch s = Stopwatch.StartNew();
 				result = PVSRoot(i);
 				result.depthAchieved = i;
+				result.time = s.ElapsedMilliseconds;
+				result.nodesEvaluated = nodesEvaluated;
 
 				List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
-				foreach (string move in PVLine) {
-					Console.Write(move + " ");
-				}
-				Console.WriteLine("");
+				UCI_IO.printInfo(PVLine, i);
 			}
 	    }
 
@@ -355,6 +356,11 @@ namespace Chess_Engine {
 			}
 		}
 
+		// Uses selection sort to pick the move with the highest score, and returns it
+		// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE),
+		// killer moves (that caused beta-cutoffs at different positions at the same depth), history moves (that raised alpha)
+		// Losing captures, all other moves
+
 		public int getNextMove() {
 
 			if (legalMoveList.Count != 0) {
@@ -375,6 +381,8 @@ namespace Chess_Engine {
 		internal int move;
 		internal int evaluationScore;
 		internal int depthAchieved;
+		internal long time;
+		internal ulong nodesEvaluated;
 	}
     
 }
