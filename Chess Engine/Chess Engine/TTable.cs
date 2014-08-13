@@ -49,6 +49,26 @@ namespace Chess_Engine {
 				if (move == 0) {
 					break;
 				}
+				// If move is not in the pseudo-legal move list, then break out of the array
+				// This ensures that an impossible move is not printed
+				bool inMoveList = false;
+				int[] pseudoLegalMoveList;
+
+				if (inputBoard.isInCheck() == false) {
+					pseudoLegalMoveList = cloneBoard.generateListOfAlmostLegalMoves();
+				} else {
+					pseudoLegalMoveList = cloneBoard.generateListOfAlmostLegalMoves();
+				}
+				for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
+					if (move == pseudoLegalMoveList[i]) {
+						inMoveList = true;
+						break;
+					}
+				}
+				if (inMoveList == false) {
+					break;
+				}
+
 				cloneBoard.makeMove(move);
 				if (cloneBoard.isMoveLegal(cloneBoard.sideToMove ^ 1) == false) {
 					break;

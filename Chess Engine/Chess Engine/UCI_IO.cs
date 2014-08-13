@@ -207,19 +207,27 @@ namespace Chess_Engine {
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 			Console.WriteLine("");
-
-			Console.WriteLine("score in stockfish units:" + Search.result.evaluationScore);
-			
 			Console.WriteLine("Percentage of fail high first:\t\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
 			
 		}
 
 		// Prints out information during iterative deepening
 	    public static void printInfo(List<string> PVLine, int depth) {
-			Console.Write("info score cp " + (int)((Search.result.evaluationScore) / 2.28) + " depth " + depth + " nodes " + Search.result.nodesEvaluated + " time " + Search.result.time + " pv ");
+		    Console.Write("info");
+			if (Constants.CHECKMATE - Search.result.evaluationScore < Constants.MAX_DEPTH) {
+				Console.Write(" score mate " + (Constants.CHECKMATE - Search.result.evaluationScore + 1)/2);    
+		    } else if (-Constants.CHECKMATE - Search.result.evaluationScore > -Constants.MAX_DEPTH) {
+			    Console.Write(" score mate " + -(Constants.CHECKMATE - -Search.result.evaluationScore + 1)/2);
+		    } else {
+				Console.Write(" score cp " + (int)((Search.result.evaluationScore) / 2.28));    
+		    }
+			Console.Write(" depth " + depth);
+		    Console.Write(" nodes " + Search.result.nodesEvaluated);
+			Console.Write(" time " + Search.result.time + " pv ");
 			foreach (string move in PVLine) {
 				Console.Write(move + " ");
 			}
+			Console.Write("nps " + Search.result.nodesEvaluated/(ulong)(Search.result.time + 1) * 1000);
 			Console.WriteLine("");
 	    }
 

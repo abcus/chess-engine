@@ -884,7 +884,10 @@ namespace Chess_Engine {
 		// TRANSPOSITION TABLE CONSTANTS
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
-	    public const int TT_SIZE = 15485867;
+
+	    public const int MAX_DEPTH = 64;
+		
+		public const int TT_SIZE = 15485867;
 
 	    public const int PV_NODE = 1;
 	    public const int CUT_NODE = 2;
