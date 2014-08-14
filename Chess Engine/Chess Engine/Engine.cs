@@ -27,10 +27,10 @@ namespace Chess_Engine {
             Constants.initEvalConstants();
 	        Constants.initZobrist();
 
-			Board position = new Board("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
+			Board position = new Board("2k5/8/8/3pRrRr/8/8/8/2K5 w - -");
 			UCI_IO.drawBoard(position);
 	        
-			Console.WriteLine(position.staticExchangeEval(Constants.D3, Constants.E5, Constants.WHITE));
+			Console.WriteLine(position.staticExchangeEval(Constants.E5, Constants.F5, Constants.WHITE));
 			
 
 			while (true) {

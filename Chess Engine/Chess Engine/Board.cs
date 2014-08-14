@@ -915,9 +915,9 @@ namespace Chess_Engine {
 					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
 					Bitboard ray = rookAttacksFromDestionationSquareNew & rookAttacksFromFrontAttackerSquare & ~rookAttacksFromDestinationSquareOld;
 
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.WHITE];
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN) {
+					if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN) {
 						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
 						return potentialXRayAttackers;
 					}
@@ -929,9 +929,9 @@ namespace Chess_Engine {
 					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
 					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
 
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.WHITE];
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN) {
+					if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
 						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
 						return potentialXRayAttackers;
 					}
@@ -943,9 +943,9 @@ namespace Chess_Engine {
 					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
 					Bitboard ray = rookAttacksFromDestionationSquare & rookAttacksFromFrontAttackerSquareNew & ~rookAttacksFromDestinationSquareOld;
 
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.BLACK];
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.BLACK_ROOK|| potentialXRayPiece == Constants.BLACK_QUEEN) {
+					if (potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN) {
 						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
 						return potentialXRayAttackers;
 					}
@@ -957,9 +957,9 @@ namespace Chess_Engine {
 					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
 					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
 
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.BLACK];
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
+					if (potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN) {
 						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
 						return potentialXRayAttackers;
 					}
@@ -968,7 +968,7 @@ namespace Chess_Engine {
 		    return 0;
 	    }
 
-		// Method that returns the expected evaluation value to be lost or gained after a series of exchanges on a single square
+		// Method that returns the expected evaluation score gain or loss after a series of exchanges on a single square
 	    public int staticExchangeEval(int startSquare, int destinationSquare, int sideToCapture) {
 
 			int[] gain = new int[32];
