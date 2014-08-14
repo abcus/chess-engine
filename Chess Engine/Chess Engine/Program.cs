@@ -19,7 +19,7 @@ namespace Chess_Engine {
             var stream = Console.OpenStandardInput(8196);
             Console.SetIn(new StreamReader(stream, Encoding.ASCII));
 
-            Engine e = new Engine();
+			Engine e = new Engine();
             e.run();
         } 
     }

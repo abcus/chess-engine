@@ -556,7 +556,7 @@ namespace Chess_Engine {
         // Have to test if the move is legal or not
         public static void printLegalMove(Board inputBoard)
         {
-            int[] moveList = inputBoard.generateListOfAlmostLegalMoves();
+            int[] moveList = inputBoard.generateAlmostLegalMoves();
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Length);
             int moveCount = 0;
@@ -736,7 +736,7 @@ namespace Chess_Engine {
                 int[] pseudoLegalMoveList;
                 
 		        if (inputBoard.isInCheck() == false) {
-		            pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves();
+		            pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 		        } else {
                     pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 		        }
@@ -772,7 +772,7 @@ namespace Chess_Engine {
 			    int[] pseudoLegalMoveList = null;
                 
                 if (inputBoard.isInCheck() == false) {
-                    pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves(); 
+                    pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves(); 
                 } else {
                     pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
                 }

@@ -22,7 +22,7 @@ namespace Chess_Engine {
 	    
 		internal static moveAndEval result;
 		internal static int initialDepth;
-		internal static ulong nodesEvaluated;
+		internal static ulong nodesVisited;
 
 	    internal static double failHigh;
 	    internal static double failHighFirst;
@@ -51,7 +51,7 @@ namespace Chess_Engine {
 			result =  new moveAndEval();
 		    
 			initialDepth = 0;
-		    nodesEvaluated = 0;
+		    nodesVisited = 0;
 			failHigh = 0;
 			failHighFirst = 0;
 			numOfSuccessfulZWS = 0;
@@ -79,7 +79,7 @@ namespace Chess_Engine {
 
 				// sets the initial depth (for mate score calculation)
 				initialDepth = i;
-				nodesEvaluated = 0;
+				nodesVisited = 0;
 
 				Stopwatch s = Stopwatch.StartNew();
 				moveAndEval tempResult = PVSRoot(i);
@@ -95,7 +95,7 @@ namespace Chess_Engine {
 					result = tempResult;
 					result.depthAchieved = i;
 					result.time = s.ElapsedMilliseconds;
-					result.nodesEvaluated = nodesEvaluated;
+					result.nodesVisited = nodesVisited;
 
 					List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
@@ -160,6 +160,8 @@ namespace Chess_Engine {
 					return null;
 				}
 
+				nodesVisited++;
+
 				if (boardScore > alpha) {
 					alpha = boardScore;
 					bestMoves.Clear();
@@ -191,7 +193,7 @@ namespace Chess_Engine {
 		    if (depth == 0) {
 
 				// Every 2047 nodes evaluated, check to see if there is a cancellation pending; if so then return 0
-			    if ((nodesEvaluated & 2047) == 0) {
+			    if ((nodesVisited & 2047) == 0) {
 				    if (quitSearch()) {
 					    return 0;
 				    }
@@ -218,8 +220,7 @@ namespace Chess_Engine {
 
 				// Otherwise, find the evaluation and store it in the table for future use
 				int evaluationScore = Evaluate.evaluationFunction(Search.cloneBoard);
-			    nodesEvaluated++;
-				//TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
+			    //TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
 				//UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
 			    
 				return evaluationScore;
@@ -241,7 +242,7 @@ namespace Chess_Engine {
 			TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
 
 			// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
-			if (entry.key == zobristKey && entry.depth == depth) {
+			if (entry.key == zobristKey && entry.depth >= depth) {
 				// If it is a PV node, see if it is greater than beta (if so return beta), less than alpha (if so return alpha), or in between (if so return the exact score)
 				// If it is a CUT node, see if this lower bound is greater than beta (if so return beta)
 				// If it is an ALL node, see if this upper bound is less than alpha (is so return alpha)
@@ -275,11 +276,10 @@ namespace Chess_Engine {
 				}
 			}
 
-			// Backs up the board's instance variables (that are restored during the unmake move)
 			stateVariables restoreData = new stateVariables(Search.cloneBoard);
 			movePicker mPicker = new movePicker(Search.cloneBoard);
 			int bestMove = 0;
-			int movesMade = 0;
+			int legalMovesMade = 0;
 			int boardScore = 0;
 			bool firstMove = true;
 			// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
@@ -295,7 +295,6 @@ namespace Chess_Engine {
 				}
 
 				Search.cloneBoard.makeMove(move);
-				movesMade++;
 				
 				// If it is the first move, search with a full window
 				if (firstMove) {
@@ -316,16 +315,18 @@ namespace Chess_Engine {
 				Search.cloneBoard.unmakeMove(move, restoreData);
 
 				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
-				if ((nodesEvaluated & 2047) == 0) {
+				if ((nodesVisited & 2047) == 0) {
 					if (quitSearch()) {
 						return 0;
 					}
 				}
-				
+				legalMovesMade++;
+				nodesVisited++;
+
 				if (boardScore > alpha) {
 					raisedAlpha = true;
 
-					// If the score was greater than beta, we have a beta cutoff (and move is too good to be played)
+					// If the score was greater than beta, we have a beta cutoff (fail high)
 					if (boardScore >= beta) {
 
 						// Store the value in the transposition table
@@ -348,8 +349,8 @@ namespace Chess_Engine {
 				firstMove = false;
 			}
 
-			// If the first move is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
-			if (movesMade == 0) {
+			// If number of legal moves made is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
+			if (legalMovesMade == 0) {
 				if (Search.cloneBoard.isInCheck() == true) {
 					// Returns the mate score - number of moves made from root to mate 
 					// Ensures that checkmates closer to the root will get a higher score, so that they will be played
@@ -393,6 +394,9 @@ namespace Chess_Engine {
 		    if (UCI_IO.searchWorker.CancellationPending) {
 			    stopEvent.Cancel = true;
 			    return true;
+		    }  else if (false) { // else if the current time is greater than the expected finish date time object
+			    stopEvent.Cancel = true;
+			    return true;
 		    } else {
 			    return false;
 		    }
@@ -416,7 +420,7 @@ namespace Chess_Engine {
 		public movePicker(Board inputBoard) {
 			this.board = inputBoard;
 			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves();
+				this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
@@ -457,7 +461,6 @@ namespace Chess_Engine {
 			} else {
 				return 0;
 			}
-
 		}		
 	}
 
@@ -474,6 +477,6 @@ namespace Chess_Engine {
 		internal int evaluationScore;
 		internal int depthAchieved;
 		internal long time;
-		internal ulong nodesEvaluated;
+		internal ulong nodesVisited;
 	}
 }

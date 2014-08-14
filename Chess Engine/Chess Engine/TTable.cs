@@ -33,6 +33,8 @@ namespace Chess_Engine {
 		// Method that returns an array of integers containing the principal variation
 		public List<string> getPVLine(Board inputBoard, int maxDepth) {
 
+			// Later: don't actually have to make the move, can just calculate the new key and look up the table entry
+
 			Board cloneBoard = new Board(inputBoard);
 			List<string> PVLine = new List<string>();
 			int depth = 1;
@@ -55,9 +57,9 @@ namespace Chess_Engine {
 				int[] pseudoLegalMoveList;
 
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = cloneBoard.generateListOfAlmostLegalMoves();
+					pseudoLegalMoveList = cloneBoard.generateAlmostLegalMoves();
 				} else {
-					pseudoLegalMoveList = cloneBoard.generateListOfAlmostLegalMoves();
+					pseudoLegalMoveList = cloneBoard.generateAlmostLegalMoves();
 				}
 				for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
 					if (move == pseudoLegalMoveList[i]) {

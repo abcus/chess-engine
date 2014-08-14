@@ -642,6 +642,7 @@ namespace Chess_Engine {
         // Array of piece values [piece]
         public static Value[] arrayOfPieceValuesMG = new Value[13];
         public static Value[] arrayOfPieceValuesEG = new Value[13];
+		public static Value[] arrayOfPieceValueSEE = { 0, 100, 325, 325, 500, 1000, 10000, 100, 325, 325, 500, 1000, 10000};
 
         // White piece square tables for the middlegame 
         public static int[] wPawnMidgamePSQ = {

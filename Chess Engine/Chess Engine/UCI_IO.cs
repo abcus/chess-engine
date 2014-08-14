@@ -176,7 +176,7 @@ namespace Chess_Engine {
                     // Generates all pseudo legal moves from the position
                     int[] pseudoLegalMoveList = null;
                     if (position.isInCheck() == false) {
-                        pseudoLegalMoveList = position.generateListOfAlmostLegalMoves(); 
+                        pseudoLegalMoveList = position.generateAlmostLegalMoves(); 
                     } else {
                         pseudoLegalMoveList = position.checkEvasionGenerator();
                     }
@@ -222,12 +222,12 @@ namespace Chess_Engine {
 				Console.Write(" score cp " + (int)((Search.result.evaluationScore) / 2.28));    
 		    }
 			Console.Write(" depth " + depth);
-		    Console.Write(" nodes " + Search.result.nodesEvaluated);
+		    Console.Write(" nodes " + Search.result.nodesVisited);
 			Console.Write(" time " + Search.result.time + " pv ");
 			foreach (string move in PVLine) {
 				Console.Write(move + " ");
 			}
-			Console.Write("nps " + Search.result.nodesEvaluated/(ulong)(Search.result.time + 1) * 1000);
+			Console.Write("nps " + Search.result.nodesVisited/(ulong)(Search.result.time + 1) * 1000);
 			Console.WriteLine("");
 	    }
 

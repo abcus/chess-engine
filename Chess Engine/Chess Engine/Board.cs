@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Microsoft.Win32;
 using Bitboard = System.UInt64;
 using Zobrist = System.UInt64;
 using Score = System.UInt32;
@@ -891,6 +891,143 @@ namespace Chess_Engine {
             return isInCheck;
         }
 
+		// Method that returns the least valuable piece attacking or defending a square
+	    public Bitboard getLVP(Bitboard attackersAndDefenders, int side) {
+		    
+			// Loops through all attacker (or defender) bitboards from least valuable to most valuable
+			// As soon as an intersection is found with the bitboard of attackers and defenders, returns that intersection
+			for (int i = Constants.WHITE_PAWN + 6 * side; i <= Constants.WHITE_KING + 6*side; i ++) {
+			    Bitboard LVP = attackersAndDefenders & arrayOfBitboards[i];
+			    if (LVP != 0) {
+				    return LVP;
+			    }
+		    }
+		    return 0;
+	    }
+
+	    public Bitboard getXRay(int destinationSquare, int frontAttackerSquare, Bitboard oldOccupiedBitboard, Bitboard newOccupiedBitboard, int sideToCapture) {
+		    int frontAttackerPieceType = this.pieceArray[frontAttackerSquare];
+
+		    if (sideToCapture == Constants.WHITE) {
+				if (frontAttackerPieceType == Constants.WHITE_ROOK || frontAttackerPieceType == Constants.WHITE_QUEEN) {
+					Bitboard rookAttacksFromDestionationSquareNew = generateRookMovesFromIndex(newOccupiedBitboard, destinationSquare);
+					Bitboard rookAttacksFromFrontAttackerSquare = generateRookMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+					Bitboard ray = rookAttacksFromDestionationSquareNew & rookAttacksFromFrontAttackerSquare & ~rookAttacksFromDestinationSquareOld;
+
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.WHITE];
+					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+					if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN) {
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						return potentialXRayAttackers;
+					}
+				}
+
+				if (frontAttackerPieceType == Constants.WHITE_PAWN || frontAttackerPieceType == Constants.WHITE_BISHOP || frontAttackerPieceType == Constants.WHITE_QUEEN) {
+					Bitboard bishopAttacksFromDestionationSquare = generateBishopMovesFromIndex(newOccupiedBitboard, destinationSquare);
+					Bitboard bishopAttacksFromFrontAttackerSquare = generateBishopMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
+
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.WHITE];
+					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+					if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN) {
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						return potentialXRayAttackers;
+					}
+				}
+		    } else {
+				if (frontAttackerPieceType == Constants.BLACK_ROOK || frontAttackerPieceType == Constants.BLACK_QUEEN) {
+					Bitboard rookAttacksFromDestionationSquare = generateRookMovesFromIndex(newOccupiedBitboard, destinationSquare);
+					Bitboard rookAttacksFromFrontAttackerSquareNew = generateRookMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+					Bitboard ray = rookAttacksFromDestionationSquare & rookAttacksFromFrontAttackerSquareNew & ~rookAttacksFromDestinationSquareOld;
+
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.BLACK];
+					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+					if (potentialXRayPiece == Constants.BLACK_ROOK|| potentialXRayPiece == Constants.BLACK_QUEEN) {
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						return potentialXRayAttackers;
+					}
+				}
+
+				if (frontAttackerPieceType == Constants.BLACK_PAWN || frontAttackerPieceType == Constants.BLACK_BISHOP || frontAttackerPieceType == Constants.BLACK_QUEEN) {
+					Bitboard bishopAttacksFromDestionationSquare = generateBishopMovesFromIndex(newOccupiedBitboard, destinationSquare);
+					Bitboard bishopAttacksFromFrontAttackerSquare = generateBishopMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
+
+					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.BLACK];
+					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+					if (potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						return potentialXRayAttackers;
+					}
+				}
+		    }
+		    return 0;
+	    }
+
+		// Method that returns the expected evaluation value to be lost or gained after a series of exchanges on a single square
+	    public int staticExchangeEval(int startSquare, int destinationSquare, int sideToCapture) {
+
+			int[] gain = new int[32];
+		    int depth = 0;
+			Bitboard mayBeFrontAttacker = (this.arrayOfBitboards[Constants.WHITE_PAWN] | this.arrayOfBitboards[Constants.WHITE_BISHOP] |
+		                                   this.arrayOfBitboards[Constants.WHITE_ROOK] | this.arrayOfBitboards[Constants.WHITE_QUEEN] |
+		                                   this.arrayOfBitboards[Constants.BLACK_PAWN] | this.arrayOfBitboards[Constants.BLACK_BISHOP] |
+		                                   this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
+			Bitboard startSquareBitboard = (0x1UL << startSquare);
+			Bitboard occupiedBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
+			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare);
+		    
+			// Material win for side capturing (e.g. white) if the target piece (e.g. pawn) is en-prise
+			gain[depth] = Constants.arrayOfPieceValueSEE[this.pieceArray[destinationSquare]];
+			
+			Console.WriteLine(gain[depth]);
+
+			do {
+			    depth++;
+				
+				
+				// Material win for other side (e.g. black) if the piece that just captured (e.g. rook) is en-prise
+				gain[depth] = Constants.arrayOfPieceValueSEE[this.pieceArray[startSquare]] - gain[depth - 1];
+			    
+				Console.WriteLine(gain[depth]);
+
+				// Doesn't affect the sign of the result, but affects the magnitude so will leave out
+				/*if (Math.Max(-gain[depth - 1], gain[depth]) < 0) {
+				    break;
+			    }*/
+				
+				
+
+				// Add any hidden attackers
+				if ((startSquareBitboard & mayBeFrontAttacker) != 0) {
+					attackersAndDefenders |= getXRay(destinationSquare, startSquare, occupiedBitboard, occupiedBitboard ^ startSquareBitboard, sideToCapture);
+				}
+
+				// Remove the piece that just captured (e.g. rook) from the attackers/defenders and occupied bitboards
+				attackersAndDefenders ^= startSquareBitboard;
+				occupiedBitboard ^= startSquareBitboard;
+
+				sideToCapture ^= 1;
+
+				// Get the other side's (e.g. black) least valuable attacker
+				startSquareBitboard = this.getLVP(attackersAndDefenders, sideToCapture);
+
+				startSquare = Constants.findFirstSet(startSquareBitboard);
+
+			// If there are no least valuable attackers, then break out of the loop
+		    } while (startSquareBitboard != 0);
+
+		    while (-- depth != 0) {
+			    gain[depth - 1] = -Math.Max(-gain[depth - 1], gain[depth]);
+		    }
+
+		    return gain[0];
+	    }
+
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
 		// ALMOST LEGAL MOVE GENERATOR
@@ -901,7 +1038,7 @@ namespace Chess_Engine {
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         
-        public int[] generateListOfAlmostLegalMoves() {
+        public int[] generateAlmostLegalMoves() {
 
             if (this.sideToMove == Constants.WHITE) {
                 
