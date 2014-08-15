@@ -27,12 +27,6 @@ namespace Chess_Engine {
             Constants.initEvalConstants();
 	        Constants.initZobrist();
 
-			Board position = new Board("2k5/8/8/3pRrRr/8/8/8/2K5 w - -");
-			UCI_IO.drawBoard(position);
-	        
-			Console.WriteLine(position.staticExchangeEval(Constants.E5, Constants.F5, Constants.WHITE));
-			
-
 			while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {
                     break;

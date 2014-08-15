@@ -75,21 +75,32 @@ namespace Chess_Engine {
 
 			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
 			// Clones the inputboard and operates on the clone so that this problem won't occur
-			for (int i = 1; i <= Constants.MAX_DEPTH; i++) {
+			int alpha = -Constants.LARGE_INT;
+			int beta = Constants.LARGE_INT;
+
+			int currentWindow = Constants.ASP_WINDOW;
+
+			for (int i = 1; i <= Constants.MAX_DEPTH;) {
 
 				// sets the initial depth (for mate score calculation)
 				initialDepth = i;
 				nodesVisited = 0;
 
 				Stopwatch s = Stopwatch.StartNew();
-				moveAndEval tempResult = PVSRoot(i);
+				moveAndEval tempResult = PVSRoot(i, alpha, beta);
 
 				// If PVSRoot at depth i returned null, that means that the search wasn't completed and time has run out
 				// In that case, terminate the thread
 				// The result variable will be the result of the last iteration
 				if (tempResult == null) {
 					return;
-				} 
+				} if (tempResult.evaluationScore == alpha) {
+					currentWindow *= 2;
+					alpha -= (int) (0.5 * currentWindow);
+				} else if (tempResult.evaluationScore == beta) {
+					currentWindow *= 2;
+					beta += (int) (0.5*currentWindow);
+				}
 				// Otherwise, the search was completed so we set the result variable equal to the return value of PVS root
 				else {
 					result = tempResult;
@@ -99,6 +110,10 @@ namespace Chess_Engine {
 
 					List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
+					currentWindow = Constants.ASP_WINDOW;
+					alpha = result.evaluationScore - currentWindow;
+					beta = result.evaluationScore + currentWindow;
+					i++;
 				}
 			}
 	    }
@@ -110,9 +125,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-	    public static moveAndEval PVSRoot(int depth) {
-		    int alpha = -Constants.LARGE_INT;
-		    int beta = Constants.LARGE_INT;
+	    public static moveAndEval PVSRoot(int depth, int alpha, int beta) {
 		    Zobrist zobristKey = Search.cloneBoard.zobristKey;
 
 			TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
@@ -128,6 +141,7 @@ namespace Chess_Engine {
 		    bool firstMove = true;
 			List<int> bestMoves = new List<int>();
 			stateVariables restoreData = new stateVariables(Search.cloneBoard);
+			bool raisedAlpha = false;
 
 			while (true) {
 
@@ -142,6 +156,14 @@ namespace Chess_Engine {
 				
 				if (firstMove == true) {
 					boardScore = -PVS(depth - 1, -beta, -alpha);
+
+					// The first move is assumed to be the best move
+					// If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
+					if (boardScore < alpha) {
+						moveAndEval failLowResult = new moveAndEval();
+						failLowResult.evaluationScore = alpha;
+						return failLowResult;
+					}
 				} else {
 					boardScore = -PVS(depth - 1, -alpha - 1, -alpha);
 					numOfSuccessfulZWS++;
@@ -163,6 +185,14 @@ namespace Chess_Engine {
 				nodesVisited++;
 
 				if (boardScore > alpha) {
+					raisedAlpha = true;
+
+					if (boardScore >= beta) {
+						// return beta and not best score (fail-hard)
+						 moveAndEval failHighResult = new moveAndEval();
+						failHighResult.evaluationScore = beta;
+						return failHighResult;
+					}
 					alpha = boardScore;
 					bestMoves.Clear();
 					bestMoves.Add(move);
@@ -170,13 +200,24 @@ namespace Chess_Engine {
 				    bestMoves.Add(move);
 			    }
 		    }
-			TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMoves[0]);
-			UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
 
-		    moveAndEval result = new moveAndEval();
-		    result.evaluationScore = alpha;
-		    result.move = bestMoves[0];
-		    return result;
+			// If score was greater than alpha but less than beta, then it is a PV node and we can store the information
+			// Otherwise, we failed low and return alpha without storing any information
+		    if (raisedAlpha == true) {
+			    TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMoves[0]);
+			    UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+
+			    moveAndEval result = new moveAndEval();
+			    result.evaluationScore = alpha;
+			    result.move = bestMoves[0];
+			    return result;
+		    }
+		    else {
+				// return beta and not best score (fail-hard)
+				moveAndEval failLowResult = new moveAndEval();
+				failLowResult.evaluationScore = alpha;
+				return failLowResult;
+		    }
 	    }
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
