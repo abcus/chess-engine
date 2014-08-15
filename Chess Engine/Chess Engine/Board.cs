@@ -176,13 +176,14 @@ namespace Chess_Engine {
         public void makeMove(int moveRepresentationInput) {
 
             // Extracts information (piece moved, start square, destination square,  flag, piece captured, piece promoted) from the int encoding the move
-            int pieceMoved = ((moveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
-			int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
+            int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
 			int destinationSquare = ((moveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
 			int flag = ((moveRepresentationInput & Constants.FLAG_MASK) >> 16);
 			int pieceCaptured = ((moveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
             int piecePromoted = ((moveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
-			
+
+	        int pieceMoved = this.pieceArray[startSquare];
+
             // Calculates bitboards for removing piece from start square and adding piece to destionation square
 			// "and" with ~startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
 			ulong startSquareBitboard = (0x1UL << startSquare);
@@ -574,12 +575,21 @@ namespace Chess_Engine {
 	        this.blackEndgameMaterial = restoreData.blackEndgameMaterial;
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    int pieceMoved = ((unmoveRepresentationInput & Constants.PIECE_MOVED_MASK) >> 0);
 		    int startSquare = ((unmoveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
 		    int destinationSquare = ((unmoveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
 		    int flag = ((unmoveRepresentationInput & Constants.FLAG_MASK) >> 16);
 		    int pieceCaptured = ((unmoveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
             int piecePromoted = ((unmoveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
+
+			int pieceMoved = this.pieceArray[destinationSquare];
+	        if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
+		        if (destinationSquare >= Constants.H8) {
+			        pieceMoved = Constants.WHITE_PAWN;
+		        } else if (destinationSquare <= Constants.A1) {
+			        pieceMoved = Constants.BLACK_PAWN;
+		        }
+	        }
+
 
 		    //Calculates bitboards for removing piece from start square and adding piece to destionation square
 		    //"and" with startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
@@ -890,6 +900,26 @@ namespace Chess_Engine {
             }
             return isInCheck;
         }
+
+		//Checks if the king is in check and prints out the result
+		public void kingInCheckTest(int colourOfKingToCheck) {
+
+			int indexOfKing = 0;
+
+			if (colourOfKingToCheck == Constants.WHITE) {
+				indexOfKing = Constants.findFirstSet(this.arrayOfBitboards[Constants.WHITE_KING]);
+			} else if (colourOfKingToCheck == Constants.BLACK) {
+				indexOfKing = Constants.findFirstSet(this.arrayOfBitboards[Constants.BLACK_KING]);
+			}
+			int checkStatus = this.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
+
+			switch (checkStatus) {
+				case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
+				case Constants.CHECK: Console.WriteLine("King is in check"); break;
+				case Constants.DOUBLE_CHECK: Console.WriteLine("King is in double check"); break;
+				case Constants.MULTIPLE_CHECK: Console.WriteLine("King is in multiple check"); break;
+			}
+		}
 
 		// Method that returns the least valuable piece attacking or defending a square
 	    public Bitboard getLVP(Bitboard attackersAndDefenders, int side) {

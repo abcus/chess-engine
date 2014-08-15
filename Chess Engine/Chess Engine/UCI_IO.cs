@@ -405,7 +405,7 @@ namespace Chess_Engine {
             Console.WriteLine("Zobrist key: " + inputBoard.zobristKey);
 			Console.WriteLine("");
 
-            Test.kingInCheckTest(inputBoard, inputBoard.sideToMove);
+            inputBoard.kingInCheckTest(inputBoard.sideToMove);
         }
     }
 }

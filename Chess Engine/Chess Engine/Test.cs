@@ -532,26 +532,6 @@ namespace Chess_Engine {
 
 		 */
 
-        //Checks if the king is in check and prints out the result
-        public static void kingInCheckTest(Board inputBoard, int colourOfKingToCheck) {
-
-            int indexOfKing = 0;
-
-            if (colourOfKingToCheck == Constants.WHITE) {
-                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.WHITE_KING]);
-            } else if (colourOfKingToCheck == Constants.BLACK) {
-                indexOfKing = Constants.findFirstSet(inputBoard.arrayOfBitboards[Constants.BLACK_KING]);
-            }
-
-            int checkStatus = inputBoard.timesSquareIsAttacked(colourOfKingToCheck, indexOfKing);
-
-            switch (checkStatus) {
-                case Constants.NOT_IN_CHECK: Console.WriteLine("King not in check"); break;
-                case Constants.CHECK: Console.WriteLine("King is in check"); break;
-                case Constants.DOUBLE_CHECK: Console.WriteLine("King is in double check"); break;
-				case Constants.MULTIPLE_CHECK: Console.WriteLine("King is in multiple check"); break;
-            }
-        }
         //Prints out a list of legal moves
         // Have to test if the move is legal or not
         public static void printLegalMove(Board inputBoard)
