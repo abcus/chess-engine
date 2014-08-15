@@ -39,7 +39,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
 		public static void initSearch(Board inputBoard, DoWorkEventArgs e) {
-		    
+
 			// Clones the input board (so that if a search is interrupted midway through and all moves aren't unmade, it won't affect the actual board)
 			cloneBoard = new Board(inputBoard);
 			
@@ -73,11 +73,11 @@ namespace Chess_Engine {
 			
 			result = new moveAndEval();
 
-			// During iterative deepening if a search is interrupted before complete, then board will not be restored to original state
-			// Clones the inputboard and operates on the clone so that this problem won't occur
+			// Initially set alpha and beta to - infinity and + infinity
 			int alpha = -Constants.LARGE_INT;
 			int beta = Constants.LARGE_INT;
 
+			// Declare and initialize the aspiration window
 			int currentWindow = Constants.ASP_WINDOW;
 
 			for (int i = 1; i <= Constants.MAX_DEPTH;) {
@@ -89,9 +89,17 @@ namespace Chess_Engine {
 				Stopwatch s = Stopwatch.StartNew();
 				moveAndEval tempResult = PVSRoot(i, alpha, beta);
 
-				// If PVSRoot at depth i returned null, that means that the search wasn't completed and time has run out
-				// In that case, terminate the thread
-				// The result variable will be the result of the last iteration
+				// If PVSRoot at depth i returned null
+					// that means that the search wasn't completed and time has run out, so terminate the thread
+					// The result variable will be from the last completed iteration
+				// If PVSRoot returned a value of alpha
+					// That means we failed low (no move had a score that exceeded alpha)
+					// Widen the window by a factor of 2, and search again (beta is untouched because otherwise it may lead to search instability)
+				// If PVSRoot returned a value of beta
+					// That means we failed high (there was a move whose score exceeded beta)
+					// Widen the window by a factor of 2, and search again (alpha is untouched because otherwise it may lead to search instability)
+				// If PVSRoot returned a value between alpha and beta, the search completed successfully
+					// We set the result variable equal to the return value of the function
 				if (tempResult == null) {
 					return;
 				} if (tempResult.evaluationScore == alpha) {
@@ -100,9 +108,7 @@ namespace Chess_Engine {
 				} else if (tempResult.evaluationScore == beta) {
 					currentWindow *= 2;
 					beta += (int) (0.5*currentWindow);
-				}
-				// Otherwise, the search was completed so we set the result variable equal to the return value of PVS root
-				else {
+				} else {
 					result = tempResult;
 					result.depthAchieved = i;
 					result.time = s.ElapsedMilliseconds;
@@ -110,6 +116,8 @@ namespace Chess_Engine {
 
 					List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
+					
+					// Reset the current window, and set alpha and beta for the next iteration
 					currentWindow = Constants.ASP_WINDOW;
 					alpha = result.evaluationScore - currentWindow;
 					beta = result.evaluationScore + currentWindow;
@@ -304,7 +312,7 @@ namespace Chess_Engine {
 					} else if (evaluationScore > alpha && evaluationScore < beta) {
 						return evaluationScore;
 					}
-				} if (entry.flag == Constants.CUT_NODE) {
+				} else if (entry.flag == Constants.CUT_NODE) {
 					int evaluationScore = entry.evaluationScore;
 					if (evaluationScore >= beta) {
 						return beta;

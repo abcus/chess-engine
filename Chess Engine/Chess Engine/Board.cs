@@ -982,7 +982,7 @@ namespace Chess_Engine {
 			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare);
 		    
 			// Material win for side capturing (e.g. white) if the target piece (e.g. pawn) is en-prise
-			gain[depth] = Constants.arrayOfPieceValueSEE[this.pieceArray[destinationSquare]];
+			gain[depth] = Constants.arrayOfPieceValuesMG[this.pieceArray[destinationSquare]];
 			
 			Console.WriteLine(gain[depth]);
 
@@ -991,7 +991,7 @@ namespace Chess_Engine {
 				
 				
 				// Material win for other side (e.g. black) if the piece that just captured (e.g. rook) is en-prise
-				gain[depth] = Constants.arrayOfPieceValueSEE[this.pieceArray[startSquare]] - gain[depth - 1];
+				gain[depth] = Constants.arrayOfPieceValuesMG[this.pieceArray[startSquare]] - gain[depth - 1];
 			    
 				Console.WriteLine(gain[depth]);
 

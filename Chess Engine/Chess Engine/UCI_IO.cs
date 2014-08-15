@@ -110,7 +110,7 @@ namespace Chess_Engine {
 		// Method that prints out the engine name, author
         public static void UCIInitialize() {
             Console.WriteLine("id name Spark v0.1");
-            Console.WriteLine("id author John");
+            Console.WriteLine("id author Abcus");
             Console.WriteLine("uciok");
         }
 

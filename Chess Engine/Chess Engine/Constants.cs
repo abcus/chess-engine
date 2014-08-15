@@ -108,6 +108,8 @@ namespace Chess_Engine {
                BLACK_QUEEN = 11,
                BLACK_KING = 12;
 
+	    public static readonly char[] pieceCharacter = {' ', 'P', 'N', 'B', 'R', 'Q', 'K', 'p', 'n', 'b', 'r', 'q', 'k'};
+
         public const int
             PAWN = 1,
             KNIGHT = 2,
@@ -412,7 +414,7 @@ namespace Chess_Engine {
         public static ulong[][] bishopMoves = new ulong[64][];
 
 		//Populates the occupancy variation arrays and piece move arrays
-		public static void initConstants() {
+		public static void initBoardConstants() {
 			populateRookOccupancyVariation(rookOccupancyVariations);
 			populateBishopOccupancyVariation(bishopOccupancyVariations);
 			populateRookMove(rookMoves);
@@ -621,9 +623,9 @@ namespace Chess_Engine {
         // Values of draws, stalemates, and checkmates
         public const Value DRAW = 0;
         public const Value STALEMATE = 0;
-        public const Value CHECKMATE = 10000000;
+        public const Value CHECKMATE = 30000;
 
-        public const Value KING_VALUE = 10000;
+        public const Value KING_VALUE = 12500;
 
         // Material value for each piece in the middlegame
         public const Value PAWN_VALUE_MG = 198;
@@ -642,8 +644,7 @@ namespace Chess_Engine {
         // Array of piece values [piece]
         public static Value[] arrayOfPieceValuesMG = new Value[13];
         public static Value[] arrayOfPieceValuesEG = new Value[13];
-		public static Value[] arrayOfPieceValueSEE = { 0, 100, 325, 325, 500, 1000, 10000, 100, 325, 325, 500, 1000, 10000};
-
+		
         // White piece square tables for the middlegame 
         public static int[] wPawnMidgamePSQ = {
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -817,22 +818,26 @@ namespace Chess_Engine {
             arrayOfPieceValuesMG[3] = BISHOP_VALUE_MG;
             arrayOfPieceValuesMG[4] = ROOK_VALUE_MG;
             arrayOfPieceValuesMG[5] = QUEEN_VALUE_MG;
+	        arrayOfPieceValuesMG[6] = KING_VALUE;
             arrayOfPieceValuesMG[7] = PAWN_VALUE_MG;
             arrayOfPieceValuesMG[8] = KNIGHT_VALUE_MG;
             arrayOfPieceValuesMG[9] = BISHOP_VALUE_MG;
             arrayOfPieceValuesMG[10] = ROOK_VALUE_MG;
             arrayOfPieceValuesMG[11] = QUEEN_VALUE_MG;
-            
+	        arrayOfPieceValuesMG[12] = KING_VALUE;
+
             arrayOfPieceValuesEG[1] = PAWN_VALUE_EG;
             arrayOfPieceValuesEG[2] = KNIGHT_VALUE_EG;
             arrayOfPieceValuesEG[3] = BISHOP_VALUE_EG;
             arrayOfPieceValuesEG[4] = ROOK_VALUE_EG;
             arrayOfPieceValuesEG[5] = QUEEN_VALUE_EG;
+	        arrayOfPieceValuesEG[6] = KING_VALUE;
             arrayOfPieceValuesEG[7] = PAWN_VALUE_EG;
             arrayOfPieceValuesEG[8] = KNIGHT_VALUE_EG;
             arrayOfPieceValuesEG[9] = BISHOP_VALUE_EG;
             arrayOfPieceValuesEG[10] = ROOK_VALUE_EG; 
             arrayOfPieceValuesEG[11] = QUEEN_VALUE_EG;
+	        arrayOfPieceValuesEG[12] = KING_VALUE;
             
             // Initializes the black piece square tables by flipping the corresponding white table about the midpoint
             for (int i = 0; i < 64; i += 8) {
@@ -904,6 +909,9 @@ namespace Chess_Engine {
 	    private static int seed = 1;
 	    private static Random rnd = new Random(Constants.seed);
 
+		public static int[] victimScore = { 0, 10, 20, 30, 40, 50, 60, 10, 20, 30, 40, 50, 60 };
+		public static int[,] MvvLvaScore = new int[13, 13];
+
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {
 		    var buffer = new byte[sizeof (UInt64)];
@@ -911,8 +919,17 @@ namespace Chess_Engine {
 		    return BitConverter.ToUInt64(buffer, 0);
 	    }
 
-		// Initializes the zobrist random number arrays
-		public static void initZobrist() {
+		// Initializes the MVV/LVA array
+	    private static void initializeMvvLvaArray() {
+		    for (int victim = Constants.WHITE_PAWN; victim <= Constants.BLACK_KING; victim ++) {
+			    for (int attacker = Constants.WHITE_PAWN; attacker <= Constants.BLACK_KING; attacker++) {
+				    Constants.MvvLvaScore[victim, attacker] = (Constants.victimScore[victim] + 6 - ((Constants.victimScore[attacker])/10));
+			    }
+		    }
+	    }
+
+		// Initializes the zobrist random number arrays and MVV/LVA array
+		public static void initSearchConstants() {
 			
 			// Populates the piece Zobrist array
 			for (int i = 1; i <= 12; i++) {
@@ -933,7 +950,11 @@ namespace Chess_Engine {
 
 			// Populates the side to Move Zobrist array
 			Constants.sideToMoveZobrist[0] = rnd.NextUInt64();
+
+			Constants.initializeMvvLvaArray();
 		}
+
+	    
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------

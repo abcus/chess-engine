@@ -565,11 +565,17 @@ namespace Chess_Engine {
                 moveCount ++;
 
 				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation));
-                
-
-
             }
         }
+
+		// Prints out the MVV/LVA array scores
+		public static void printMvvLva() {
+			for (int i = 1; i < 13; i++) {
+				for (int j = 1; j < 13; j++) {
+					Console.WriteLine(Constants.pieceCharacter[j] + " x " + Constants.pieceCharacter[i] + " " + Constants.MvvLvaScore[i, j]);
+				}
+			}
+		}
 
 		//Extracts the piece moved from the integer that encodes the move
 		private static int getPieceMoved(int moveRepresentation) {
