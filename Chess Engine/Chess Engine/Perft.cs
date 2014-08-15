@@ -17,15 +17,20 @@ namespace Chess_Engine {
 
 		private static PerftTTEntry[] perftTT = new PerftTTEntry[Constants.TT_SIZE];
 
+		// Calls the perft method to determine the number of nodes at a given depth
 		public static int perftInit(Board inputBoard, int depth) {
+			
+			// Creates a new transposition table before perft is called to eliminate collisions
 			perftTT = new PerftTTEntry[Constants.TT_SIZE];
 			return perft(inputBoard, depth);
 		}
 
+		// Returns the number of nodes at a given depth
 		public static int perft(Board inputBoard, int depth) {
 
 			int nodes = 0;
 
+			// If the depth is 1
 			if (depth == 1) {
 
 				// Looks up the result in the transposition table
@@ -34,8 +39,8 @@ namespace Chess_Engine {
 					return entry.nodeCount;
 				}
 
+				// If the node is not found in the TTable, then get a list of almost legal moves
 				int[] pseudoLegalMoveList;
-
 				if (inputBoard.isInCheck() == false) {
 					pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 				} else {
@@ -47,9 +52,12 @@ namespace Chess_Engine {
 
 				stateVariables restoreData = new stateVariables(inputBoard);
 
+				// Loop through all the almost legal moves (testing for legality if it is a king move/en passant)
+				// If the move is legal, then increment the move count by 1
 				while (pseudoLegalMoveList[index] != 0) {
 					int move = pseudoLegalMoveList[index];
-					int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 					int flag = ((move & Constants.FLAG_MASK) >> 16);
 
@@ -66,12 +74,13 @@ namespace Chess_Engine {
 					}
 				}
 
-				// Stores the result in the transposition table
+				// Stores the result in the transposition table and returns the result
 				PerftTTEntry newEntry = new PerftTTEntry(inputBoard.zobristKey, 1, numberOfLegalMovesFromList);
 				perftTT[inputBoard.zobristKey % Constants.TT_SIZE] = newEntry;
-
 				return numberOfLegalMovesFromList;
-			} else {
+			} 
+			// If depth is greater than 1
+			else {
 
 				// Looks up the result in the transposition table
 				PerftTTEntry entry = perftTT[inputBoard.zobristKey % Constants.TT_SIZE];
@@ -79,8 +88,8 @@ namespace Chess_Engine {
 					return entry.nodeCount;
 				}
 
+				// If the result is not found in the transposition table, then get a list of almost legal moves
 				int[] pseudoLegalMoveList = null;
-
 				if (inputBoard.isInCheck() == false) {
 					pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 				} else {
@@ -88,12 +97,14 @@ namespace Chess_Engine {
 				}
 
 				int index = 0;
-
 				stateVariables restoreData = new stateVariables(inputBoard);
 
+				// Loop through and make all the almost legal moves (testing for legality if it is a king move/en passant)
+				// If the move is legal, then call perft at depth - 1
 				while (pseudoLegalMoveList[index] != 0) {
 					int move = pseudoLegalMoveList[index];
-					int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 					int flag = ((move & Constants.FLAG_MASK) >> 16);
 
@@ -109,10 +120,9 @@ namespace Chess_Engine {
 					inputBoard.unmakeMove(move, restoreData);
 					index++;
 				}
-				// Stores the result in the transposition table
+				// Stores the result in the transposition table and return the result
 				PerftTTEntry newEntry = new PerftTTEntry(inputBoard.zobristKey, depth, nodes);
 				perftTT[inputBoard.zobristKey % Constants.TT_SIZE] = newEntry;
-
 				return nodes;
 			}
 		}

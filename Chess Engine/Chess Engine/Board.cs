@@ -2682,7 +2682,7 @@ namespace Chess_Engine {
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
 		private int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted = 0x0) {
-            int moveRepresentation = (pieceMoved | (startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
+            int moveRepresentation = ((startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
             return moveRepresentation;
         }
 

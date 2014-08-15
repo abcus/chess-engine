@@ -544,7 +544,7 @@ namespace Chess_Engine {
             foreach (int moveRepresentation in moveList) {
                 moveCount ++;
 
-				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation));
+				Console.Write(moveCount + ". " + printMoveStringFromMoveRepresentation(moveRepresentation, inputBoard));
             }
         }
 
@@ -558,8 +558,9 @@ namespace Chess_Engine {
 		}
 
 		//Extracts the piece moved from the integer that encodes the move
-		private static int getPieceMoved(int moveRepresentation) {
-            int pieceMoved = ((moveRepresentation & Constants.PIECE_MOVED_MASK) >> 0);
+		private static int getPieceMoved(int moveRepresentation, Board inputBoard) {
+			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
+			int pieceMoved = (inputBoard.pieceArray[startSquare]);
 			return pieceMoved;
 		}
 		//Extracts the start square from the integer that encodes the move
@@ -589,7 +590,7 @@ namespace Chess_Engine {
         }
 
 		//prints out a move string from a move representation uint
-        public static string printMoveStringFromMoveRepresentation(int moveRepresentation) {
+        public static string printMoveStringFromMoveRepresentation(int moveRepresentation, Board inputBoard) {
             int columnOfStartSquare = (getStartSquare(moveRepresentation) % 8);
             int rowOfStartSquare = (getStartSquare(moveRepresentation) / 8);
             char fileOfStartSquare = (char)('h' - columnOfStartSquare);
@@ -601,8 +602,8 @@ namespace Chess_Engine {
             string destinationSquare = (fileOfDestinationSquare + (1 + rowOfDestinationSquare).ToString() + " ");
 
             string moveString = "";
-            
-            if (getPieceMoved(moveRepresentation) == Constants.WHITE_PAWN) {
+
+			if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_PAWN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE || getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
                     moveString += startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE || getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
@@ -621,32 +622,32 @@ namespace Chess_Engine {
                         case Constants.WHITE_ROOK: moveString += startSquare + "x" + destinationSquare + "=R"; break;
                         case Constants.WHITE_QUEEN: moveString += startSquare + "x" + destinationSquare + "=Q"; break;
                     }
-                }     
-            } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_KNIGHT) {
+                }
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_KNIGHT) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "N" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "N" + startSquare + "x" + destinationSquare;
-                } 
-            } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_BISHOP) {
+                }
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_BISHOP) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "B" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "B" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_ROOK) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_ROOK) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "R" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "R" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_QUEEN) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_QUEEN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "Q" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "Q" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.WHITE_KING) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.WHITE_KING) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "K" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
@@ -656,7 +657,7 @@ namespace Chess_Engine {
                 } else if (getFlag(moveRepresentation) == Constants.LONG_CASTLE) {
                     moveString += "O-O-O";
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_PAWN) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_PAWN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE || getFlag(moveRepresentation) == Constants.DOUBLE_PAWN_PUSH) {
                     moveString += startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE || getFlag(moveRepresentation) == Constants.EN_PASSANT_CAPTURE) {
@@ -675,32 +676,32 @@ namespace Chess_Engine {
                         case Constants.BLACK_ROOK: moveString += startSquare + "x" + destinationSquare + "=r"; break;
                         case Constants.BLACK_QUEEN: moveString += startSquare + "x" + destinationSquare + "=q"; break;
                     }
-                }  
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_KNIGHT) {
+                }
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_KNIGHT) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "n" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "n" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_BISHOP) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_BISHOP) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "b" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "b" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_ROOK) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_ROOK) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "r" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "r" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_QUEEN) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_QUEEN) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "q" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {
                     moveString += "q" + startSquare + "x" + destinationSquare;
                 }
-            } else if (getPieceMoved(moveRepresentation) == Constants.BLACK_KING) {
+			} else if (getPieceMoved(moveRepresentation, inputBoard) == Constants.BLACK_KING) {
                 if (getFlag(moveRepresentation) == Constants.QUIET_MOVE) {
                     moveString += "k" + startSquare + destinationSquare;
                 } else if (getFlag(moveRepresentation) == Constants.CAPTURE) {

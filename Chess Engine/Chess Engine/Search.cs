@@ -479,7 +479,8 @@ namespace Chess_Engine {
 			foreach (int move in pseudoLegalMoveList) {
 
 				if (move != 0) {
-					int pieceMoved = ((move & Constants.PIECE_MOVED_MASK) >> 0);
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 					int flag = ((move & Constants.FLAG_MASK) >> 16);
 
