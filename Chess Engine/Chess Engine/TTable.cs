@@ -85,6 +85,12 @@ namespace Chess_Engine {
 	// Entry that is stored in the transposition table
 	public struct TTEntry {
 
+		internal Zobrist key;
+		internal int flag;
+		internal int depth;
+		internal Score evaluationScore;
+		internal Move move;
+
 		public TTEntry(Zobrist key, int flag, int depth, Score evaluationScore, Move move = 0) {
 			this.key = key;
 			this.flag = flag;
@@ -92,11 +98,5 @@ namespace Chess_Engine {
 			this.evaluationScore = evaluationScore;
 			this.move = move;
 		}
-
-		internal Zobrist key;
-		internal int flag;
-		internal int depth;
-		internal Score evaluationScore;
-		internal Move move;
 	}
 }

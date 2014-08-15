@@ -59,10 +59,10 @@ namespace Chess_Engine {
 			// Or prints the perft test suite
 			if (string0 == "perft") {
                 int depth = Convert.ToInt32(stringArray[1]);
-                Test.printPerft(position, depth);
+                Perft.printPerft(position, depth);
             } else if (string0 == "perftsuite") {
-              Test.perftSuite1(position);
-              Test.perftSuite2(position);
+              Perft.perftSuite1(position);
+              Perft.perftSuite2(position);
             } 
 			// Prints the board along with other state variables (castling rights, etc.)
 			else if (string0 == "print") {
