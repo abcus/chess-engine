@@ -31,6 +31,8 @@ namespace Chess_Engine {
 	    
 	    internal static DoWorkEventArgs stopEvent;
 
+	    internal static DateTime finishTime;
+
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		// INITIALIZE SEARCH
@@ -38,11 +40,13 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		public static void initSearch(Board inputBoard, DoWorkEventArgs e) {
+		public static void initSearch(DateTime finishTime, Board inputBoard, DoWorkEventArgs e) {
 
 			// Clones the input board (so that if a search is interrupted midway through and all moves aren't unmade, it won't affect the actual board)
 			cloneBoard = new Board(inputBoard);
-			
+
+			Search.finishTime = finishTime;
+
 			// Resets the history table and killer table
 			historyTable = new int[13,64];
 			killerTable = new int[Constants.MAX_DEPTH, 2];
@@ -116,7 +120,10 @@ namespace Chess_Engine {
 
 					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
-					
+					Console.WriteLine(failHighFirst/(failHighFirst+ failHigh));
+					failHighFirst = 0;
+					failHigh = 0;
+
 					// Reset the current window, and set alpha and beta for the next iteration
 					currentWindow = Constants.ASP_WINDOW;
 					alpha = result.evaluationScore - currentWindow;
@@ -138,7 +145,8 @@ namespace Chess_Engine {
 
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 
-			if (entry.key == zobristKey && entry.depth >= depth) {
+			// Make sure that the node is a PV node 
+			if (entry.key == zobristKey && entry.depth >= depth && entry.flag == Constants.PV_NODE) {
 				moveAndEval tableResult = new moveAndEval();
 				tableResult.evaluationScore = entry.evaluationScore;
 				tableResult.move = entry.move;
@@ -445,8 +453,8 @@ namespace Chess_Engine {
 		    if (UCI_IO.searchWorker.CancellationPending) {
 			    stopEvent.Cancel = true;
 			    return true;
-		    }  else if (false) { // else if the current time is greater than the expected finish date time object
-			    stopEvent.Cancel = true;
+		    }  else if (DateTime.Now > Search.finishTime) { // else if the current time is greater than the expected finish date time object
+				stopEvent.Cancel = true;
 			    return true;
 		    } else {
 			    return false;
@@ -479,9 +487,18 @@ namespace Chess_Engine {
 			// retrieves the hash move from the transposition table
 			stateVariables restoreData = new stateVariables(inputBoard);
 			int hashMove = 0;
+
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(inputBoard.zobristKey);
+			TTEntry PVTableEntry = UCI_IO.transpositionTable.probePVTTable(inputBoard.zobristKey);
+			
 			if (entry.key == inputBoard.zobristKey) {
-				hashMove = entry.move;
+				if (entry.move != 0) {
+					hashMove = entry.move;
+				} else {
+					if (PVTableEntry.move != 0) {
+						hashMove = PVTableEntry.move;
+					}	
+				}
 			}
 
 			for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
@@ -493,10 +510,10 @@ namespace Chess_Engine {
 					break;
 				} else {
 					
-					// If the move is the same as the hash move, give it a score of 127
-					/*if (move == hashMove) {
-						move |= (127 << Constants.MOVE_SCORE_SHIFT);
-					}*/
+					// If the move is the same as the hash move, move it to the beginning of the list
+					if (move == hashMove) {
+						legalMoveList.Insert(0, move);
+					}
 
 					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 					int pieceMoved = (inputBoard.pieceArray[startSquare]);
@@ -538,8 +555,8 @@ namespace Chess_Engine {
 
 				int bestMove = legalMoveList[bestMoveIndex];
 				legalMoveList[bestMoveIndex] = legalMoveList[0];
-				legalMoveList[0] = bestMove;
-				 */
+				legalMoveList[0] = bestMove;*/
+				
 				
 				int moveReturned = legalMoveList[0];
 				legalMoveList.RemoveAt(0);

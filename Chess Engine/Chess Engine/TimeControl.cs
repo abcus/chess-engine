@@ -5,6 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Chess_Engine {
-	class TimeControl {
+	public static class TimeControl {
+
+		public static DateTime getFinishTime(DateTime startTime) {
+			DateTime finishTime = startTime.AddMilliseconds(100000);
+			return finishTime;
+		}
 	}
 }

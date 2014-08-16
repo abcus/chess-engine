@@ -15,6 +15,9 @@ namespace Chess_Engine {
 		// Creates a board object and initializes to to the start position
         internal static Board position = new Board(Constants.FEN_START);
 
+		// Stores the finish time
+	    internal static DateTime finishTime;
+
 		// Creates a transposition table object (which is not cleared for the duration of the runtime of the program)
         // this object contains the actual transposition table, as well as a smaller PV table for storing and retrieving the principal variation (less overwrites)
 		internal static TTable transpositionTable = new TTable();
@@ -97,6 +100,7 @@ namespace Chess_Engine {
             } 
 			// Starts the search
 			else if (string0 == "go") {
+				finishTime = TimeControl.getFinishTime(DateTime.Now);
 				searchWorker.RunWorkerAsync();
             } 
 			// Stops the search
@@ -200,7 +204,7 @@ namespace Chess_Engine {
         public static void searchWorker_StartSearch(object sender, DoWorkEventArgs e) {
             
 			// Creates a new search object
-	        Search.initSearch(position, e);
+	        Search.initSearch(finishTime, position, e);
 
         }
 
