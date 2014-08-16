@@ -176,11 +176,11 @@ namespace Chess_Engine {
         public void makeMove(int moveRepresentationInput) {
 
             // Extracts information (piece moved, start square, destination square,  flag, piece captured, piece promoted) from the int encoding the move
-            int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
-			int destinationSquare = ((moveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
-			int flag = ((moveRepresentationInput & Constants.FLAG_MASK) >> 16);
-			int pieceCaptured = ((moveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
-            int piecePromoted = ((moveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
+            int startSquare = ((moveRepresentationInput & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+			int destinationSquare = ((moveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> Constants.DESTINATION_SQUARE_SHIFT);
+			int flag = ((moveRepresentationInput & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+			int pieceCaptured = ((moveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> Constants.PIECE_CAPTURED_SHIFT);
+            int piecePromoted = ((moveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> Constants.PIECE_PROMOTED_SHIFT);
 
 	        int pieceMoved = this.pieceArray[startSquare];
 
@@ -575,11 +575,11 @@ namespace Chess_Engine {
 	        this.blackEndgameMaterial = restoreData.blackEndgameMaterial;
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
-		    int startSquare = ((unmoveRepresentationInput & Constants.START_SQUARE_MASK) >> 4);
-		    int destinationSquare = ((unmoveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> 10);
-		    int flag = ((unmoveRepresentationInput & Constants.FLAG_MASK) >> 16);
-		    int pieceCaptured = ((unmoveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> 20);
-            int piecePromoted = ((unmoveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> 24);
+		    int startSquare = ((unmoveRepresentationInput & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+		    int destinationSquare = ((unmoveRepresentationInput & Constants.DESTINATION_SQUARE_MASK) >> Constants.DESTINATION_SQUARE_SHIFT);
+		    int flag = ((unmoveRepresentationInput & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+		    int pieceCaptured = ((unmoveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> Constants.PIECE_CAPTURED_SHIFT);
+            int piecePromoted = ((unmoveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> Constants.PIECE_PROMOTED_SHIFT);
 
 			int pieceMoved = this.pieceArray[destinationSquare];
 	        if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
@@ -1340,14 +1340,14 @@ namespace Chess_Engine {
 
                 //Generates white king castling moves (if the king is not in check)
                 if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-                    int moveRepresentation = this.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
+                    int moveRepresentation = this.moveEncoder(Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY);
 
                     if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
                         listOfAlmostLegalMoves[index++] = moveRepresentation;
                     }
                 }
                 if ((this.whiteLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-                    int moveRepresentation = this.moveEncoder(Constants.WHITE_KING, Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
+                    int moveRepresentation = this.moveEncoder(Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY);
 
                     if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
                         listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -1631,7 +1631,7 @@ namespace Chess_Engine {
 
                 //Generates black king castling moves (if the king is not in check)
                 if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-                    int moveRepresentation = this.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
+                    int moveRepresentation = this.moveEncoder(Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY);
 
                     if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
                         listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -1639,7 +1639,7 @@ namespace Chess_Engine {
                 }
 
                 if ((this.blackLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-                    int moveRepresentation = this.moveEncoder(Constants.BLACK_KING, Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
+                    int moveRepresentation = this.moveEncoder(Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY);
 
                     if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
                         listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -2221,7 +2221,7 @@ namespace Chess_Engine {
             
             if (pseudoLegalSinglePawnMoveFromIndex != 0) {
                 int indexOfWhitePawnSingleMoveFromIndex = Constants.findFirstSet(pseudoLegalSinglePawnMoveFromIndex);
-                int moveRepresentation = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2235,7 +2235,7 @@ namespace Chess_Engine {
                 int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPawnCapturesFromIndex);
                 pseudoLegalPawnCapturesFromIndex &= (pseudoLegalPawnCapturesFromIndex - 1);
 
-                int moveRepresentation = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
+                int moveRepresentation = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex]);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2245,7 +2245,7 @@ namespace Chess_Engine {
             
             if (pseudoLegalDoubleMoveFromIndex != 0) {
                 int indexOfWhitePawnDoubleMoveFromIndex = Constants.findFirstSet(pseudoLegalDoubleMoveFromIndex);
-                int moveRepresentation = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
+                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2255,7 +2255,7 @@ namespace Chess_Engine {
             
             if (pseudoLegalEnPassantFromIndex != 0) {
                 int indexOfWhiteEnPassantCaptureFromIndex = Constants.findFirstSet(pseudoLegalEnPassantFromIndex);
-                int moveRepresentation = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour));
+                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour));
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2266,10 +2266,10 @@ namespace Chess_Engine {
             //Generates white pawn promotions
             if (pseudoLegalPromotionFromIndex != 0) {
                 int indexOfWhitePawnSingleMoveFromIndex = Constants.findFirstSet(pseudoLegalPromotionFromIndex);
-                int moveRepresentationKnightPromotion = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.KNIGHT + 6 * pieceColour));
-                int moveRepresentationBishopPromotion = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.BISHOP + 6 * pieceColour));
-                int moveRepresentationRookPromotion = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.ROOK + 6 * pieceColour));
-                int moveRepresentationQueenPromotion = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.QUEEN + 6 * pieceColour));
+                int moveRepresentationKnightPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.KNIGHT + 6 * pieceColour));
+                int moveRepresentationBishopPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.BISHOP + 6 * pieceColour));
+                int moveRepresentationRookPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.ROOK + 6 * pieceColour));
+                int moveRepresentationQueenPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.QUEEN + 6 * pieceColour));
 
                 listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotion;
                 listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotion;
@@ -2286,10 +2286,10 @@ namespace Chess_Engine {
                 int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPromotionCaptureFromIndex);
                 pseudoLegalPromotionCaptureFromIndex &= (pseudoLegalPromotionCaptureFromIndex - 1);
 
-                int moveRepresentationKnightPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.KNIGHT + 6 * pieceColour));
-                int moveRepresentationBishopPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.BISHOP + 6 * pieceColour));
-                int moveRepresentationRookPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.ROOK + 6 * pieceColour));
-                int moveRepresentationQueenPromotionCapture = this.moveEncoder((Constants.PAWN + 6 * pieceColour), pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.QUEEN + 6 * pieceColour));
+                int moveRepresentationKnightPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.KNIGHT + 6 * pieceColour));
+                int moveRepresentationBishopPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.BISHOP + 6 * pieceColour));
+                int moveRepresentationRookPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.ROOK + 6 * pieceColour));
+                int moveRepresentationQueenPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.QUEEN + 6 * pieceColour));
 
                 listOfPseudoLegalMoves[index++] = moveRepresentationQueenPromotionCapture;
                 listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotionCapture;
@@ -2310,9 +2310,9 @@ namespace Chess_Engine {
                 int moveRepresentation = 0x0;
 
                 if (this.pieceArray[knightMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.KNIGHT + 6 * pieceColor), knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                    moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 } else if (this.pieceArray[knightMoveIndex] != Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.KNIGHT + 6 * pieceColor), knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
+                    moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex]);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2329,11 +2329,11 @@ namespace Chess_Engine {
                 int moveRepresentation = 0x0;
 
                 if (this.pieceArray[bishopMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.BISHOP + 6 * pieceColour), bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                    moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[bishopMoveIndex] != Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.BISHOP + 6 * pieceColour), bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
+                    moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex]);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2350,11 +2350,11 @@ namespace Chess_Engine {
                 int moveRepresentation = 0x0;
 
                 if (this.pieceArray[rookMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.ROOK + 6 * pieceColour), rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                    moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[rookMoveIndex] != Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.ROOK + 6 * pieceColour), rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
+                    moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex]);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2371,11 +2371,11 @@ namespace Chess_Engine {
                 int moveRepresentation = 0x0;
 
                 if (this.pieceArray[queenMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.QUEEN + 6 * pieceColour), queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                    moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[queenMoveIndex] != Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.QUEEN + 6 * pieceColour), queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
+                    moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex]);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2391,9 +2391,9 @@ namespace Chess_Engine {
                 int moveRepresentation = 0x0;
 
                 if (this.pieceArray[kingMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.KING + 6 * pieceColour), kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
+                    moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY);
                 } else if (this.pieceArray[kingMoveIndex] != Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder((Constants.KING + 6 * pieceColour), kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
+                    moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex]);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2681,8 +2681,8 @@ namespace Chess_Engine {
         //Takes information on piece moved, start square, destination square, type of move, and piece captured
 		//Creates a 32-bit unsigned integer representing this information
 		//bits 0-3 store the piece moved, 4-9 stores start square, 10-15 stores destination square, 16-19 stores move type, 20-23 stores piece captured
-		private int moveEncoder(int pieceMoved, int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted = 0x0) {
-            int moveRepresentation = ((startSquare << 4) | (destinationSquare << 10) | (flag << 16) | (pieceCaptured << 20) | (piecePromoted << 24));
+		private int moveEncoder(int startSquare, int destinationSquare, int flag, int pieceCaptured, int piecePromoted = 0x0) {
+            int moveRepresentation = ((startSquare << Constants.START_SQUARE_SHIFT) | (destinationSquare << Constants.DESTINATION_SQUARE_SHIFT) | (flag << Constants.FLAG_SHIFT) | (pieceCaptured << Constants.PIECE_CAPTURED_SHIFT) | (piecePromoted << Constants.PIECE_PROMOTED_SHIFT));
             return moveRepresentation;
         }
 

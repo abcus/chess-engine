@@ -16,7 +16,8 @@ namespace Chess_Engine {
         internal static Board position = new Board(Constants.FEN_START);
 
 		// Creates a transposition table object (which is not cleared for the duration of the runtime of the program)
-        internal static TTable hashTable = new TTable();
+        // this object contains the actual transposition table, as well as a smaller PV table for storing and retrieving the principal variation (less overwrites)
+		internal static TTable transpositionTable = new TTable();
 
 		// Creates a background worker object for the search
 		internal static BackgroundWorker searchWorker;   
@@ -208,7 +209,6 @@ namespace Chess_Engine {
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 			Console.WriteLine("");
 			Console.WriteLine("Percentage of fail high first:\t\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
-			
 		}
 
 		// Prints out information during iterative deepening
@@ -233,17 +233,17 @@ namespace Chess_Engine {
 
         // Extracts the start square from the integer that encodes the move
         private static int getStartSquare(int moveRepresentation) {
-            int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
+            int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
             return startSquare;
         }
         // Extracts the destination square from the integer that encodes the move
         private static int getDestinationSquare(int moveRepresentation) {
-            int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> 10);
+            int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> Constants.DESTINATION_SQUARE_SHIFT);
             return destinationSquare;
         }
         // Extracts the piece promoted from the integer that encodes the move
         private static int getPiecePromoted(int moveRepresentation) {
-            int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> 24;
+            int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> Constants.PIECE_PROMOTED_SHIFT;
             return piecePromoted;
         }
         

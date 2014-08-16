@@ -23,11 +23,11 @@ namespace Chess_Engine {
         // Engine's run method
         public void run () {
 
-            Constants.initBoardConstants();
+			Constants.initBoardConstants();
             Constants.initEvalConstants();
 	        Constants.initSearchConstants();
 
-	        while (true) {
+			while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {
                     break;
                 }

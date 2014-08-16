@@ -56,10 +56,10 @@ namespace Chess_Engine {
 				// If the move is legal, then increment the move count by 1
 				while (pseudoLegalMoveList[index] != 0) {
 					int move = pseudoLegalMoveList[index];
-					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-					int flag = ((move & Constants.FLAG_MASK) >> 16);
+					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
 
 					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
 						inputBoard.makeMove(move);
@@ -103,10 +103,10 @@ namespace Chess_Engine {
 				// If the move is legal, then call perft at depth - 1
 				while (pseudoLegalMoveList[index] != 0) {
 					int move = pseudoLegalMoveList[index];
-					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-					int flag = ((move & Constants.FLAG_MASK) >> 16);
+					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
 
 					inputBoard.makeMove(move);
 

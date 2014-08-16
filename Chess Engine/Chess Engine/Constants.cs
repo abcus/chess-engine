@@ -83,15 +83,24 @@ namespace Chess_Engine {
             PROMOTION = 6,
             PROMOTION_CAPTURE = 7;
         
-        //Move representation masks
+		//Move representation masks
         public const int
-            PIECE_MOVED_MASK = 0xF,
-            START_SQUARE_MASK = 0x3F0,
-            DESTINATION_SQUARE_MASK = 0xFC00,
-            FLAG_MASK = 0xF0000,
-            PIECE_CAPTURED_MASK = 0xF00000,
-            PIECE_PROMOTED_MASK = 0xF000000;
-            
+            START_SQUARE_MASK = 0x3F,
+            DESTINATION_SQUARE_MASK = 0xFC0,
+            FLAG_MASK = 0xF000,
+            PIECE_CAPTURED_MASK = 0xF0000,
+            PIECE_PROMOTED_MASK = 0xF00000,
+			MOVE_SCORE_MASK = 0x7F000000;
+			
+		// Shift numbers
+	    public const int
+		    START_SQUARE_SHIFT = 0,
+		    DESTINATION_SQUARE_SHIFT = 6,
+		    FLAG_SHIFT = 12,
+		    PIECE_CAPTURED_SHIFT = 16,
+		    PIECE_PROMOTED_SHIFT = 20,
+		    MOVE_SCORE_SHIFT = 24;
+
 		//Enumerated types for pieces
         public const int
                EMPTY = 0,
@@ -896,6 +905,7 @@ namespace Chess_Engine {
 	    public const int ASP_WINDOW = Constants.PAWN_VALUE_MG/2;
 
 		public const int TT_SIZE = 15485867;
+	    public const int PV_TT_SIZE = 1000003;
 
 	    public const int PV_NODE = 1;
 	    public const int CUT_NODE = 2;

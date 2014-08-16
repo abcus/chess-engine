@@ -28,7 +28,7 @@ namespace Chess_Engine {
 	    internal static double failHighFirst;
 
 	    internal static int numOfSuccessfulZWS;
-
+	    
 	    internal static DoWorkEventArgs stopEvent;
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -114,7 +114,7 @@ namespace Chess_Engine {
 					result.time = s.ElapsedMilliseconds;
 					result.nodesVisited = nodesVisited;
 
-					List<string> PVLine = UCI_IO.hashTable.getPVLine(Search.cloneBoard, i);
+					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
 					
 					// Reset the current window, and set alpha and beta for the next iteration
@@ -136,7 +136,7 @@ namespace Chess_Engine {
 	    public static moveAndEval PVSRoot(int depth, int alpha, int beta) {
 		    Zobrist zobristKey = Search.cloneBoard.zobristKey;
 
-			TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
+			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 
 			if (entry.key == zobristKey && entry.depth >= depth) {
 				moveAndEval tableResult = new moveAndEval();
@@ -213,7 +213,8 @@ namespace Chess_Engine {
 			// Otherwise, we failed low and return alpha without storing any information
 		    if (raisedAlpha == true) {
 			    TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMoves[0]);
-			    UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+			    UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
+				UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
 
 			    moveAndEval result = new moveAndEval();
 			    result.evaluationScore = alpha;
@@ -288,7 +289,7 @@ namespace Chess_Engine {
 			// At the interior nodes
 			// Probe the hash table and if the entry's depth is greater than or equal to current depth:
 			Zobrist zobristKey = Search.cloneBoard.zobristKey;
-			TTEntry entry = UCI_IO.hashTable.probeTTable(zobristKey);
+			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 
 			// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
 			if (entry.key == zobristKey && entry.depth >= depth) {
@@ -380,7 +381,7 @@ namespace Chess_Engine {
 
 						// Store the value in the transposition table
 						TTEntry newEntry = new TTEntry(zobristKey, Constants.CUT_NODE, depth, beta, move);
-						UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+						UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 
 						// Increment fail high first if first move produced cutoff, otherwise increment fail high
 						if (firstMove == true) {
@@ -404,21 +405,22 @@ namespace Chess_Engine {
 					// Returns the mate score - number of moves made from root to mate 
 					// Ensures that checkmates closer to the root will get a higher score, so that they will be played
 					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, -Constants.CHECKMATE);
-					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 					return -Constants.CHECKMATE + (initialDepth - depth);
 				} else {
 					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, Constants.STALEMATE);
-					UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+					UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 					return Constants.STALEMATE;
 				}
 			}
 
 			if (raisedAlpha == true) {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMove);
-				UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
+				UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
 			} else if (raisedAlpha == false) {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.ALL_NODE, depth, alpha);
-				UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 			}
 			return alpha; //return alpha whether it was raised or not (fail-hard)
 		}
@@ -474,15 +476,32 @@ namespace Chess_Engine {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
 
+			// retrieves the hash move from the transposition table
 			stateVariables restoreData = new stateVariables(inputBoard);
+			int hashMove = 0;
+			TTEntry entry = UCI_IO.transpositionTable.probeTTable(inputBoard.zobristKey);
+			if (entry.key == inputBoard.zobristKey) {
+				hashMove = entry.move;
+			}
 
-			foreach (int move in pseudoLegalMoveList) {
+			for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
 
-				if (move != 0) {
-					int startSquare = ((move & Constants.START_SQUARE_MASK) >> 4);
+				int move = pseudoLegalMoveList[i];
+
+				// Loop through all moves in the pseudo legal move list (until it hits a 0)
+				if (move == 0) {
+					break;
+				} else {
+					
+					// If the move is the same as the hash move, give it a score of 127
+					/*if (move == hashMove) {
+						move |= (127 << Constants.MOVE_SCORE_SHIFT);
+					}*/
+
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 					int pieceMoved = (inputBoard.pieceArray[startSquare]);
 					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-					int flag = ((move & Constants.FLAG_MASK) >> 16);
+					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
 
 					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
 						inputBoard.makeMove(move);
@@ -498,16 +517,33 @@ namespace Chess_Engine {
 		}
 
 		// Uses selection sort to pick the move with the highest score, and returns it
-		// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE),
+		// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE), promotions
 		// killer moves (that caused beta-cutoffs at different positions at the same depth), history moves (that raised alpha)
 		// Losing captures, all other moves
 
 		public int getNextMove() {
 
 			if (legalMoveList.Count != 0) {
-				int move = legalMoveList[0];
+
+				/*int bestMoveScore = 0;
+				int bestMoveIndex = 0;
+
+				for (int i = 0; i < legalMoveList.Count; i ++) {
+					int moveScore = ((legalMoveList[i] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+					if (moveScore > bestMoveScore) {
+						bestMoveScore = moveScore;
+						bestMoveIndex = i;
+					}
+				}
+
+				int bestMove = legalMoveList[bestMoveIndex];
+				legalMoveList[bestMoveIndex] = legalMoveList[0];
+				legalMoveList[0] = bestMove;
+				 */
+				
+				int moveReturned = legalMoveList[0];
 				legalMoveList.RemoveAt(0);
-				return move;
+				return moveReturned;
 			} else {
 				return 0;
 			}

@@ -559,33 +559,33 @@ namespace Chess_Engine {
 
 		//Extracts the piece moved from the integer that encodes the move
 		private static int getPieceMoved(int moveRepresentation, Board inputBoard) {
-			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
+			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 			int pieceMoved = (inputBoard.pieceArray[startSquare]);
 			return pieceMoved;
 		}
 		//Extracts the start square from the integer that encodes the move
 		private static int getStartSquare(int moveRepresentation) {
-			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> 4);
+			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 			return startSquare;
 		}
 		//Extracts the destination square from the integer that encodes the move
 		private static int getDestinationSquare(int moveRepresentation) {
-			int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> 10);
+			int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> Constants.DESTINATION_SQUARE_SHIFT);
 			return destinationSquare;
 		}
 		//Extracts the flag from the integer that encodes the move
 		private static int getFlag(int moveRepresentation) {
-			int flag = ((moveRepresentation & Constants.FLAG_MASK) >> 16);
+			int flag = ((moveRepresentation & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
 			return flag;
 		}
 		//Extracts the piece captured from the integer that encodes the move
 		private static int getPieceCaptured(int moveRepresentation) {
-			int pieceCaptured = (moveRepresentation & Constants.PIECE_CAPTURED_MASK) >> 20;
+			int pieceCaptured = (moveRepresentation & Constants.PIECE_CAPTURED_MASK) >> Constants.PIECE_CAPTURED_SHIFT;
             return pieceCaptured;
 		}
         //Extracts the piece promoted from the integer that encodes the move
         private static int getPiecePromoted(int moveRepresentation) {
-            int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> 24;
+            int piecePromoted = (moveRepresentation & Constants.PIECE_PROMOTED_MASK) >> Constants.PIECE_PROMOTED_SHIFT;
             return piecePromoted;
         }
 

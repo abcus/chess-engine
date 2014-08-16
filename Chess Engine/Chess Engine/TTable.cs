@@ -11,26 +11,41 @@ using Move = System.Int32;
 namespace Chess_Engine {
 	public class TTable {
 
-		internal TTEntry[] hashTable = new TTEntry[Constants.TT_SIZE];
+		internal TTEntry[] hashTable;
+		internal TTEntry[] PVTable;
 
 		// Constructor
 		public TTable() {
-			
+			this.hashTable = new TTEntry[Constants.TT_SIZE];
+			this.PVTable = new TTEntry[Constants.PV_TT_SIZE];
 		}
 
-		// Method that stores an entry in the table
+		// Method that stores an entry in the hash table
 		public void storeTTable(Zobrist key, TTEntry entry) {
 			int index = (int)(key % Constants.TT_SIZE);
-			hashTable[index] = entry;
+			this.hashTable[index] = entry;
 		}
 
-		// Method that retrieves an entry from the table
+		// Method that retrieves an entry from the hash table
 		public TTEntry probeTTable(Zobrist key) {
 			int index = (int)(key % Constants.TT_SIZE);
-			return hashTable[index];
+			return this.hashTable[index];
 		}
 
-		// Method that returns an array of integers containing the principal variation
+
+
+		// Method that stores an entry in the PV table
+		public void storePVTTable(Zobrist key, TTEntry entry) {
+			int index = (int) (key%Constants.PV_TT_SIZE);
+			this.PVTable[index] = entry;
+		}
+		// Method that retrieves an entry from the PV table
+		public TTEntry probePVTTable(Zobrist key) {
+			int index = (int) (key%Constants.PV_TT_SIZE);
+			return this.PVTable[index];
+		}
+
+		// Method that returns an array of integers containing the principal variation from the PV table
 		public List<string> getPVLine(Board inputBoard, int maxDepth) {
 
 			// Later: don't actually have to make the move, can just calculate the new key and look up the table entry
@@ -40,7 +55,7 @@ namespace Chess_Engine {
 			int depth = 1;
 
 			while (true) {
-				TTEntry PVNode = this.probeTTable(cloneBoard.zobristKey);
+				TTEntry PVNode = this.probePVTTable(cloneBoard.zobristKey);
 				int move = PVNode.move;
 				
 				// If we have reached max depth, then break out of the array
