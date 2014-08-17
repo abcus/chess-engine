@@ -791,18 +791,18 @@ namespace Chess_Engine {
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
 
-        public Bitboard getBitboardOfAttackers(int colourUnderAttack, int squareToCheck) {
+        public Bitboard getBitboardOfAttackers(int colourUnderAttack, int squareToCheck, Bitboard occupiedBitboard) {
             ulong bitboardOfAttackers = 0x0UL;
 
             if (colourUnderAttack == Constants.WHITE) {
 
                 // Looks up horizontal/vertical attack set from square, and intersects with opponent's rook/queen bitboard
-                ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[squareToCheck];
+                ulong horizontalVerticalOccupancy = occupiedBitboard & Constants.rookOccupancyMask[squareToCheck];
                 int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
                 ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
 
                 // Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
-                ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[squareToCheck];
+                ulong diagonalOccupancy = occupiedBitboard & Constants.bishopOccupancyMask[squareToCheck];
                 int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
                 ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
 
@@ -828,12 +828,12 @@ namespace Chess_Engine {
             } else {
 
                 // Looks up horizontal/vertical attack set from square, and intersects with opponent's rook/queen bitboard
-                ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[squareToCheck];
+                ulong horizontalVerticalOccupancy = occupiedBitboard & Constants.rookOccupancyMask[squareToCheck];
                 int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
                 ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
 
                 // Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
-                ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[squareToCheck];
+                ulong diagonalOccupancy = occupiedBitboard & Constants.bishopOccupancyMask[squareToCheck];
                 int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
                 ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
 
@@ -863,7 +863,7 @@ namespace Chess_Engine {
         public int timesSquareIsAttacked(int colourUnderAttack, int squareToCheck) {
 
             // Gets the bitboard of attackers for that square and returns a popcount
-            Bitboard bitboardOfAttackers = getBitboardOfAttackers(colourUnderAttack, squareToCheck);
+            Bitboard bitboardOfAttackers = getBitboardOfAttackers(colourUnderAttack, squareToCheck, this.arrayOfAggregateBitboards[Constants.ALL]);
             
 			if (bitboardOfAttackers == 0) {
                 return 0;
@@ -948,7 +948,7 @@ namespace Chess_Engine {
 					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
 					if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
 						return potentialXRayAttackers;
 					}
 				}
@@ -962,7 +962,7 @@ namespace Chess_Engine {
 					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
 					if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
 						return potentialXRayAttackers;
 					}
 				}
@@ -976,7 +976,7 @@ namespace Chess_Engine {
 					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
 					if (potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
 						return potentialXRayAttackers;
 					}
 				}
@@ -990,7 +990,7 @@ namespace Chess_Engine {
 					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
 					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
 					if (potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) == 1);
+						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
 						return potentialXRayAttackers;
 					}
 				}
@@ -1001,6 +1001,10 @@ namespace Chess_Engine {
 		// Method that returns the expected evaluation score gain or loss after a series of exchanges on a single square
 	    public int staticExchangeEval(int startSquare, int destinationSquare, int sideToCapture) {
 
+		    int piece = this.pieceArray[startSquare];
+		    int captured;
+		    bool firstMoveIsCapture = (pieceArray[destinationSquare] != Constants.EMPTY) ? true : false;
+
 			int[] gain = new int[32];
 		    int depth = 0;
 			Bitboard mayBeFrontAttacker = (this.arrayOfBitboards[Constants.WHITE_PAWN] | this.arrayOfBitboards[Constants.WHITE_BISHOP] |
@@ -1009,22 +1013,47 @@ namespace Chess_Engine {
 		                                   this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
 			Bitboard startSquareBitboard = (0x1UL << startSquare);
 			Bitboard occupiedBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
-			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare);
-		    
+
+
+			if (piece == Constants.WHITE_PAWN && pieceArray[destinationSquare] == Constants.EMPTY && (startSquare % 8 != destinationSquare % 8)) {
+			    occupiedBitboard ^= (0x1UL << (destinationSquare - 8));
+				captured = Constants.BLACK_PAWN;
+			    firstMoveIsCapture = true;
+			} else if (piece == Constants.BLACK_PAWN && pieceArray[destinationSquare] == Constants.EMPTY && (startSquare % 8 != destinationSquare % 8)) {
+			    occupiedBitboard ^= (0x1UL >> (destinationSquare + 8));
+				captured = Constants.WHITE_PAWN;
+				firstMoveIsCapture = true;
+		    } else {
+				captured = this.pieceArray[destinationSquare];  
+		    }
+
 			// Material win for side capturing (e.g. white) if the target piece (e.g. pawn) is en-prise
-			gain[depth] = Constants.arrayOfPieceValuesMG[this.pieceArray[destinationSquare]];
-			
-			Console.WriteLine(gain[depth]);
+			gain[depth] = Constants.arrayOfPieceValuesSEE[captured];
+
+			// Handles promotions
+		    if (piece == Constants.WHITE_PAWN && destinationSquare >= Constants.H8) {
+			    gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.WHITE_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.WHITE_PAWN]);
+				captured = Constants.WHITE_QUEEN;
+		    } else if (piece == Constants.BLACK_PAWN && destinationSquare <= Constants.A1) {
+				gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.BLACK_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.BLACK_PAWN]);
+				captured = Constants.BLACK_QUEEN;
+		    } else {
+			    captured = this.pieceArray[startSquare];
+		    }
+
+			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare, occupiedBitboard) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare, occupiedBitboard);
+
+			//Console.WriteLine(gain[depth]);
+
+		    if ((attackersAndDefenders & this.arrayOfAggregateBitboards[sideToCapture ^ 1]) == 0) {
+			    return gain[depth];
+		    }
 
 			do {
 			    depth++;
 				
-				
 				// Material win for other side (e.g. black) if the piece that just captured (e.g. rook) is en-prise
-				gain[depth] = Constants.arrayOfPieceValuesMG[this.pieceArray[startSquare]] - gain[depth - 1];
-			    
-				Console.WriteLine(gain[depth]);
-
+				gain[depth] = Constants.arrayOfPieceValuesSEE[captured] - gain[depth - 1];
 				// Doesn't affect the sign of the result, but affects the magnitude so will leave out
 				/*if (Math.Max(-gain[depth - 1], gain[depth]) < 0) {
 				    break;
@@ -1038,15 +1067,32 @@ namespace Chess_Engine {
 				}
 
 				// Remove the piece that just captured (e.g. rook) from the attackers/defenders and occupied bitboards
-				attackersAndDefenders ^= startSquareBitboard;
 				occupiedBitboard ^= startSquareBitboard;
 
+				if (firstMoveIsCapture == true || ((firstMoveIsCapture == false && piece != Constants.WHITE_PAWN && piece != Constants.BLACK_PAWN))) {
+					attackersAndDefenders ^= startSquareBitboard;
+				}
+				firstMoveIsCapture = true;
+				
 				sideToCapture ^= 1;
 
 				// Get the other side's (e.g. black) least valuable attacker
 				startSquareBitboard = this.getLVP(attackersAndDefenders, sideToCapture);
-
 				startSquare = Constants.findFirstSet(startSquareBitboard);
+				piece = this.pieceArray[startSquare];
+
+				// Handles promotions
+				if (piece == Constants.WHITE_PAWN && destinationSquare >= Constants.H8) {
+					gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.WHITE_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.WHITE_PAWN]);
+					captured = Constants.WHITE_QUEEN;
+				} else if (piece == Constants.BLACK_PAWN && destinationSquare <= Constants.A1) {
+					gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.BLACK_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.BLACK_PAWN]);
+					captured = Constants.BLACK_QUEEN;
+				} else {
+					captured = this.pieceArray[startSquare];
+				}
+
+				//Console.WriteLine(gain[depth]);
 
 			// If there are no least valuable attackers, then break out of the loop
 		    } while (startSquareBitboard != 0);
@@ -1813,7 +1859,7 @@ namespace Chess_Engine {
                     }
 
                     //Calculates the squares that pieces can move to in order to capture or block the checking piece
-                    Bitboard checkingPieceBitboard = this.getBitboardOfAttackers(Constants.WHITE, kingIndex);
+                    Bitboard checkingPieceBitboard = this.getBitboardOfAttackers(Constants.WHITE, kingIndex, this.arrayOfAggregateBitboards[Constants.ALL]);
                     int indexOfCheckingPiece = Constants.findFirstSet(checkingPieceBitboard);
                     Bitboard blockOrCaptureSquares = 0x0UL;
 
@@ -2088,7 +2134,7 @@ namespace Chess_Engine {
                     }
 
                     //Calculates the squares that pieces can move to in order to capture or block the checking piece
-                    Bitboard checkingPieceBitboard = this.getBitboardOfAttackers(Constants.BLACK, kingIndex);
+                    Bitboard checkingPieceBitboard = this.getBitboardOfAttackers(Constants.BLACK, kingIndex, this.arrayOfAggregateBitboards[Constants.ALL]);
                     int indexOfCheckingPiece = Constants.findFirstSet(checkingPieceBitboard);
                     Bitboard blockOrCaptureSquares = 0x0UL;
 
@@ -2235,7 +2281,14 @@ namespace Chess_Engine {
                 int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPawnCapturesFromIndex);
                 pseudoLegalPawnCapturesFromIndex &= (pseudoLegalPawnCapturesFromIndex - 1);
 
-				int moveRepresentation = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[pawnMoveIndex], pieceArray[pawnIndex]]);
+	            int moveScore = Constants.MvvLvaScore[pieceArray[pawnMoveIndex], pieceArray[pawnIndex]];
+				if (this.staticExchangeEval(pawnIndex, pawnMoveIndex, pieceColour) >= 0) {
+					moveScore += Constants.GOOD_CAPTURE_SCORE;
+				} else {
+					moveScore += Constants.BAD_CAPTURE_SCORE;
+				}
+
+				int moveRepresentation = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex], Constants.EMPTY, moveScore);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2312,7 +2365,15 @@ namespace Chess_Engine {
                 if (this.pieceArray[knightMoveIndex] == Constants.EMPTY) {
                     moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
                 } else if (this.pieceArray[knightMoveIndex] != Constants.EMPTY) {
-					moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[knightMoveIndex], pieceArray[knightIndex]]);
+
+	                int moveScore = Constants.MvvLvaScore[pieceArray[knightMoveIndex], pieceArray[knightIndex]];
+	                if (this.staticExchangeEval(knightIndex, knightMoveIndex, pieceColor) >= 0) {
+		                moveScore += Constants.GOOD_CAPTURE_SCORE;
+	                } else {
+		                moveScore += Constants.BAD_CAPTURE_SCORE;
+	                }
+					
+					moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex], Constants.EMPTY, moveScore);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2333,7 +2394,15 @@ namespace Chess_Engine {
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[bishopMoveIndex] != Constants.EMPTY) {
-					moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[bishopMoveIndex], pieceArray[bishopIndex]]);
+
+	                int moveScore = Constants.MvvLvaScore[pieceArray[bishopMoveIndex], pieceArray[bishopIndex]];
+					if (this.staticExchangeEval(bishopIndex, bishopMoveIndex, pieceColour) >= 0) {
+						moveScore += Constants.GOOD_CAPTURE_SCORE;
+					} else {
+						moveScore += Constants.BAD_CAPTURE_SCORE;
+					}
+					
+					moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex], Constants.EMPTY, moveScore);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2354,7 +2423,15 @@ namespace Chess_Engine {
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[rookMoveIndex] != Constants.EMPTY) {
-					moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[rookMoveIndex], pieceArray[rookIndex]]);
+
+	                int moveScore = Constants.MvvLvaScore[pieceArray[rookMoveIndex], pieceArray[rookIndex]];
+					if (this.staticExchangeEval(rookIndex, rookMoveIndex, pieceColour) >= 0) {
+						moveScore += Constants.GOOD_CAPTURE_SCORE;
+					} else {
+						moveScore += Constants.BAD_CAPTURE_SCORE;
+					}
+					
+					moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex], Constants.EMPTY, moveScore);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2375,7 +2452,15 @@ namespace Chess_Engine {
                 }
                     //If not empty, then must be a black piece at that location, so generate a capture
                 else if (this.pieceArray[queenMoveIndex] != Constants.EMPTY) {
-					moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[queenMoveIndex], pieceArray[queenIndex]]);
+
+	                int moveScore = Constants.MvvLvaScore[pieceArray[queenMoveIndex], pieceArray[queenIndex]];
+					if (this.staticExchangeEval(queenIndex, queenMoveIndex, pieceColour) >= 0) {
+						moveScore += Constants.GOOD_CAPTURE_SCORE;
+					} else {
+						moveScore += Constants.BAD_CAPTURE_SCORE;
+					}
+					
+					moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex], Constants.EMPTY, moveScore);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
@@ -2393,7 +2478,15 @@ namespace Chess_Engine {
                 if (this.pieceArray[kingMoveIndex] == Constants.EMPTY) {
                     moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
                 } else if (this.pieceArray[kingMoveIndex] != Constants.EMPTY) {
-					moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex], Constants.EMPTY, Constants.MvvLvaScore[pieceArray[kingMoveIndex], pieceArray[kingIndex]]);
+
+	                int moveScore = Constants.MvvLvaScore[pieceArray[kingMoveIndex], pieceArray[kingIndex]];
+					if (this.staticExchangeEval(kingIndex, kingMoveIndex, pieceColour) >= 0) {
+						moveScore += Constants.GOOD_CAPTURE_SCORE;
+					} else {
+						moveScore += Constants.BAD_CAPTURE_SCORE;
+					}
+					
+					moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex], Constants.EMPTY, moveScore);
                 }
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }

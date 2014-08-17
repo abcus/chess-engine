@@ -42,7 +42,7 @@ namespace Chess_Engine {
         public const ulong RANK_8 = RANK_1 << (8 * 7);
 	    public const ulong RANK_2_TO_6 = (RANK_2 | RANK_3 | RANK_4 | RANK_5 | RANK_6);
 		public const ulong RANK_3_TO_7 = (RANK_3 | RANK_4 | RANK_5 | RANK_6 | RANK_7);
-
+		
         //Light and dark squares
         public const ulong LIGHT_SQUARES = 0xAA55AA55AA55AA55UL;
         public const ulong DARK_SQUARES = 0x55AA55AA55AA55AAUL;
@@ -653,7 +653,8 @@ namespace Chess_Engine {
         // Array of piece values [piece]
         public static Value[] arrayOfPieceValuesMG = new Value[13];
         public static Value[] arrayOfPieceValuesEG = new Value[13];
-		
+	    public static Value[] arrayOfPieceValuesSEE = {0, 100, 325, 330, 500, 1000, 10000, 100, 325, 330, 500, 1000, 10000};
+
         // White piece square tables for the middlegame 
         public static int[] wPawnMidgamePSQ = {
             0, 0, 0, 0, 0, 0, 0, 0,
@@ -924,12 +925,14 @@ namespace Chess_Engine {
 
 	    public static int HASH_MOVE_SCORE = 127;
 	    public static int GOOD_CAPTURE_SCORE = 60;
-	    public static int BAD_CAPTURE_SCORE = -9;
-	    public static int EN_PASSANT_SCORE = 75;
-	    public static int PROMOTION_SCORE = 69;
-	    public static int PROMOTION_CAPTURE_SCORE = 69;
-	    public static int KILLER_1_SCORE = 68;
-	    public static int KILLER_2_SCORE = 67;
+		public static int EN_PASSANT_SCORE = 75;
+		public static int PROMOTION_SCORE = 69;
+		public static int PROMOTION_CAPTURE_SCORE = 69;
+
+		// Have to experiment with ordering of killer and bad capture
+	    public static int BAD_CAPTURE_SCORE = 0;
+	    public static int KILLER_1_SCORE = 2;
+	    public static int KILLER_2_SCORE = 1;
 
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {
