@@ -212,7 +212,6 @@ namespace Chess_Engine {
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
 			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
 			Console.WriteLine("");
-			Console.WriteLine("Percentage of fail high first:\t\t" + Search.failHighFirst/(Search.failHigh + Search.failHighFirst) * 100);
 		}
 
 		// Prints out information during iterative deepening

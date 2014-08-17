@@ -9,7 +9,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
+using Microsoft.Win32;
 using Zobrist = System.UInt64;
 
 namespace Chess_Engine {
@@ -120,7 +120,7 @@ namespace Chess_Engine {
 
 					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
-					Console.WriteLine(failHighFirst/(failHighFirst+ failHigh));
+					Console.WriteLine("Move ordering: " + failHighFirst/(failHighFirst+ failHigh) * 100);
 					failHighFirst = 0;
 					failHigh = 0;
 
@@ -471,13 +471,21 @@ namespace Chess_Engine {
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	public sealed class movePicker {
-
-		internal int[] pseudoLegalMoveList;
-		internal List<int> legalMoveList = new List<int>(); 
+		
 		internal Board board;
+		internal stateVariables restoreData;
+		
+		internal int[] pseudoLegalMoveList;
+		internal int index = 0;
+		
 
+		// Constructor
 		public movePicker(Board inputBoard) {
 			this.board = inputBoard;
+			this.restoreData = new stateVariables(inputBoard);
+
+			// If the side to move is not in check, then get list of moves from the almost legal move generator
+			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
 				this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 			} else {
@@ -485,87 +493,87 @@ namespace Chess_Engine {
 			}
 
 			// retrieves the hash move from the transposition table
-			stateVariables restoreData = new stateVariables(inputBoard);
+			// If the entry's key matches the board's current key, then probe the move
+			// If the entry from the transposition table doesn't have a move, then probe the PV table
+			// Have to remove any previous score from the hashmove
 			int hashMove = 0;
-
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(inputBoard.zobristKey);
 			TTEntry PVTableEntry = UCI_IO.transpositionTable.probePVTTable(inputBoard.zobristKey);
-			
-			if (entry.key == inputBoard.zobristKey) {
-				if (entry.move != 0) {
-					hashMove = entry.move;
-				} else {
-					if (PVTableEntry.move != 0) {
-						hashMove = PVTableEntry.move;
-					}	
-				}
+			if (entry.key == inputBoard.zobristKey && entry.move != 0) {
+				hashMove = (entry.move & ~Constants.MOVE_SCORE_MASK);
+			} else if (PVTableEntry.key == inputBoard.zobristKey && PVTableEntry.move != 0) {
+				hashMove = (PVTableEntry.move & ~Constants.MOVE_SCORE_MASK);
 			}
-
+			
 			for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
-
-				int move = pseudoLegalMoveList[i];
+				// Have to remove any score from the move mask
+				int move = pseudoLegalMoveList[i] & ~Constants.MOVE_SCORE_MASK;
 
 				// Loop through all moves in the pseudo legal move list (until it hits a 0)
 				if (move == 0) {
 					break;
 				} else {
-					
-					// If the move is the same as the hash move, move it to the beginning of the list
+					// If the move is the same as the hash move, give it a value of 127
 					if (move == hashMove) {
-						legalMoveList.Insert(0, move);
-					}
-
-					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
-					int pieceMoved = (inputBoard.pieceArray[startSquare]);
-					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
-					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-
-					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
-						inputBoard.makeMove(move);
-						if (inputBoard.isMoveLegal(sideToMove) == true) {
-							legalMoveList.Add(move);
-						}
-						inputBoard.unmakeMove(move, restoreData);
-					} else {
-						legalMoveList.Add(move);
+						pseudoLegalMoveList[i] |= (Constants.HASH_MOVE_SCORE << Constants.MOVE_SCORE_SHIFT);
+						break;
 					}
 				}
 			}
 		}
 
-		// Uses selection sort to pick the move with the highest score, and returns it
-		// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE), promotions
-		// killer moves (that caused beta-cutoffs at different positions at the same depth), history moves (that raised alpha)
-		// Losing captures, all other moves
-
 		public int getNextMove() {
 
-			if (legalMoveList.Count != 0) {
+			while (true) {
+				int move = pseudoLegalMoveList[index];
 
-				/*int bestMoveScore = 0;
-				int bestMoveIndex = 0;
+				if (move == 0) {
+					return 0;
+				} else if (move != 0) {
 
-				for (int i = 0; i < legalMoveList.Count; i ++) {
-					int moveScore = ((legalMoveList[i] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
-					if (moveScore > bestMoveScore) {
-						bestMoveScore = moveScore;
-						bestMoveIndex = i;
+					// Fix this later to swap only at the end of an interation
+					int bestMoveScore = (move & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT;
+					int tempIndex = index + 1;
+					while (pseudoLegalMoveList[tempIndex] != 0) {
+						if (((pseudoLegalMoveList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) > bestMoveScore) {
+							bestMoveScore = ((pseudoLegalMoveList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+							int bestMove = pseudoLegalMoveList[tempIndex];
+							pseudoLegalMoveList[tempIndex] = pseudoLegalMoveList[index];
+							pseudoLegalMoveList[index] = bestMove;
+						}
+						tempIndex ++;
 					}
-				}
 
-				int bestMove = legalMoveList[bestMoveIndex];
-				legalMoveList[bestMoveIndex] = legalMoveList[0];
-				legalMoveList[0] = bestMove;*/
-				
-				
-				int moveReturned = legalMoveList[0];
-				legalMoveList.RemoveAt(0);
-				return moveReturned;
-			} else {
-				return 0;
+					move = pseudoLegalMoveList[index];
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+					int pieceMoved = (this.board.pieceArray[startSquare]);
+					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+
+					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
+						this.board.makeMove(move);
+						if (this.board.isMoveLegal(sideToMove) == true) {
+							board.unmakeMove(move, restoreData);
+							index++;
+							return move;
+						} else {
+							board.unmakeMove(move, restoreData);
+							index ++;
+						}
+					} else {
+						index++;
+						return move;
+					}	
+				} 
 			}
 		}		
 	}
+
+
+	// Uses selection sort to pick the move with the highest score, and returns it
+	// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE), promotions
+	// killer moves (that caused beta-cutoffs at different positions at the same depth), history moves (that raised alpha)
+	// Losing captures, all other moves
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------

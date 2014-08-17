@@ -56,7 +56,7 @@ namespace Chess_Engine {
 
 			while (true) {
 				TTEntry PVNode = this.probePVTTable(cloneBoard.zobristKey);
-				int move = PVNode.move;
+				int move = PVNode.move & ~Constants.MOVE_SCORE_MASK;
 				
 				// If we have reached max depth, then break out of the array
 				if (depth++ > maxDepth) {
@@ -77,7 +77,7 @@ namespace Chess_Engine {
 					pseudoLegalMoveList = cloneBoard.generateAlmostLegalMoves();
 				}
 				for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
-					if (move == pseudoLegalMoveList[i]) {
+					if (move == (pseudoLegalMoveList[i] & ~Constants.MOVE_SCORE_MASK)) {
 						inMoveList = true;
 						break;
 					}

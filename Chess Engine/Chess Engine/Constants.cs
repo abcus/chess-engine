@@ -922,6 +922,15 @@ namespace Chess_Engine {
 		public static int[] victimScore = { 0, 10, 20, 30, 40, 50, 60, 10, 20, 30, 40, 50, 60 };
 		public static int[,] MvvLvaScore = new int[13, 13];
 
+	    public static int HASH_MOVE_SCORE = 127;
+	    public static int GOOD_CAPTURE_SCORE = 60;
+	    public static int BAD_CAPTURE_SCORE = -9;
+	    public static int EN_PASSANT_SCORE = 75;
+	    public static int PROMOTION_SCORE = 69;
+	    public static int PROMOTION_CAPTURE_SCORE = 69;
+	    public static int KILLER_1_SCORE = 68;
+	    public static int KILLER_2_SCORE = 67;
+
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {
 		    var buffer = new byte[sizeof (UInt64)];
