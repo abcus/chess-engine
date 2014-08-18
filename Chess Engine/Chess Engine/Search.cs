@@ -120,7 +120,7 @@ namespace Chess_Engine {
 
 					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
-					Console.WriteLine("Move ordering: " + failHighFirst/(failHighFirst+ failHigh) * 100);
+					Console.WriteLine("fh1: " + failHighFirst/(failHighFirst+ failHigh) * 100);
 					failHighFirst = 0;
 					failHigh = 0;
 

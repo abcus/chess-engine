@@ -929,7 +929,9 @@ namespace Chess_Engine {
 			for (int i = Constants.WHITE_PAWN + 6 * side; i <= Constants.WHITE_KING + 6*side; i ++) {
 			    Bitboard LVP = attackersAndDefenders & arrayOfBitboards[i];
 			    if (LVP != 0) {
-				    return LVP;
+				    Bitboard firstPiece = 0x1UL << (Constants.findFirstSet(LVP));
+					Debug.Assert(Constants.popcount(firstPiece) == 1);
+					return firstPiece;
 			    }
 		    }
 		    return 0;
@@ -986,9 +988,20 @@ namespace Chess_Engine {
 		                                   this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
 			Bitboard startSquareBitboard = (0x1UL << startSquare);
 			Bitboard occupiedBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
-		    Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare, occupiedBitboard) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare, occupiedBitboard);
-			Test.printBitboard(attackersAndDefenders);
+		    
+			// Handles en passant
+			if (piece == Constants.WHITE_PAWN && captured == Constants.EMPTY && (startSquare%8 != destinationSquare %8)) {
+			    occupiedBitboard ^= (0x1UL << (destinationSquare - 8));
+				captured = this.pieceArray[destinationSquare - 8];
+			    firstMoveIsCapture = true;	
+			} else if (piece == Constants.BLACK_PAWN && captured == Constants.EMPTY && (startSquare % 8 != destinationSquare % 8)) {
+			    occupiedBitboard ^= (0x1UL << (destinationSquare + 8));
+			    captured = this.pieceArray[destinationSquare + 8];
+			    firstMoveIsCapture = true;
+		    }
 
+			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare, occupiedBitboard) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare, occupiedBitboard);
+			
 			// Material win for side capturing (e.g. white) if the target piece (e.g. pawn) is en-prise
 			gain[depth] = Constants.arrayOfPieceValuesSEE[captured];
 			
@@ -1003,8 +1016,7 @@ namespace Chess_Engine {
 		    } else {
 			    captured = this.pieceArray[startSquare];
 		    }
-			Console.WriteLine(gain[depth]);
-
+			
 			// If no piece from the other side is attcking the destination square, then return
 			if ((attackersAndDefenders & this.arrayOfAggregateBitboards[sideToCapture ^ 1]) == 0) {
 			    return gain[depth];
@@ -1015,22 +1027,19 @@ namespace Chess_Engine {
 				
 				// Material win for other side (e.g. black) if the piece that just captured (e.g. rook) is en-prise
 				gain[depth] = Constants.arrayOfPieceValuesSEE[captured] - gain[depth - 1];
-				Console.WriteLine(gain[depth]);
-
+				
 				// Add any hidden attackers behind the piece that just captured
 				if ((startSquareBitboard & mayBeFrontAttacker) != 0) {
 					attackersAndDefenders |= getXRay(destinationSquare, startSquare, occupiedBitboard, occupiedBitboard ^ startSquareBitboard, sideToCapture);
 				}
-				Test.printBitboard(attackersAndDefenders);
-
+				
 				// Remove the piece that just captured (e.g. rook) from the attackers/defenders and occupied bitboards
 				// If the first move was a quiet move, still remove the piece that did the moving because it would still be attacking the square (unless it is a pawn, which can't attack forwards)
 				occupiedBitboard ^= startSquareBitboard;
 				if (firstMoveIsCapture == true || ((firstMoveIsCapture == false && piece != Constants.WHITE_PAWN && piece != Constants.BLACK_PAWN))) {
 					attackersAndDefenders ^= startSquareBitboard;
 				}
-				Test.printBitboard(attackersAndDefenders);
-
+				
 				firstMoveIsCapture = true;
 				
 				sideToCapture ^= 1;
@@ -2265,10 +2274,17 @@ namespace Chess_Engine {
             
             if (pseudoLegalEnPassantFromIndex != 0) {
                 int indexOfWhiteEnPassantCaptureFromIndex = Constants.findFirstSet(pseudoLegalEnPassantFromIndex);
-                
+
+				int moveScore = Constants.MvvLvaScore[Constants.PAWN, Constants.PAWN];
+				if (this.staticExchangeEval(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, pieceColour) >= 0) {
+					moveScore += Constants.GOOD_CAPTURE_SCORE;
+				} else {
+					moveScore += Constants.BAD_CAPTURE_SCORE;
+				}
 				
-				
-				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, (60 + 15));
+				// Score will always equal 75 (MVV/LVA = 15, and PxP is always a good capture so SEE = 60)
+
+				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, moveScore);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
@@ -2278,11 +2294,18 @@ namespace Chess_Engine {
             
             //Generates white pawn promotions
             if (pseudoLegalPromotionFromIndex != 0) {
-                int indexOfWhitePawnSingleMoveFromIndex = Constants.findFirstSet(pseudoLegalPromotionFromIndex);
-                int moveRepresentationKnightPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.KNIGHT + 6 * pieceColour), Constants.PROMOTION_SCORE);
-				int moveRepresentationBishopPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.BISHOP + 6 * pieceColour), Constants.PROMOTION_SCORE);
-				int moveRepresentationRookPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.ROOK + 6 * pieceColour), Constants.PROMOTION_SCORE);
-                int moveRepresentationQueenPromotion = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.QUEEN + 6 * pieceColour), Constants.PROMOTION_SCORE);
+                int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPromotionFromIndex);
+				int moveScore = 0;
+				if (this.staticExchangeEval(pawnIndex, pawnMoveIndex, pieceColour) >= 0) {
+					moveScore += Constants.GOOD_PROMOTION_SCORE;
+				} else {
+					moveScore += Constants.BAD_PROMOTION_SCORE;
+				}
+
+				int moveRepresentationKnightPromotion = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.KNIGHT + 6 * pieceColour), moveScore);
+				int moveRepresentationBishopPromotion = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.BISHOP + 6 * pieceColour), moveScore);
+				int moveRepresentationRookPromotion = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.ROOK + 6 * pieceColour), moveScore);
+				int moveRepresentationQueenPromotion = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION, Constants.EMPTY, (Constants.QUEEN + 6 * pieceColour), moveScore);
 
                 listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotion;
                 listOfPseudoLegalMoves[index++] = moveRepresentationBishopPromotion;
@@ -2298,11 +2321,17 @@ namespace Chess_Engine {
 
                 int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPromotionCaptureFromIndex);
                 pseudoLegalPromotionCaptureFromIndex &= (pseudoLegalPromotionCaptureFromIndex - 1);
+				int moveScore = 0;
+				if (this.staticExchangeEval(pawnIndex, pawnMoveIndex, pieceColour) >= 0) {
+					moveScore += Constants.GOOD_PROMOTION_CAPTURE_SCORE;
+				} else {
+					moveScore += Constants.BAD_PROMOTION_CAPTURE_SCORE;
+				}
 
-                int moveRepresentationKnightPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.KNIGHT + 6 * pieceColour), Constants.PROMOTION_CAPTURE_SCORE);
-				int moveRepresentationBishopPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.BISHOP + 6 * pieceColour), Constants.PROMOTION_CAPTURE_SCORE);
-				int moveRepresentationRookPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.ROOK + 6 * pieceColour), Constants.PROMOTION_CAPTURE_SCORE);
-				int moveRepresentationQueenPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.QUEEN + 6 * pieceColour), Constants.PROMOTION_CAPTURE_SCORE);
+				int moveRepresentationKnightPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.KNIGHT + 6 * pieceColour), moveScore);
+				int moveRepresentationBishopPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.BISHOP + 6 * pieceColour), moveScore);
+				int moveRepresentationRookPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.ROOK + 6 * pieceColour), moveScore);
+				int moveRepresentationQueenPromotionCapture = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.PROMOTION_CAPTURE, pieceArray[pawnMoveIndex], (Constants.QUEEN + 6 * pieceColour), moveScore);
 
                 listOfPseudoLegalMoves[index++] = moveRepresentationQueenPromotionCapture;
                 listOfPseudoLegalMoves[index++] = moveRepresentationKnightPromotionCapture;

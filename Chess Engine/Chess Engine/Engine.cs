@@ -27,11 +27,7 @@ namespace Chess_Engine {
             Constants.initEvalConstants();
 	        Constants.initSearchConstants();
 
-			Board temp = new Board("5rr1/3P4/8/3R4/3R4/8/8/8 w - - 0 1");
-			UCI_IO.drawBoard(temp);
-			Console.WriteLine("FINAL" + temp.staticExchangeEval(Constants.D7, Constants.D8, Constants.WHITE));
-
-	        while (true) {
+			while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {
                     break;
                 }
