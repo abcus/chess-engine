@@ -936,101 +936,64 @@ namespace Chess_Engine {
 	    }
 
 	    public Bitboard getXRay(int destinationSquare, int frontAttackerSquare, Bitboard oldOccupiedBitboard, Bitboard newOccupiedBitboard, int sideToCapture) {
-		    int frontAttackerPieceType = this.pieceArray[frontAttackerSquare];
+		    
+			if ((frontAttackerSquare % 8 == destinationSquare % 8) || (frontAttackerSquare/8 == destinationSquare/8)) {
+				Bitboard rookAttacksFromDestionationSquareNew = generateRookMovesFromIndex(newOccupiedBitboard, destinationSquare);
+				Bitboard rookAttacksFromFrontAttackerSquare = generateRookMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+				Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+				Bitboard ray = rookAttacksFromDestionationSquareNew & rookAttacksFromFrontAttackerSquare & ~rookAttacksFromDestinationSquareOld;
 
-		    if (sideToCapture == Constants.WHITE) {
-				if (frontAttackerPieceType == Constants.WHITE_ROOK || frontAttackerPieceType == Constants.WHITE_QUEEN) {
-					Bitboard rookAttacksFromDestionationSquareNew = generateRookMovesFromIndex(newOccupiedBitboard, destinationSquare);
-					Bitboard rookAttacksFromFrontAttackerSquare = generateRookMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
-					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
-					Bitboard ray = rookAttacksFromDestionationSquareNew & rookAttacksFromFrontAttackerSquare & ~rookAttacksFromDestinationSquareOld;
-
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
-					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
-						return potentialXRayAttackers;
-					}
+				Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
+				int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+				if (potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN) {
+					Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
+					return potentialXRayAttackers;
 				}
+			} else {
+				Bitboard bishopAttacksFromDestionationSquare = generateBishopMovesFromIndex(newOccupiedBitboard, destinationSquare);
+				Bitboard bishopAttacksFromFrontAttackerSquare = generateBishopMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
+				Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
+				Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
 
-				if (frontAttackerPieceType == Constants.WHITE_PAWN || frontAttackerPieceType == Constants.WHITE_BISHOP || frontAttackerPieceType == Constants.WHITE_QUEEN) {
-					Bitboard bishopAttacksFromDestionationSquare = generateBishopMovesFromIndex(newOccupiedBitboard, destinationSquare);
-					Bitboard bishopAttacksFromFrontAttackerSquare = generateBishopMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
-					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
-					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
-
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
-					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
-						return potentialXRayAttackers;
-					}
+				Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
+				int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
+				if (potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN || potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN) {
+					Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
+					return potentialXRayAttackers;
 				}
-		    } else {
-				if (frontAttackerPieceType == Constants.BLACK_ROOK || frontAttackerPieceType == Constants.BLACK_QUEEN) {
-					Bitboard rookAttacksFromDestionationSquare = generateRookMovesFromIndex(newOccupiedBitboard, destinationSquare);
-					Bitboard rookAttacksFromFrontAttackerSquareNew = generateRookMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
-					Bitboard rookAttacksFromDestinationSquareOld = generateRookMovesFromIndex(oldOccupiedBitboard, destinationSquare);
-					Bitboard ray = rookAttacksFromDestionationSquare & rookAttacksFromFrontAttackerSquareNew & ~rookAttacksFromDestinationSquareOld;
-
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
-					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.BLACK_ROOK || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_ROOK || potentialXRayPiece == Constants.WHITE_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
-						return potentialXRayAttackers;
-					}
-				}
-
-				if (frontAttackerPieceType == Constants.BLACK_PAWN || frontAttackerPieceType == Constants.BLACK_BISHOP || frontAttackerPieceType == Constants.BLACK_QUEEN) {
-					Bitboard bishopAttacksFromDestionationSquare = generateBishopMovesFromIndex(newOccupiedBitboard, destinationSquare);
-					Bitboard bishopAttacksFromFrontAttackerSquare = generateBishopMovesFromIndex(newOccupiedBitboard, frontAttackerSquare);
-					Bitboard bishopAttacksFromDestionationSquareOld = generateBishopMovesFromIndex(oldOccupiedBitboard, destinationSquare);
-					Bitboard ray = bishopAttacksFromDestionationSquare & bishopAttacksFromFrontAttackerSquare & ~bishopAttacksFromDestionationSquareOld;
-
-					Bitboard potentialXRayAttackers = ray & this.arrayOfAggregateBitboards[Constants.ALL];
-					int potentialXRayPiece = this.pieceArray[Constants.findFirstSet(potentialXRayAttackers)];
-					if (potentialXRayPiece == Constants.BLACK_BISHOP || potentialXRayPiece == Constants.BLACK_QUEEN || potentialXRayPiece == Constants.WHITE_BISHOP || potentialXRayPiece == Constants.WHITE_QUEEN) {
-						Debug.Assert(Constants.popcount(potentialXRayAttackers) <= 1);
-						return potentialXRayAttackers;
-					}
-				}
-		    }
-		    return 0;
+			}
+			return 0;
 	    }
 
 		// Method that returns the expected evaluation score gain or loss after a series of exchanges on a single square
 	    public int staticExchangeEval(int startSquare, int destinationSquare, int sideToCapture) {
 
+			// Gets the piece type on the start square
 		    int piece = this.pieceArray[startSquare];
-		    int captured;
-		    bool firstMoveIsCapture = (pieceArray[destinationSquare] != Constants.EMPTY) ? true : false;
+
+			// Gets the piece type on the destination square (if any)
+			int captured = this.pieceArray[destinationSquare];
+
+			// Whether or not the first move was a capture
+		    bool firstMoveIsCapture = (captured == Constants.EMPTY) ? false : true;
 
 			int[] gain = new int[32];
 		    int depth = 0;
+
 			Bitboard mayBeFrontAttacker = (this.arrayOfBitboards[Constants.WHITE_PAWN] | this.arrayOfBitboards[Constants.WHITE_BISHOP] |
 		                                   this.arrayOfBitboards[Constants.WHITE_ROOK] | this.arrayOfBitboards[Constants.WHITE_QUEEN] |
 		                                   this.arrayOfBitboards[Constants.BLACK_PAWN] | this.arrayOfBitboards[Constants.BLACK_BISHOP] |
 		                                   this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
 			Bitboard startSquareBitboard = (0x1UL << startSquare);
 			Bitboard occupiedBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
-
-
-			if (piece == Constants.WHITE_PAWN && pieceArray[destinationSquare] == Constants.EMPTY && (startSquare % 8 != destinationSquare % 8)) {
-			    occupiedBitboard ^= (0x1UL << (destinationSquare - 8));
-				captured = Constants.BLACK_PAWN;
-			    firstMoveIsCapture = true;
-			} else if (piece == Constants.BLACK_PAWN && pieceArray[destinationSquare] == Constants.EMPTY && (startSquare % 8 != destinationSquare % 8)) {
-			    occupiedBitboard ^= (0x1UL >> (destinationSquare + 8));
-				captured = Constants.WHITE_PAWN;
-				firstMoveIsCapture = true;
-		    } else {
-				captured = this.pieceArray[destinationSquare];  
-		    }
+		    Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare, occupiedBitboard) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare, occupiedBitboard);
+			Test.printBitboard(attackersAndDefenders);
 
 			// Material win for side capturing (e.g. white) if the target piece (e.g. pawn) is en-prise
 			gain[depth] = Constants.arrayOfPieceValuesSEE[captured];
-
+			
 			// Handles promotions
+			// Sets "captured" to the value of the piece sitting on the destination square (e.g. white rook)
 		    if (piece == Constants.WHITE_PAWN && destinationSquare >= Constants.H8) {
 			    gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.WHITE_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.WHITE_PAWN]);
 				captured = Constants.WHITE_QUEEN;
@@ -1040,12 +1003,10 @@ namespace Chess_Engine {
 		    } else {
 			    captured = this.pieceArray[startSquare];
 		    }
+			Console.WriteLine(gain[depth]);
 
-			Bitboard attackersAndDefenders = this.getBitboardOfAttackers(Constants.WHITE, destinationSquare, occupiedBitboard) | this.getBitboardOfAttackers(Constants.BLACK, destinationSquare, occupiedBitboard);
-
-			//Console.WriteLine(gain[depth]);
-
-		    if ((attackersAndDefenders & this.arrayOfAggregateBitboards[sideToCapture ^ 1]) == 0) {
+			// If no piece from the other side is attcking the destination square, then return
+			if ((attackersAndDefenders & this.arrayOfAggregateBitboards[sideToCapture ^ 1]) == 0) {
 			    return gain[depth];
 		    }
 
@@ -1054,24 +1015,22 @@ namespace Chess_Engine {
 				
 				// Material win for other side (e.g. black) if the piece that just captured (e.g. rook) is en-prise
 				gain[depth] = Constants.arrayOfPieceValuesSEE[captured] - gain[depth - 1];
-				// Doesn't affect the sign of the result, but affects the magnitude so will leave out
-				/*if (Math.Max(-gain[depth - 1], gain[depth]) < 0) {
-				    break;
-			    }*/
-				
-				
+				Console.WriteLine(gain[depth]);
 
-				// Add any hidden attackers
+				// Add any hidden attackers behind the piece that just captured
 				if ((startSquareBitboard & mayBeFrontAttacker) != 0) {
 					attackersAndDefenders |= getXRay(destinationSquare, startSquare, occupiedBitboard, occupiedBitboard ^ startSquareBitboard, sideToCapture);
 				}
+				Test.printBitboard(attackersAndDefenders);
 
 				// Remove the piece that just captured (e.g. rook) from the attackers/defenders and occupied bitboards
+				// If the first move was a quiet move, still remove the piece that did the moving because it would still be attacking the square (unless it is a pawn, which can't attack forwards)
 				occupiedBitboard ^= startSquareBitboard;
-
 				if (firstMoveIsCapture == true || ((firstMoveIsCapture == false && piece != Constants.WHITE_PAWN && piece != Constants.BLACK_PAWN))) {
 					attackersAndDefenders ^= startSquareBitboard;
 				}
+				Test.printBitboard(attackersAndDefenders);
+
 				firstMoveIsCapture = true;
 				
 				sideToCapture ^= 1;
@@ -1089,10 +1048,8 @@ namespace Chess_Engine {
 					gain[depth] += (Constants.arrayOfPieceValuesSEE[Constants.BLACK_QUEEN] - Constants.arrayOfPieceValuesSEE[Constants.BLACK_PAWN]);
 					captured = Constants.BLACK_QUEEN;
 				} else {
-					captured = this.pieceArray[startSquare];
+					captured = piece;
 				}
-
-				//Console.WriteLine(gain[depth]);
 
 			// If there are no least valuable attackers, then break out of the loop
 		    } while (startSquareBitboard != 0);
@@ -2308,7 +2265,10 @@ namespace Chess_Engine {
             
             if (pseudoLegalEnPassantFromIndex != 0) {
                 int indexOfWhiteEnPassantCaptureFromIndex = Constants.findFirstSet(pseudoLegalEnPassantFromIndex);
-                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, (60 + 15));
+                
+				
+				
+				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, (60 + 15));
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }
             return index;
