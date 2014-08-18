@@ -61,6 +61,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Evaluate.cs" />
+    <Compile Include="OpeningBook.cs" />
     <Compile Include="Perft.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

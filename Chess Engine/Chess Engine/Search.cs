@@ -23,6 +23,7 @@ namespace Chess_Engine {
 		internal static moveAndEval result;
 		internal static int initialDepth;
 		internal static ulong nodesVisited;
+	    internal static int researches;
 
 	    internal static double failHigh;
 	    internal static double failHighFirst;
@@ -56,6 +57,7 @@ namespace Chess_Engine {
 		    
 			initialDepth = 0;
 		    nodesVisited = 0;
+			researches = 0;
 			failHigh = 0;
 			failHighFirst = 0;
 			numOfSuccessfulZWS = 0;
@@ -84,13 +86,12 @@ namespace Chess_Engine {
 			// Declare and initialize the aspiration window
 			int currentWindow = Constants.ASP_WINDOW;
 
+			DateTime iterationStartTime = DateTime.Now;
 			for (int i = 1; i <= Constants.MAX_DEPTH;) {
 
 				// sets the initial depth (for mate score calculation)
 				initialDepth = i;
-				nodesVisited = 0;
-
-				Stopwatch s = Stopwatch.StartNew();
+				
 				moveAndEval tempResult = PVSRoot(i, alpha, beta);
 
 				// If PVSRoot at depth i returned null
@@ -109,18 +110,19 @@ namespace Chess_Engine {
 				} if (tempResult.evaluationScore == alpha) {
 					currentWindow *= 2;
 					alpha -= (int) (0.5 * currentWindow);
+					researches++;
 				} else if (tempResult.evaluationScore == beta) {
 					currentWindow *= 2;
 					beta += (int) (0.5*currentWindow);
+					researches++;
 				} else {
 					result = tempResult;
 					result.depthAchieved = i;
-					result.time = s.ElapsedMilliseconds;
+					result.time = (long)(DateTime.Now - iterationStartTime).TotalMilliseconds;
 					result.nodesVisited = nodesVisited;
 
 					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 					UCI_IO.printInfo(PVLine, i);
-					Console.WriteLine("fh1: " + failHighFirst/(failHighFirst+ failHigh) * 100);
 					failHighFirst = 0;
 					failHigh = 0;
 
@@ -128,6 +130,9 @@ namespace Chess_Engine {
 					currentWindow = Constants.ASP_WINDOW;
 					alpha = result.evaluationScore - currentWindow;
 					beta = result.evaluationScore + currentWindow;
+					iterationStartTime = DateTime.Now;
+					nodesVisited = 0;
+					researches = 0;
 					i++;
 				}
 			}

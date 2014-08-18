@@ -8,7 +8,7 @@ namespace Chess_Engine {
 	public static class TimeControl {
 
 		public static DateTime getFinishTime(DateTime startTime) {
-			DateTime finishTime = startTime.AddMilliseconds(200000);
+			DateTime finishTime = startTime.AddMilliseconds(20000000);
 			return finishTime;
 		}
 	}

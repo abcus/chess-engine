@@ -216,7 +216,8 @@ namespace Chess_Engine {
 
 		// Prints out information during iterative deepening
 	    public static void printInfo(List<string> PVLine, int depth) {
-		    Console.Write("info");
+		    Console.WriteLine("");
+			Console.Write("info");
 			if (Constants.CHECKMATE - Search.result.evaluationScore < Constants.MAX_DEPTH) {
 				Console.Write(" score mate " + (Constants.CHECKMATE - Search.result.evaluationScore + 1)/2);    
 		    } else if (-Constants.CHECKMATE - Search.result.evaluationScore > -Constants.MAX_DEPTH) {
@@ -232,6 +233,8 @@ namespace Chess_Engine {
 			}
 			Console.Write("nps " + Search.result.nodesVisited/(ulong)(Search.result.time + 1) * 1000);
 			Console.WriteLine("");
+
+			Console.WriteLine("fh1: " + Search.failHighFirst / (Search.failHighFirst + Search.failHigh) * 100 + "\t\t researches:" + Search.researches);
 	    }
 
         // Extracts the start square from the integer that encodes the move
@@ -405,7 +408,8 @@ namespace Chess_Engine {
 		        Console.WriteLine("Draw by threefold repetition");
 	        }
 
-            Console.WriteLine("Zobrist key: " + inputBoard.zobristKey);
+            Console.WriteLine("Zobrist key: " + inputBoard.zobristKey.ToString("x"));
+			Console.WriteLine("Polyglot key: " + OpeningBook.calculatePolyglotKey(inputBoard).ToString("x"));
 			Console.WriteLine("");
 
             inputBoard.kingInCheckTest(inputBoard.sideToMove);
