@@ -79,62 +79,70 @@ namespace Chess_Engine {
 			
 			result = new moveAndEval();
 
-			// Initially set alpha and beta to - infinity and + infinity
-			int alpha = -Constants.LARGE_INT;
-			int beta = Constants.LARGE_INT;
+			int bookMove = OpeningBook.probeBookMove(cloneBoard);
+			
+			// If there is a book move, then return it
+			// Otherwise, start iterative deepening
+			if (bookMove != 0) {
+				result.move = bookMove;
+			} else {
+				// Initially set alpha and beta to - infinity and + infinity
+				int alpha = -Constants.LARGE_INT;
+				int beta = Constants.LARGE_INT;
 
-			// Declare and initialize the aspiration window
-			int currentWindow = Constants.ASP_WINDOW;
+				// Declare and initialize the aspiration window
+				int currentWindow = Constants.ASP_WINDOW;
 
-			DateTime iterationStartTime = DateTime.Now;
-			for (int i = 1; i <= Constants.MAX_DEPTH;) {
+				DateTime iterationStartTime = DateTime.Now;
+				for (int i = 1; i <= Constants.MAX_DEPTH; ) {
 
-				// sets the initial depth (for mate score calculation)
-				initialDepth = i;
-				
-				moveAndEval tempResult = PVSRoot(i, alpha, beta);
+					// sets the initial depth (for mate score calculation)
+					initialDepth = i;
 
-				// If PVSRoot at depth i returned null
+					moveAndEval tempResult = PVSRoot(i, alpha, beta);
+
+					// If PVSRoot at depth i returned null
 					// that means that the search wasn't completed and time has run out, so terminate the thread
 					// The result variable will be from the last completed iteration
-				// If PVSRoot returned a value of alpha
+					// If PVSRoot returned a value of alpha
 					// That means we failed low (no move had a score that exceeded alpha)
 					// Widen the window by a factor of 2, and search again (beta is untouched because otherwise it may lead to search instability)
-				// If PVSRoot returned a value of beta
+					// If PVSRoot returned a value of beta
 					// That means we failed high (there was a move whose score exceeded beta)
 					// Widen the window by a factor of 2, and search again (alpha is untouched because otherwise it may lead to search instability)
-				// If PVSRoot returned a value between alpha and beta, the search completed successfully
+					// If PVSRoot returned a value between alpha and beta, the search completed successfully
 					// We set the result variable equal to the return value of the function
-				if (tempResult == null) {
-					return;
-				} if (tempResult.evaluationScore == alpha) {
-					currentWindow *= 2;
-					alpha -= (int) (0.5 * currentWindow);
-					researches++;
-				} else if (tempResult.evaluationScore == beta) {
-					currentWindow *= 2;
-					beta += (int) (0.5*currentWindow);
-					researches++;
-				} else {
-					result = tempResult;
-					result.depthAchieved = i;
-					result.time = (long)(DateTime.Now - iterationStartTime).TotalMilliseconds;
-					result.nodesVisited = nodesVisited;
+					if (tempResult == null) {
+						return;
+					} if (tempResult.evaluationScore == alpha) {
+						currentWindow *= 2;
+						alpha -= (int)(0.5 * currentWindow);
+						researches++;
+					} else if (tempResult.evaluationScore == beta) {
+						currentWindow *= 2;
+						beta += (int)(0.5 * currentWindow);
+						researches++;
+					} else {
+						result = tempResult;
+						result.depthAchieved = i;
+						result.time = (long)(DateTime.Now - iterationStartTime).TotalMilliseconds;
+						result.nodesVisited = nodesVisited;
 
-					List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
-					UCI_IO.printInfo(PVLine, i);
-					failHighFirst = 0;
-					failHigh = 0;
+						List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
+						UCI_IO.printInfo(PVLine, i);
+						failHighFirst = 0;
+						failHigh = 0;
 
-					// Reset the current window, and set alpha and beta for the next iteration
-					currentWindow = Constants.ASP_WINDOW;
-					alpha = result.evaluationScore - currentWindow;
-					beta = result.evaluationScore + currentWindow;
-					iterationStartTime = DateTime.Now;
-					nodesVisited = 0;
-					researches = 0;
-					i++;
-				}
+						// Reset the current window, and set alpha and beta for the next iteration
+						currentWindow = Constants.ASP_WINDOW;
+						alpha = result.evaluationScore - currentWindow;
+						beta = result.evaluationScore + currentWindow;
+						iterationStartTime = DateTime.Now;
+						nodesVisited = 0;
+						researches = 0;
+						i++;
+					}
+				}	
 			}
 	    }
 
@@ -299,6 +307,7 @@ namespace Chess_Engine {
 				// Probe the hash table and if the entry's depth is greater than or equal to current depth:
 				Zobrist zobristKey = Search.cloneBoard.zobristKey;
 				TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
+				int TTmove = entry.move;
 
 				// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
 				if (entry.key == zobristKey && entry.depth >= depth) {
@@ -316,6 +325,14 @@ namespace Chess_Engine {
 						}
 
 						if (evaluationScore >= beta) {
+
+							// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
+							// Moves in the killer table shouldn't have a score, so don't need to take it out
+							int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[initialDepth - depth, 0])) {
+								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
+								Search.killerTable[initialDepth - depth, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
+							}
 							return beta;
 						} else if (evaluationScore <= alpha) {
 							return alpha;
@@ -325,6 +342,15 @@ namespace Chess_Engine {
 					} else if (entry.flag == Constants.CUT_NODE) {
 						int evaluationScore = entry.evaluationScore;
 						if (evaluationScore >= beta) {
+
+							// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
+							// Moves in the killer table shouldn't have a score, so don't need to take it out
+							int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[initialDepth - depth, 0])) {
+								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
+								Search.killerTable[initialDepth - depth, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
+							}
+
 							return beta;
 						}
 					} else if (entry.flag == Constants.ALL_NODE) {
@@ -404,8 +430,6 @@ namespace Chess_Engine {
 							if ((flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (move != Search.killerTable[initialDepth - depth, 0])) {
 								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
 								Search.killerTable[initialDepth - depth, 0] = (move & ~Constants.MOVE_SCORE_MASK);
-								Debug.Assert((killerTable[initialDepth - depth, 0] & Constants.MOVE_SCORE_MASK) == 0);
-								Debug.Assert((killerTable[initialDepth - depth, 1] & Constants.MOVE_SCORE_MASK) == 0);
 							}
 
 							// return beta and not best score (fail-hard)

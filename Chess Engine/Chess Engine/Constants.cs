@@ -1122,6 +1122,17 @@ namespace Chess_Engine {
 
 		public static ulong[] sideToMovePolyglot = { 0xF8D626AAAF278509UL };
 
+	    public const int MAX_BOOK_MOVES = 32;
+
+		// Array for printing the rank
+		public static readonly char[] fileChar = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
+
+		// Array for printing the file
+		public static readonly char[] rankChar = { '1', '2', '3', '4', '5', '6', '7', '8' };
+
+		// Array for the promotion piece
+	    public static readonly char[] promotionPieceChar = {' ', 'n', 'b', 'r', 'q'};
+
 		//--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //BIT MANIPULATION METHODS

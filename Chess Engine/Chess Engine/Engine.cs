@@ -26,10 +26,9 @@ namespace Chess_Engine {
             Constants.initBoardConstants();
             Constants.initEvalConstants();
 	        Constants.initSearchConstants();
+			OpeningBook.initOpeningBook();
 
-			OpeningBook.readPolyBook();
-
-			while (true) {
+	        while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {
                     break;
                 }
