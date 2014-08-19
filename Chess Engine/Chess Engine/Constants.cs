@@ -1154,8 +1154,23 @@ namespace Chess_Engine {
             return (int)((bitboard * 0x0101010101010101UL) >> 56);
         }
 
+		// Swaps endian-ness for a uint16
+	    public static UInt16 swapUint16Endian(UInt16 val) {
+			return (ushort)((val << 8) | (val >> 8));
+	    }
 
+		// Swaps endian-ness for a uint32
+	    public static UInt32 swapUint32Endian(UInt32 val) {
+			val = ((val << 8) & 0xFF00FF00) | ((val >> 8) & 0xFF00FF);
+			return (val << 16) | (val >> 16);
+	    }
+		
 
-       
+		// Swaps endian-ness for a uint64
+		public static UInt64 swapUint64Endian (UInt64 val) {
+			val = ((val << 8) & 0xFF00FF00FF00FF00UL ) | ((val >> 8) & 0x00FF00FF00FF00FFUL);
+			val = ((val << 16) & 0xFFFF0000FFFF0000UL ) | ((val >> 16) & 0x0000FFFF0000FFFFUL);
+			return (val << 32) | (val >> 32);
+		}
     }
 }
