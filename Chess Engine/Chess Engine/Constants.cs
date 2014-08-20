@@ -938,7 +938,7 @@ namespace Chess_Engine {
 		// Quiescence search constants
 	    public const int CAP_AND_QUEEN_PROMO = 0;
 	    public const int QUIET_CHECK = 1;
-	    public const int QUITE_NO_CHECK = 2;
+	    public const int QUIET_NO_CHECK = 2;
 
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {

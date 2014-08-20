@@ -40,9 +40,9 @@ namespace Chess_Engine {
 				}
 
 				// If the node is not found in the TTable, then get a list of almost legal moves
-				int[] pseudoLegalMoveList;
+				int[] pseudoLegalMoveList = null;
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
+					pseudoLegalMoveList = inputBoard.phasedMoveGen();
 				} else {
 					pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 				}
@@ -91,7 +91,7 @@ namespace Chess_Engine {
 				// If the result is not found in the transposition table, then get a list of almost legal moves
 				int[] pseudoLegalMoveList = null;
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
+					pseudoLegalMoveList = inputBoard.phasedMoveGen();
 				} else {
 					pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 				}
