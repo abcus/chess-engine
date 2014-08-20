@@ -32,7 +32,10 @@ namespace Chess_Engine {
 	    
 	    internal static DoWorkEventArgs stopEvent;
 
+	    internal static SearchInfo info;
 	    internal static DateTime finishTime;
+
+	    internal static List<string> PVLine;
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -41,13 +44,13 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		public static void initSearch(DateTime finishTime, Board inputBoard, DoWorkEventArgs e) {
+		public static void initSearch(SearchInfo info, Board inputBoard, DoWorkEventArgs e) {
 
-			// Clones the input board (so that if a search is interrupted midway through and all moves aren't unmade, it won't affect the actual board)
-			cloneBoard = new Board(inputBoard);
+			// Copies the reference for the input board into a static variable 
+			cloneBoard = inputBoard;
 
-			Search.finishTime = finishTime;
-
+			Search.info = info;
+			
 			// Resets the history table and killer table
 			historyTable = new int[13,64];
 			killerTable = new int[Constants.MAX_DEPTH, 2];
@@ -65,6 +68,9 @@ namespace Chess_Engine {
 			// Sets the stop search event
 			stopEvent = e;
 
+			// Resets the PV line string list
+			PVLine = new List<string>();
+
 			// Starts the iterative deepening
 			runSearch();
 	    }
@@ -76,16 +82,20 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
 		public static void runSearch () {
-			
-			result = new moveAndEval();
 
+			// Set the target finish time (don't do it too early)
+			finishTime = TimeControl.getFinishTime(info);
+			result = new moveAndEval();
+			
 			int bookMove = OpeningBook.probeBookMove(cloneBoard);
 			
 			// If there is a book move, then return it
 			// Otherwise, start iterative deepening
 			if (bookMove != 0) {
+				UCI_IO.plyOutOfBook = 0;
 				result.move = bookMove;
 			} else {
+				UCI_IO.plyOutOfBook ++;
 				// Initially set alpha and beta to - infinity and + infinity
 				int alpha = -Constants.LARGE_INT;
 				int beta = Constants.LARGE_INT;
@@ -94,10 +104,15 @@ namespace Chess_Engine {
 				int currentWindow = Constants.ASP_WINDOW;
 
 				DateTime iterationStartTime = DateTime.Now;
-				for (int i = 1; i <= Constants.MAX_DEPTH; ) {
+				for (int i = 1; i <= Constants.MAX_DEPTH;) {
 
 					// sets the initial depth (for mate score calculation)
 					initialDepth = i;
+
+					// Before each search, it sees if it should quit
+					if (quitSearch()) {
+						return;
+					}
 
 					moveAndEval tempResult = PVSRoot(i, alpha, beta);
 
@@ -128,7 +143,7 @@ namespace Chess_Engine {
 						result.time = (long)(DateTime.Now - iterationStartTime).TotalMilliseconds;
 						result.nodesVisited = nodesVisited;
 
-						List<string> PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
+						PVLine = UCI_IO.transpositionTable.getPVLine(Search.cloneBoard, i);
 						UCI_IO.printInfo(PVLine, i);
 						failHighFirst = 0;
 						failHigh = 0;
@@ -483,16 +498,33 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		// CHECK STATUS
 		// Called every 2048 nodes searched, and checks if time is up or if there is an interrupt form the GUI
+		// When pondering, the time control and depth limit will be set to false
+		// The only way that the engine will exit is if a "stop" command is received (even if search has exceeded the allocated time)
+		// When the "ponderhit" command is received, the time control will be set to true
+		// If the search has exceeded the allocated time it will return; otherwise it will keep thinking
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 	    private static bool quitSearch() {
-		    if (UCI_IO.searchWorker.CancellationPending) {
+		    // If the "stop" command was received, then set the stop event.Cancel (or "e") to true
+			// Return true to the search functions so they can exit
+			if (UCI_IO.searchWorker.CancellationPending) {
 			    stopEvent.Cancel = true;
 			    return true;
-		    }  else if (DateTime.Now > Search.finishTime) { // else if the current time is greater than the expected finish date time object
+		    }  
+			// If time control is on and the time has run out, then set the stop event.Cancel (or "e") to true
+			// Return true to the search functions so they can exit
+			else if (info.timeControl == true && DateTime.Now > Search.finishTime) { 
 				stopEvent.Cancel = true;
 			    return true;
-		    } else {
+		    } 
+			// If the depth limit is on and the engine is trying to search deeper than the limit, set the stop event.Cancel (or "e") to true
+			// Return true to the search functions so they can exit
+			else if (info.depthLimit == true && initialDepth > info.depth) {
+			    stopEvent.Cancel = true;
+			    return true;
+		    } 
+			// If nothing is causing a cancellation, then return false to the search functions so they can keep searching
+			else {
 			    return false;
 		    }
 	    }

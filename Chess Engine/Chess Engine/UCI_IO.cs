@@ -14,9 +14,12 @@ namespace Chess_Engine {
 
 		// Creates a board object and initializes to to the start position
         internal static Board position = new Board(Constants.FEN_START);
+	    
+		// Keeps track of how many half-moves have been played out of book (for time management)
+		internal static int plyOutOfBook = 0;
 
 		// Stores the finish time
-	    internal static DateTime finishTime;
+	    internal static SearchInfo info;
 
 		// Creates a transposition table object (which is not cleared for the duration of the runtime of the program)
         // this object contains the actual transposition table, as well as a smaller PV table for storing and retrieving the principal variation (less overwrites)
@@ -96,11 +99,12 @@ namespace Chess_Engine {
 			// Sets the board to the position specified by the GUI
 			else if (string0 == "position") {
                 stringList.RemoveAt(0);
-                setPosition(stringList);
+                parsePosition(stringList);
             } 
 			// Starts the search
 			else if (string0 == "go") {
-				finishTime = TimeControl.getFinishTime(DateTime.Now);
+				stringList.RemoveAt(0);
+				info = parseGo(stringList);
 				searchWorker.RunWorkerAsync();
             } 
 			// Stops the search
@@ -109,6 +113,13 @@ namespace Chess_Engine {
 		            searchWorker.CancelAsync();
 	            }
             }
+			// Sent by the GUI if the move made by the opponent was the move predicted by the engine
+			// Set Search.info.timeControl to true
+			// If the thinking time has been exceeded, then the search will exit immediately
+			// Otherwise, the search will continue
+			else if (string0 == "ponderhit") {
+				Search.info.timeControl = true;
+			}
             return true;
         }
 
@@ -135,7 +146,7 @@ namespace Chess_Engine {
         }
 
 		// Sets the board to the position specified by the GUI
-        public static void setPosition(List<string> inputStringList) {
+        public static void parsePosition(List<string> inputStringList) {
             
             // Sets the board to the starting position
             if (inputStringList[0] == "startpos") {
@@ -200,17 +211,87 @@ namespace Chess_Engine {
             } 
         }
 
+		// Parses the go command
+		public static SearchInfo parseGo(List<string> inputStringList) {
+
+			bool timeControl = false;
+			bool depthLimit = false;
+			int depth = - 1;
+			int movesToGo = 30;
+			int moveTime = -1;
+
+			int timeLeft = -1;
+			int increment = 0;
+			
+			for (int i = 0; i < inputStringList.Count; i++) {
+				if (inputStringList[i] == "infinite") {
+				
+				}
+				if (inputStringList[i] == "depth") {
+					depthLimit = true;
+					depth = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "movestogo") {
+					movesToGo = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "movetime") {
+					timeControl = true;
+					moveTime = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "wtime" && position.sideToMove == Constants.WHITE) {
+					timeControl = true;
+					timeLeft = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "winc" && position.sideToMove == Constants.WHITE) {
+					timeControl = true;
+					increment = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "btime" && position.sideToMove == Constants.BLACK) {
+					timeControl = true;
+					timeLeft = Convert.ToInt32(inputStringList[i + 1]);
+				}
+				if (inputStringList[i] == "binc" && position.sideToMove == Constants.BLACK) {
+					timeControl = true;
+					increment = Convert.ToInt32(inputStringList[i + 1]);
+				}
+			}
+
+			// Loop through the string again to see if the GUI sent a "ponderhit" command
+			// If so, turn time control to false 
+			// Need to keep track of time, but want to keep pondering until the "ponderhit" or "stop" command has been received (even if time has run out)
+			// If "stop" command is received, then search will exit immediately
+			// If "ponderhit" is received, then will set the Search.info.timeControl to true
+			// If there is no more time, then the search will return immediately; if there is more time then the search will keep thinking
+			for (int i = 0; i < inputStringList.Count; i++) {
+				if (inputStringList[i] == "ponder") {
+					timeControl = false;
+				}
+			}
+			SearchInfo info = new SearchInfo(timeControl, depthLimit,depth, movesToGo, moveTime, timeLeft, increment);
+			return info;
+		}
+
 		// Starts the search 
         public static void searchWorker_StartSearch(object sender, DoWorkEventArgs e) {
             
-			// Creates a new search object
-	        Search.initSearch(finishTime, position, e);
+			// Starts the search
+			// Passes the do work object "e" to the search
+			// When the search is terminated, "e.Cancel" will be set to true
+	        Search.initSearch(info, position, e);
 
         }
 
 		// Prints out the results when the search has completed (or been stopped)
 	    public static void searchWorker_SearchCompleted(object sender, RunWorkerCompletedEventArgs e) {
-			Console.WriteLine("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
+			
+			// When the search thread has termined and "e.Cancel" is true, the best move will be printed
+			// Also the opponent's expected reply will be printed
+			Console.Write("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
+		    
+			// Check to see if there is an expected reply move; if so then print it out so that the UCI will set up pondering
+			if (Search.PVLine.Count > 1) {
+				Console.WriteLine(" ponder " + Search.PVLine[1]);
+		    }
 			Console.WriteLine("");
 		}
 
@@ -415,4 +496,25 @@ namespace Chess_Engine {
             inputBoard.kingInCheckTest(inputBoard.sideToMove);
         }
     }
+
+	public struct SearchInfo {
+		internal bool timeControl;
+		internal bool depthLimit;
+		internal int depth;
+		internal int movesToGo;
+		internal int moveTime;
+
+		internal int timeLeft;
+		internal int increment;
+
+		public SearchInfo(bool timeControl, bool depthLimit, int depth, int movesToGo, int moveTime, int timeLeft, int increment) {
+			this.timeControl = timeControl;
+			this.depthLimit = depthLimit;
+			this.depth = depth;
+			this.movesToGo = movesToGo;
+			this.moveTime = moveTime;
+			this.timeLeft = timeLeft;
+			this.increment = increment;
+		}
+	}
 }
