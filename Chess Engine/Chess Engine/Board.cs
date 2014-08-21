@@ -3119,8 +3119,7 @@ namespace Chess_Engine {
 		    return move;
 	    }
 
-
-		// Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
+	    // Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
         private int generatePawnMove(int pawnIndex, Bitboard pseudoLegalSinglePawnMoveFromIndex, int[] listOfPseudoLegalMoves, int index, int pieceColour) {
             
             if (pseudoLegalSinglePawnMoveFromIndex != 0) {

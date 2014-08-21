@@ -181,7 +181,7 @@ namespace Chess_Engine {
 				return tableResult;
 			}
 
-			movePicker mPicker = new movePicker(Search.cloneBoard, depth);
+			movePicker mPicker = new movePicker(Search.cloneBoard, depth, Constants.ALL_MOVES);
 		    bool firstMove = true;
 			List<int> bestMoves = new List<int>();
 			stateVariables restoreData = new stateVariables(Search.cloneBoard);
@@ -278,43 +278,11 @@ namespace Chess_Engine {
 			// At the leaf nodes
 			if (depth == 0) {
 
-				// Every 2047 nodes evaluated, check to see if there is a cancellation pending; if so then return 0
-				if ((nodesVisited & 2047) == 0) {
-					if (quitSearch()) {
-						return 0;
-					}
-				}
+				return quiescence(depth, alpha, beta);
 
-				// return 0 if repetition or draw
-				if (Search.cloneBoard.fiftyMoveRule >= 100) {
-					return 0;
-				}
-				if (Search.cloneBoard.getRepetitionNumber() > 1) {
-					return 0;
-				}
-
-				// Probe the hash table, and if a match is found then return the score
-				// (validate the key to prevent type 2 collision)
-				/*Zobrist zobristKey = Search.cloneBoard.zobristKey;
-				TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
-				if (entry.key == zobristKey && entry.depth >= 0) {
-					return entry.evaluationScore;
-				}*/
-
-				// Otherwise, find the evaluation and store it in the table for future use
-				int evaluationScore = Evaluate.evaluationFunction(Search.cloneBoard);
-				//TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
-				//UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
-
-				return evaluationScore;
-
-				// return quiescence(alpha, beta);
 			} else {
 				// return 0 if repetition or draw
-				if (Search.cloneBoard.fiftyMoveRule >= 100) {
-					return 0;
-				}
-				if (Search.cloneBoard.getRepetitionNumber() > 1) {
+				if (Search.cloneBoard.fiftyMoveRule >= 100 || Search.cloneBoard.getRepetitionNumber() > 1) {
 					return 0;
 				}
 
@@ -377,7 +345,7 @@ namespace Chess_Engine {
 				}
 
 				stateVariables restoreData = new stateVariables(Search.cloneBoard);
-				movePicker mPicker = new movePicker(Search.cloneBoard, depth);
+				movePicker mPicker = new movePicker(Search.cloneBoard, depth, Constants.ALL_MOVES);
 				int bestMove = 0;
 				int legalMovesMade = 0;
 				int boardScore = 0;
@@ -490,8 +458,97 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		private static int quiescence(int alpha, int beta) {
-		    return 0;
+		private static int quiescence(int depth, int alpha, int beta) {
+
+			// Probe the hash table, and if a match is found then return the score
+			// (validate the key to prevent type 2 collision)
+			/*Zobrist zobristKey = Search.cloneBoard.zobristKey;
+			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
+			if (entry.key == zobristKey && entry.depth >= 0) {
+				return entry.evaluationScore;
+			}*/
+
+			// Otherwise, find the evaluation and store it in the table for future use
+			//int evaluationScore = Evaluate.evaluationFunction(Search.cloneBoard);
+			//TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, 0, evaluationScore);
+			//UCI_IO.hashTable.storeTTable(zobristKey, newEntry);
+			
+			// return 0 if repetition or draw
+			if (Search.cloneBoard.fiftyMoveRule >= 100 || Search.cloneBoard.getRepetitionNumber() > 1) {
+				return 0;
+			}
+			
+			if (Search.cloneBoard.isInCheck() == false) {
+				int evaluationScore = Evaluate.evaluationFunction(Search.cloneBoard);
+				if (evaluationScore > alpha) {
+					if (evaluationScore >= beta) {
+						return beta;
+					}
+					alpha = evaluationScore;
+				}
+			}
+
+			stateVariables restoreData = new stateVariables(Search.cloneBoard);
+			movePicker mPicker = new movePicker(Search.cloneBoard, depth, Constants.CAP_AND_QUEEN_PROMO);
+			int legalMovesMade = 0;
+			int boardScore = 0;
+			bool firstMove = true;
+			
+			// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
+			bool raisedAlpha = false;
+
+			// Loops through all moves
+			while (true) {
+				int move = mPicker.getNextMove();
+
+				// If the move picker returns a 0, then no more moves left, so break out of loop
+				if (move == 0) {
+					break;
+				}
+
+				Search.cloneBoard.makeMove(move);
+
+				boardScore = -quiescence(depth - 1, -beta, -alpha);
+
+				Search.cloneBoard.unmakeMove(move, restoreData);
+
+				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
+				if ((nodesVisited & 2047) == 0) {
+					if (quitSearch()) {
+						return 0;
+					}
+				}
+				legalMovesMade++;
+				nodesVisited++;
+
+				if (boardScore > alpha) {
+					raisedAlpha = true;
+
+					// If the score was greater than beta, we have a beta cutoff (fail high)
+					if (boardScore >= beta) {
+
+						// Increment fail high first if first move produced cutoff, otherwise increment fail high
+						if (firstMove == true) {
+							failHighFirst++;
+						} else {
+							failHigh++;
+						}
+						// return beta and not best score (fail-hard)
+						return beta;
+					}
+					// If no beta cutoff but board score was higher than old alpha, then raise alpha
+					alpha = boardScore;
+				}
+				firstMove = false;
+			}
+
+			// If number of legal moves made is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
+			if (legalMovesMade == 0) {
+				if (Search.cloneBoard.isInCheck() == true) {
+					return -Constants.CHECKMATE + (initialDepth - depth);
+				}
+			}
+			return alpha; //return alpha whether it was raised or not (fail-hard)	 
 	    }
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -546,9 +603,10 @@ namespace Chess_Engine {
 		internal int[] pseudoLegalMoveList;
 		internal int index = 0;
 		private int depth;
+		private int flag;
 
 		// Constructor
-		public movePicker(Board inputBoard, int depth) {
+		public movePicker(Board inputBoard, int depth, int flag) {
 			this.board = inputBoard;
 			this.restoreData = new stateVariables(inputBoard);
 			this.depth = depth;
@@ -556,7 +614,11 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
+				if (flag == Constants.ALL_MOVES) {
+					this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
+				} else if (flag == Constants.CAP_AND_QUEEN_PROMO) {
+					this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.CAP_AND_QUEEN_PROMO);
+				}
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
@@ -579,18 +641,20 @@ namespace Chess_Engine {
 				int move = pseudoLegalMoveList[i] & ~Constants.MOVE_SCORE_MASK;
 
 				// Loop through all moves in the pseudo legal move list (until it hits a 0)
+				// If the move is the same as the hash move, give it a value of 127
+				// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
 				if (move == 0) {
 					break;
 				} else if (move == hashMove) {
-					// If the move is the same as the hash move, give it a value of 127
+					
 					pseudoLegalMoveList[i] |= (Constants.HASH_MOVE_SCORE << Constants.MOVE_SCORE_SHIFT);
 					break;
-				} else if (move == Search.killerTable[Search.initialDepth - depth, 0]) {
+				} else if (move == Search.killerTable[Search.initialDepth - depth, 0] && this.flag == Constants.ALL_MOVES) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
 					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 0] & Constants.MOVE_SCORE_MASK) == 0);
 					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 0]) != hashMove);
 					break;
-				} else if (move == Search.killerTable[Search.initialDepth - depth, 1]) {
+				} else if (move == Search.killerTable[Search.initialDepth - depth, 1] && this.flag == Constants.ALL_MOVES) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
 					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 1] & Constants.MOVE_SCORE_MASK) == 0);
 					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 1]) != hashMove);

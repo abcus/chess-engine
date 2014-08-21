@@ -903,7 +903,7 @@ namespace Chess_Engine {
 
 	    public const int MAX_DEPTH = 64;
 
-	    public const int ASP_WINDOW = Constants.PAWN_VALUE_MG/2;
+	    public const int ASP_WINDOW = Constants.PAWN_VALUE_MG/3;
 
 		public const int TT_SIZE = 15485867;
 	    public const int PV_TT_SIZE = 1000003;
@@ -939,6 +939,7 @@ namespace Chess_Engine {
 	    public const int CAP_AND_QUEEN_PROMO = 0;
 	    public const int QUIET_CHECK = 1;
 	    public const int QUIET_NO_CHECK = 2;
+	    public const int ALL_MOVES = 3;
 
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {
