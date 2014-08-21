@@ -46,8 +46,7 @@ namespace Chess_Engine {
 
 		public static void initSearch(SearchInfo info, Board inputBoard, DoWorkEventArgs e) {
 
-			// Copies the reference for the input board into a static variable 
-			cloneBoard = inputBoard;
+			cloneBoard = new Board(inputBoard);
 
 			Search.info = info;
 			
@@ -106,6 +105,8 @@ namespace Chess_Engine {
 				DateTime iterationStartTime = DateTime.Now;
 				for (int i = 1; i <= Constants.MAX_DEPTH;) {
 
+					
+
 					// sets the initial depth (for mate score calculation)
 					initialDepth = i;
 
@@ -132,6 +133,7 @@ namespace Chess_Engine {
 					} if (tempResult.evaluationScore == alpha) {
 						currentWindow *= 2;
 						alpha -= (int)(0.5 * currentWindow);
+						Console.WriteLine("ALPHA:" + alpha);
 						researches++;
 					} else if (tempResult.evaluationScore == beta) {
 						currentWindow *= 2;
@@ -203,9 +205,11 @@ namespace Chess_Engine {
 
 					// The first move is assumed to be the best move
 					// If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
+					// Other approach is to wait until you search all moves to return
 					if (boardScore < alpha) {
 						moveAndEval failLowResult = new moveAndEval();
 						failLowResult.evaluationScore = alpha;
+						Search.cloneBoard.unmakeMove(move, restoreData);
 						return failLowResult;
 					}
 				} else {
