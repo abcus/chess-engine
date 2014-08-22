@@ -270,7 +270,7 @@ namespace Chess_Engine {
 			// Increments the fifty move rule counter (actually counts plies and not moves)
 	        this.fiftyMoveRule ++;
 
-			// Maybe should clear the history hash here?? (speed might be an issue)
+			// resets the 50 move rule
 			if (flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE || flag == Constants.EN_PASSANT_CAPTURE) {
 		        this.fiftyMoveRule = 0;
 	        } if (flag == Constants.QUIET_MOVE && (pieceMoved == Constants.WHITE_PAWN || pieceMoved == Constants.BLACK_PAWN)) {
@@ -785,6 +785,24 @@ namespace Chess_Engine {
 	        //updates the aggregate bitboards
             this.arrayOfAggregateBitboards[Constants.ALL] = ( this.arrayOfAggregateBitboards[Constants.WHITE] | this.arrayOfAggregateBitboards[Constants.BLACK]);
         }
+
+	    public void makeNullMove() {
+			// Sets the board's instance variables
+			// sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
+			this.sideToMove ^= 1;
+			this.zobristKey ^= Constants.sideToMoveZobrist[0];
+
+			this.gameHistory.Add(this.zobristKey);
+			this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)]++;
+	    }
+
+	    public void unmakeNullMove() {
+			this.sideToMove ^= 1;
+			this.zobristKey ^= Constants.sideToMoveZobrist[0];
+
+			this.gameHistory.RemoveAt(this.gameHistory.Count - 1);
+			this.historyHash[(this.zobristKey % (ulong)this.historyHash.Length)]--;
+	    }
 
         //--------------------------------------------------------------------------------------------------------------------------------------------
         //--------------------------------------------------------------------------------------------------------------------------------------------
