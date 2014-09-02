@@ -90,7 +90,7 @@ namespace Chess_Engine {
 			
 			// If there is a book move, then return it
 			// Otherwise, start iterative deepening
-			if (bookMove != bookMove) {
+			if (bookMove != 0) {
 				UCI_IO.plyOutOfBook = 0;
 				result.move = bookMove;
 			} else {

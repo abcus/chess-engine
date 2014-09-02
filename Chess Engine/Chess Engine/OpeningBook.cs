@@ -15,9 +15,10 @@ namespace Chess_Engine {
 	public static class OpeningBook {
 
 		public static PolyglotEntry[] polyglotOpeningBook;
-		
+		public static Random rnd = new Random();
+
 		public static void initOpeningBook() {
-			using (BinaryReader b = new BinaryReader(File.Open(@"C:\Users\Kevin\Desktop\chess\Performance.bin", FileMode.Open))) {
+			using (BinaryReader b = new BinaryReader(File.Open(@"Performance.bin", FileMode.Open))) {
 				
 				// Calculates the size of the polyglot entry structure (16 bytes)
 				int sizeOfPolyStruct = System.Runtime.InteropServices.Marshal.SizeOf(typeof (PolyglotEntry));
@@ -194,16 +195,26 @@ namespace Chess_Engine {
 				}
 			}
 
-			// Add in randomization later
-			if (engineBookMoves[0] != 0) {
-				return engineBookMoves[0];
+			// Number of book moves
+			int numBookMoves = 0;
+
+			// Loops through the entire engine book moves array and sets the number of book moves = index (of last book moves found) + 1
+			for (int i = 0; i < engineBookMoves.Length; i ++) {
+				if (engineBookMoves[i] != 0) {
+					numBookMoves = i + 1;
+				}
+			}
+
+			// If the number of book moves isn't 0, it generates a random number between 0 and numBookMoves - 1 (inclusive)
+			// It returns the move at that index
+			// Otherwise if the number of book moves is 0, it returns 0
+			if (numBookMoves != 0) {
+				return engineBookMoves[rnd.Next(0, numBookMoves)];
 			} else {
 				return 0;
 			}
 		}
 	}
-
-
 
 	public struct PolyglotEntry {
 		internal Zobrist key;

@@ -321,7 +321,7 @@ namespace Chess_Engine {
 		public static void perftSuite2(Board inputBoard) {
 
 			//Reads the perft suite into an array one line at a time
-			string[] fileInput = System.IO.File.ReadAllLines(@"C:\Users\Kevin\Desktop\chess\perftsuite.txt");
+			string[] fileInput = System.IO.File.ReadAllLines(@"perftsuite.txt");
 
 			//Splits each line into FEN, and depth 1-6
 			string[][] delimitedFileInput = new string[fileInput.Length][];
