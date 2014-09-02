@@ -21,19 +21,19 @@ namespace Chess_Engine {
 		internal static int[,] killerTable;
 	    
 		internal static moveAndEval result;
-		internal static int initialDepth;
 		internal static ulong nodesVisited;
 	    internal static int researches;
 
 	    internal static double failHigh;
 	    internal static double failHighFirst;
 
-	    internal static int numOfSuccessfulZWS;
-	    
+	    internal static int ply;
+
 	    internal static DoWorkEventArgs stopEvent;
 
 	    internal static SearchInfo info;
-	    internal static DateTime finishTime;
+	    internal static int moveTime;
+	    internal static Stopwatch finishTimer;
 
 	    internal static List<string> PVLine;
 
@@ -57,12 +57,11 @@ namespace Chess_Engine {
 			// Resets other variables
 			result =  new moveAndEval();
 		    
-			initialDepth = 0;
-		    nodesVisited = 0;
+			nodesVisited = 0;
 			researches = 0;
 			failHigh = 0;
 			failHighFirst = 0;
-			numOfSuccessfulZWS = 0;
+			ply = 0;
 
 			// Sets the stop search event
 			stopEvent = e;
@@ -82,15 +81,16 @@ namespace Chess_Engine {
 
 		public static void runSearch () {
 
-			// Set the target finish time (don't do it too early)
-			finishTime = TimeControl.getFinishTime(info);
+			// Set the target finish time
+			moveTime = TimeControl.getFinishTime(info);
 			result = new moveAndEval();
-			
+			finishTimer = Stopwatch.StartNew();
+
 			int bookMove = OpeningBook.probeBookMove(board);
 			
 			// If there is a book move, then return it
 			// Otherwise, start iterative deepening
-			if (bookMove != 0) {
+			if (bookMove != bookMove) {
 				UCI_IO.plyOutOfBook = 0;
 				result.move = bookMove;
 			} else {
@@ -102,20 +102,15 @@ namespace Chess_Engine {
 				// Declare and initialize the aspiration window
 				int currentWindow = Constants.ASP_WINDOW;
 
-				DateTime iterationStartTime = DateTime.Now;
+				Stopwatch iterationTimer = Stopwatch.StartNew();
 				for (int i = 1; i <= Constants.MAX_DEPTH;) {
-
-					
-
-					// sets the initial depth (for mate score calculation)
-					initialDepth = i;
 
 					// Before each search, it sees if it should quit
 					if (quitSearch()) {
 						return;
 					}
 
-					moveAndEval tempResult = PVSRoot(i, alpha, beta);
+					moveAndEval tempResult = PVSRoot(i, ply, alpha, beta);
 
 					// If PVSRoot at depth i returned null
 					// that means that the search wasn't completed and time has run out, so terminate the thread
@@ -133,32 +128,33 @@ namespace Chess_Engine {
 					} if (tempResult.evaluationScore == alpha) {
 						currentWindow *= 2;
 						alpha -= (int)(0.5 * currentWindow);
-						Console.WriteLine("ALPHA:" + alpha);
 						researches++;
+						continue;
 					} else if (tempResult.evaluationScore == beta) {
 						currentWindow *= 2;
 						beta += (int)(0.5 * currentWindow);
 						researches++;
-					} else {
-						result = tempResult;
-						result.depthAchieved = i;
-						result.time = (long)(DateTime.Now - iterationStartTime).TotalMilliseconds;
-						result.nodesVisited = nodesVisited;
-
-						PVLine = UCI_IO.transpositionTable.getPVLine(Search.board, i);
-						UCI_IO.printInfo(PVLine, i);
-						failHighFirst = 0;
-						failHigh = 0;
-
-						// Reset the current window, and set alpha and beta for the next iteration
-						currentWindow = Constants.ASP_WINDOW;
-						alpha = result.evaluationScore - currentWindow;
-						beta = result.evaluationScore + currentWindow;
-						iterationStartTime = DateTime.Now;
-						nodesVisited = 0;
-						researches = 0;
-						i++;
+						continue;
 					}
+					result = tempResult;
+					result.depthAchieved = i;
+					result.time = iterationTimer.ElapsedMilliseconds;
+					result.nodesVisited = nodesVisited;
+
+					PVLine = UCI_IO.transpositionTable.getPVLine(Search.board, i);
+					UCI_IO.printInfo(PVLine, i);
+					failHighFirst = 0;
+					failHigh = 0;
+
+					// Reset the current window, and set alpha and beta for the next iteration
+					currentWindow = Constants.ASP_WINDOW;
+					alpha = result.evaluationScore - currentWindow;
+					beta = result.evaluationScore + currentWindow;
+					iterationTimer.Restart();
+					nodesVisited = 0;
+					researches = 0;
+					ply = 0;
+					i++;	
 				}	
 			}
 	    }
@@ -170,21 +166,21 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-	    public static moveAndEval PVSRoot(int depth, int alpha, int beta) {
+	    public static moveAndEval PVSRoot(int depth, int ply, int alpha, int beta) {
 		    Zobrist zobristKey = Search.board.zobristKey;
 
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 
 			// Make sure that the node is a PV node 
-			if (entry.key == zobristKey && entry.depth >= depth && entry.flag == Constants.PV_NODE) {
+			if (entry.key == zobristKey && entry.depth >= depth && entry.flag == Constants.EXACT) {
 				moveAndEval tableResult = new moveAndEval();
 				tableResult.evaluationScore = entry.evaluationScore;
 				tableResult.move = entry.move;
 				return tableResult;
 			}
 
-			movePicker mPicker = new movePicker(Search.board, depth, Constants.ALL_MOVES);
-		    bool firstMove = true;
+			movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.ALL_MOVES);
+		    int movesMade = 0;
 			List<int> bestMoves = new List<int>();
 			stateVariables restoreData = new stateVariables(Search.board);
 			bool raisedAlpha = false;
@@ -200,8 +196,8 @@ namespace Chess_Engine {
 
 				Search.board.makeMove(move);
 				
-				if (firstMove == true) {
-					boardScore = -PVS(depth - 1, -beta, -alpha, true);
+				if (movesMade == 0) {
+					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
 
 					// The first move is assumed to be the best move
 					// If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
@@ -213,16 +209,14 @@ namespace Chess_Engine {
 						return failLowResult;
 					}
 				} else {
-					boardScore = -PVS(depth - 1, -alpha - 1, -alpha, true);
-					numOfSuccessfulZWS++;
-
+					boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+					
 					if (boardScore > alpha) {
-						numOfSuccessfulZWS--;
-						boardScore = -PVS(depth - 1, -beta, -alpha, true);
+						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
 					}
 				}
 				Search.board.unmakeMove(move, restoreData);
-				firstMove = false;
+				movesMade++;
 
 				// At the end of every move, check to see if there is a cancellation pending; if so then return null 
 				// A null value will signify that the search for that depth wasn't completed
@@ -252,7 +246,7 @@ namespace Chess_Engine {
 			// If score was greater than alpha but less than beta, then it is a PV node and we can store the information
 			// Otherwise, we failed low and return alpha without storing any information
 		    if (raisedAlpha == true) {
-			    TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMoves[0]);
+			    TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMoves[0]);
 			    UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 				UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
 
@@ -277,12 +271,12 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		public static int PVS(int depth, int alpha, int beta, bool doNull) {
+		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull, int nodeType) {
 		    
 			// At the leaf nodes
 			if (depth == 0) {
 
-				return quiescence(depth, alpha, beta);
+				return quiescence(depth, ply, alpha, beta, nodeType);
 
 			} else {
 				// return 0 if repetition or draw
@@ -302,11 +296,11 @@ namespace Chess_Engine {
 					// If it is a CUT node, see if this lower bound is greater than beta (if so return beta)
 					// If it is an ALL node, see if this upper bound is less than alpha (is so return alpha)
 					// Using a fail-hard here so need those extra conditions instead of just returning the score
-					if (entry.flag == Constants.PV_NODE) {
+					if (entry.flag == Constants.EXACT) {
 						int evaluationScore = entry.evaluationScore;
 
 						if (evaluationScore == -Constants.CHECKMATE) {
-							return -Constants.CHECKMATE + (initialDepth - depth);
+							return -Constants.CHECKMATE + ply;
 						} else if (evaluationScore == Constants.STALEMATE) {
 							return Constants.STALEMATE;
 						}
@@ -316,9 +310,9 @@ namespace Chess_Engine {
 							// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
 							// Moves in the killer table shouldn't have a score, so don't need to take it out
 							int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[initialDepth - depth, 0])) {
-								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
-								Search.killerTable[initialDepth - depth, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
+							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[ply, 0])) {
+								Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
+								Search.killerTable[ply, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
 							}
 							return beta;
 						} else if (evaluationScore <= alpha) {
@@ -326,21 +320,21 @@ namespace Chess_Engine {
 						} else if (evaluationScore > alpha && evaluationScore < beta) {
 							return evaluationScore;
 						}
-					} else if (entry.flag == Constants.CUT_NODE) {
+					} else if (entry.flag == Constants.L_BOUND) {
 						int evaluationScore = entry.evaluationScore;
 						if (evaluationScore >= beta) {
 
 							// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
 							// Moves in the killer table shouldn't have a score, so don't need to take it out
 							int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[initialDepth - depth, 0])) {
-								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
-								Search.killerTable[initialDepth - depth, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
+							if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[ply, 0])) {
+								Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
+								Search.killerTable[ply, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
 							}
 
 							return beta;
 						}
-					} else if (entry.flag == Constants.ALL_NODE) {
+					} else if (entry.flag == Constants.U_BOUND) {
 						int evaluationScore = entry.evaluationScore;
 						if (evaluationScore <= alpha) {
 							return alpha;
@@ -354,9 +348,9 @@ namespace Chess_Engine {
 				// Do only if side to move is not in check (otherwise next move would lead to king capture)
 				// Do only if depth is greater than or equal to (depth reduction + 1), otherwise we will get PVS called with depth = -1
 				// DO only if it is a non-PV node (if PV node then beta != alpha + 1, if non-PV node then beta == alpha + 1)
-				if (doNull == true && Search.board.isInCheck() == false && depth >= Constants.R + 1 && (beta == alpha + 1)) {
+				if (doNull == true && Search.board.isInCheck() == false && depth >= Constants.R + 1 && nodeType != Constants.PV_NODE) {
 					Search.board.makeNullMove();
-					int nullScore = -PVS(depth - 1 - Constants.R , - beta, -beta + 1, false);
+					int nullScore = -PVS(depth - 1 - Constants.R, ply + 1 + Constants.R, - beta, -beta + 1, false, nodeType);
 					Search.board.unmakeNullMove();
 
 					// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
@@ -374,11 +368,10 @@ namespace Chess_Engine {
 				
 
 				stateVariables restoreData = new stateVariables(Search.board);
-				movePicker mPicker = new movePicker(Search.board, depth, Constants.ALL_MOVES);
+				movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.ALL_MOVES);
 				int bestMove = 0;
-				int legalMovesMade = 0;
+				int movesMade = 0;
 				int boardScore = 0;
-				bool firstMove = true;
 				// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
 				bool raisedAlpha = false;
 
@@ -394,22 +387,21 @@ namespace Chess_Engine {
 					Search.board.makeMove(move);
 
 					// If it is the first move, search with a full window
-					if (firstMove) {
-						boardScore = -PVS(depth - 1, -beta, -alpha, true);
+					if (movesMade == 0) {
+						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
 					}
 						// Otherwise, search with a zero window search
 					else {
-						boardScore = -PVS(depth - 1, -alpha - 1, -alpha, true);
-						numOfSuccessfulZWS++;
-
+						boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+						
 						// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
 						// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
 						if (boardScore > alpha) {
-							numOfSuccessfulZWS--;
-							boardScore = -PVS(depth - 1, -beta, -alpha, true);
+							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
 						}
 					}
 					Search.board.unmakeMove(move, restoreData);
+					movesMade++;
 
 					// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
 					if ((nodesVisited & 2047) == 0) {
@@ -417,7 +409,6 @@ namespace Chess_Engine {
 							return 0;
 						}
 					}
-					legalMovesMade++;
 					nodesVisited++;
 
 					if (boardScore > alpha) {
@@ -427,11 +418,11 @@ namespace Chess_Engine {
 						if (boardScore >= beta) {
 
 							// Store the value in the transposition table
-							TTEntry newEntry = new TTEntry(zobristKey, Constants.CUT_NODE, depth, beta, move);
+							TTEntry newEntry = new TTEntry(zobristKey, Constants.L_BOUND, depth, beta, move);
 							UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 
 							// Increment fail high first if first move produced cutoff, otherwise increment fail high
-							if (firstMove == true) {
+							if (movesMade == 1) {
 								failHighFirst++;
 							} else {
 								failHigh++;
@@ -439,9 +430,9 @@ namespace Chess_Engine {
 							// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
 							// Moves in the killer table shouldn't have a score, so don't need to take it out
 							int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-							if ((flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (move != Search.killerTable[initialDepth - depth, 0])) {
-								Search.killerTable[initialDepth - depth, 1] = Search.killerTable[initialDepth - depth, 0];
-								Search.killerTable[initialDepth - depth, 0] = (move & ~Constants.MOVE_SCORE_MASK);
+							if ((flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (move != Search.killerTable[ply, 0])) {
+								Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
+								Search.killerTable[ply, 0] = (move & ~Constants.MOVE_SCORE_MASK);
 							}
 
 							// return beta and not best score (fail-hard)
@@ -451,30 +442,29 @@ namespace Chess_Engine {
 						bestMove = move;
 						alpha = boardScore;
 					}
-					firstMove = false;
 				}
 
 				// If number of legal moves made is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
-				if (legalMovesMade == 0) {
+				if (movesMade == 0) {
 					if (Search.board.isInCheck() == true) {
 						// Returns the mate score - number of moves made from root to mate 
 						// Ensures that checkmates closer to the root will get a higher score, so that they will be played
-						TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, -Constants.CHECKMATE);
+						TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, -Constants.CHECKMATE);
 						UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
-						return -Constants.CHECKMATE + (initialDepth - depth);
+						return -Constants.CHECKMATE + ply;
 					} else {
-						TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, Constants.STALEMATE);
+						TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, Constants.STALEMATE);
 						UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 						return Constants.STALEMATE;
 					}
 				}
 
 				if (raisedAlpha == true) {
-					TTEntry newEntry = new TTEntry(zobristKey, Constants.PV_NODE, depth, alpha, bestMove);
+					TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMove);
 					UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 					UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
 				} else if (raisedAlpha == false) {
-					TTEntry newEntry = new TTEntry(zobristKey, Constants.ALL_NODE, depth, alpha);
+					TTEntry newEntry = new TTEntry(zobristKey, Constants.U_BOUND, depth, alpha);
 					UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 				}
 				return alpha; //return alpha whether it was raised or not (fail-hard)	
@@ -487,7 +477,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		private static int quiescence(int depth, int alpha, int beta) {
+		private static int quiescence(int depth, int ply, int alpha, int beta, int nodeType) {
 
 			// Probe the hash table, and if a match is found then return the score
 			// (validate the key to prevent type 2 collision)
@@ -518,8 +508,8 @@ namespace Chess_Engine {
 			}
 
 			stateVariables restoreData = new stateVariables(Search.board);
-			movePicker mPicker = new movePicker(Search.board, depth, Constants.CAP_AND_QUEEN_PROMO);
-			int legalMovesMade = 0;
+			movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.CAP_AND_QUEEN_PROMO);
+			int movesMade = 0;
 			int boardScore = 0;
 			bool firstMove = true;
 			
@@ -537,9 +527,10 @@ namespace Chess_Engine {
 
 				Search.board.makeMove(move);
 
-				boardScore = -quiescence(depth - 1, -beta, -alpha);
+				boardScore = -quiescence(depth - 1, ply + 1, -beta, -alpha, nodeType);
 
 				Search.board.unmakeMove(move, restoreData);
+				movesMade++;
 
 				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
 				if ((nodesVisited & 2047) == 0) {
@@ -547,7 +538,6 @@ namespace Chess_Engine {
 						return 0;
 					}
 				}
-				legalMovesMade++;
 				nodesVisited++;
 
 				if (boardScore > alpha) {
@@ -572,9 +562,9 @@ namespace Chess_Engine {
 			}
 
 			// If number of legal moves made is 0, that means there is no legal moves, which means the side to move is either in checkmate or stalemate
-			if (legalMovesMade == 0) {
+			if (movesMade == 0) {
 				if (Search.board.isInCheck() == true) {
-					return -Constants.CHECKMATE + (initialDepth - depth);
+					return -Constants.CHECKMATE + ply;
 				}
 			}
 			return alpha; //return alpha whether it was raised or not (fail-hard)	 
@@ -599,14 +589,8 @@ namespace Chess_Engine {
 		    }  
 			// If time control is on and the time has run out, then set the stop event.Cancel (or "e") to true
 			// Return true to the search functions so they can exit
-			else if (info.timeControl == true && DateTime.Now > Search.finishTime) { 
+			else if (info.timeControl == true && finishTimer.ElapsedMilliseconds> Search.moveTime) { 
 				stopEvent.Cancel = true;
-			    return true;
-		    } 
-			// If the depth limit is on and the engine is trying to search deeper than the limit, set the stop event.Cancel (or "e") to true
-			// Return true to the search functions so they can exit
-			else if (info.depthLimit == true && initialDepth > info.depth) {
-			    stopEvent.Cancel = true;
 			    return true;
 		    } 
 			// If nothing is causing a cancellation, then return false to the search functions so they can keep searching
@@ -633,9 +617,10 @@ namespace Chess_Engine {
 		internal int index = 0;
 		private int depth;
 		private int flag;
+		private int ply;
 
 		// Constructor
-		public movePicker(Board inputBoard, int depth, int flag) {
+		public movePicker(Board inputBoard, int depth, int ply, int flag) {
 			this.board = inputBoard;
 			this.restoreData = new stateVariables(inputBoard);
 			this.depth = depth;
@@ -678,15 +663,15 @@ namespace Chess_Engine {
 					
 					pseudoLegalMoveList[i] |= (Constants.HASH_MOVE_SCORE << Constants.MOVE_SCORE_SHIFT);
 					break;
-				} else if (move == Search.killerTable[Search.initialDepth - depth, 0] && this.flag == Constants.ALL_MOVES) {
+				} else if (move == Search.killerTable[ply, 0] && this.flag == Constants.ALL_MOVES) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
-					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 0] & Constants.MOVE_SCORE_MASK) == 0);
-					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 0]) != hashMove);
+					Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
+					Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
 					break;
-				} else if (move == Search.killerTable[Search.initialDepth - depth, 1] && this.flag == Constants.ALL_MOVES) {
+				} else if (move == Search.killerTable[ply, 1] && this.flag == Constants.ALL_MOVES) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
-					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 1] & Constants.MOVE_SCORE_MASK) == 0);
-					Debug.Assert((Search.killerTable[Search.initialDepth - depth, 1]) != hashMove);
+					Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
+					Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
 					break;
 				}
 			}

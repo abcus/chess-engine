@@ -908,9 +908,12 @@ namespace Chess_Engine {
 		public const int TT_SIZE = 15485867;
 	    public const int PV_TT_SIZE = 1000003;
 
+	    public const int EXACT = 1;
+	    public const int L_BOUND = 2;
+	    public const int U_BOUND = 3;
+
 	    public const int PV_NODE = 1;
-	    public const int CUT_NODE = 2;
-	    public const int ALL_NODE = 3;
+	    public const int NON_PV_NODE = 2;
 
 		public static ulong[,] pieceZobrist = new ulong[13,64];
 		public static ulong[] enPassantZobrist = new ulong[64];

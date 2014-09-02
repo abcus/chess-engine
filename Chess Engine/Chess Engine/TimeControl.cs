@@ -7,14 +7,11 @@ using System.Threading.Tasks;
 namespace Chess_Engine {
 	public static class TimeControl {
 
-		public static DateTime getFinishTime(SearchInfo info) {
-			DateTime finishTime = new DateTime();
-
+		public static int getFinishTime(SearchInfo info) {
+			
 			if (info.moveTime != -1) {
-				int moveTime = info.moveTime - 50;
-				Console.WriteLine(moveTime);
-				finishTime = DateTime.Now.AddMilliseconds(moveTime);
-				return finishTime;
+				int moveTime = info.moveTime;
+				return moveTime;
 			}
 			if (info.timeLeft != -1) {
 				int moveTime = Math.Max((info.timeLeft / info.movesToGo - 50), 0);
@@ -24,11 +21,9 @@ namespace Chess_Engine {
 				if (info.increment != 0) {
 					moveTime += info.increment;
 				}
-				Console.WriteLine(moveTime);
-				finishTime = DateTime.Now.AddMilliseconds(moveTime);
-				return finishTime;
+				return moveTime;
 			}
-			return finishTime;
+			return 0;
 		}
 	}
 }
