@@ -191,10 +191,7 @@ namespace Chess_Engine {
 			ulong destinationSquareBitboard = (0x1UL << destinationSquare);
 
             // Sets the board's instance variables
-            // sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
-            this.sideToMove ^= 1;
-	        this.zobristKey ^= Constants.sideToMoveZobrist[0];
-
+            
             // If the move is anything but a double pawn push, sets the en passant square bitboard to 0x0UL;
 		    if (flag != Constants.DOUBLE_PAWN_PUSH && this.enPassantSquare != 0x0UL) {
 			    zobristKey ^= Constants.enPassantZobrist[Constants.findFirstSet(this.enPassantSquare)];
@@ -276,6 +273,10 @@ namespace Chess_Engine {
 	        } if (flag == Constants.QUIET_MOVE && (pieceMoved == Constants.WHITE_PAWN || pieceMoved == Constants.BLACK_PAWN)) {
 		        this.fiftyMoveRule = 0;
 	        }
+
+			// sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
+			this.sideToMove ^= 1;
+			this.zobristKey ^= Constants.sideToMoveZobrist[0];
 
             // Updates the piece count and material fields
             if (flag == Constants.CAPTURE) {

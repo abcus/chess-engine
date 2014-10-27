@@ -368,21 +368,19 @@ namespace Chess_Engine {
         //Draws the board on the console
         public static void drawBoard(Board inputBoard) {
 
-            //gets the bitboards from the board object
-            
-            ulong wPawn = inputBoard.arrayOfBitboards[1];
-			ulong wKnight = inputBoard.arrayOfBitboards[2];
-			ulong wBishop = inputBoard.arrayOfBitboards[3];
-			ulong wRook = inputBoard.arrayOfBitboards[4];
-			ulong wQueen = inputBoard.arrayOfBitboards[5];
-			ulong wKing = inputBoard.arrayOfBitboards[6];
+            //gets the piece array from the board object
+	        int[] pieceArray = inputBoard.pieceArray;
+			int sideToMove = inputBoard.sideToMove;
+			int whiteShortCastleRights = inputBoard.whiteShortCastleRights;
+			int whiteLongCastleRights = inputBoard.whiteLongCastleRights;
+			int blackShortCastleRights = inputBoard.blackShortCastleRights;
+			int blackLongCastleRights = inputBoard.blackLongCastleRights;
+			ulong enPassantSquareBitboard = inputBoard.enPassantSquare;
+			int fullMoveNumber = inputBoard.fullMoveNumber;
+			int fiftyMoveRule = inputBoard.fiftyMoveRule;
+			int repetitionOfPosition = inputBoard.getRepetitionNumber();
+			string FEN_String = "";
 
-			ulong bPawn = inputBoard.arrayOfBitboards[7];
-			ulong bKnight = inputBoard.arrayOfBitboards[8];
-			ulong bBishop = inputBoard.arrayOfBitboards[9];
-			ulong bRook = inputBoard.arrayOfBitboards[10];
-			ulong bQueen = inputBoard.arrayOfBitboards[11];
-			ulong bKing = inputBoard.arrayOfBitboards[12];
 
             //creates a new 8x8 array of String and sets it all to spaces
             string[,] chessBoard = new string[8, 8];
@@ -390,37 +388,138 @@ namespace Chess_Engine {
                 chessBoard[i / 8, i % 8] = "   ";
             }
 
-            //Goes through each of the bitboards; if they have a "1" then it sets the appropriate element in the array to the appropriate piece
-            //Note that the array goes from A8 to H1
-            for (int i = 0; i < 64; i++) {
-                if (((wPawn >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " P ";
-                } if (((wKnight >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " N ";
-                } if (((wBishop >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " B ";
-                } if (((wRook >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " R ";
-                } if (((wQueen >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " Q ";
-                } if (((wKing >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "(K)";
-                } if (((bPawn >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " p ";
-                } if (((bKnight >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " n ";
-                } if (((bBishop >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " b ";
-                } if (((bRook >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " r ";
-                } if (((bQueen >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = " q ";
-                } if (((bKing >> i) & 1L) == 1) {
-                    chessBoard[7 - (i / 8), 7 - (i % 8)] = "(k)";
-                }
-            }
+            //Goes through each element of the piece array and sets the corresponding element in the chess board array to the proper piece
+            //Note that the chess board array goes from A8 to H1
+	        for (int i = 0; i < 64; i+= 8) {
+		        for (int j = 0; j < 8; j++) {
+			        switch (pieceArray[i + j]) {
+						case Constants.WHITE_PAWN: chessBoard[7 - (i / 8), (7 - j)] = " P "; break;
+						case Constants.WHITE_KNIGHT: chessBoard[7 - (i / 8), (7 - j)] = " N "; break;
+						case Constants.WHITE_BISHOP: chessBoard[7 - (i / 8), (7 - j)] = " B "; break;
+						case Constants.WHITE_ROOK: chessBoard[7 - (i / 8), (7 - j)] = " R "; break;
+						case Constants.WHITE_QUEEN: chessBoard[7 - (i / 8), (7 - j)] = " Q "; break;
+						case Constants.WHITE_KING: chessBoard[7 - (i / 8), (7 - j)] = "(K)"; break;
+						case Constants.BLACK_PAWN: chessBoard[7 - (i / 8), (7 - j)] = " p "; break;
+						case Constants.BLACK_KNIGHT: chessBoard[7 - (i / 8), (7 - j)] = " n "; break;
+						case Constants.BLACK_BISHOP: chessBoard[7 - (i / 8), (7 - j)] = " b "; break;
+						case Constants.BLACK_ROOK: chessBoard[7 - (i / 8), (7 - j)] = " r "; break;
+						case Constants.BLACK_QUEEN: chessBoard[7 - (i / 8), (7 - j)] = " q "; break;
+						case Constants.BLACK_KING: chessBoard[7 - (i / 8), (7 - j)] = "(k)"; break;
+			        }
+		        }
+	        }
 
-            //Goes through the 8x8 array and prints its contents
+			//Goes through each element of the chess board array to build the FEN string
+	        for (int i = 56; i >= 0; i -= 8) {
+
+				int emptyCounter = 0;
+				
+				for (int j = 7; j >= 0; j--) {
+
+			        switch (pieceArray[i + j]) {
+						case Constants.WHITE_PAWN:
+					        FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+					        emptyCounter = 0;
+							FEN_String += "P"; 
+							break;
+						case Constants.WHITE_KNIGHT:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "N"; 
+							break;
+						case Constants.WHITE_BISHOP:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "B";
+							break;
+						case Constants.WHITE_ROOK:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "R";
+							break;
+						case Constants.WHITE_QUEEN:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "Q";
+							break;
+						case Constants.WHITE_KING:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "K";
+							break;
+						case Constants.BLACK_PAWN:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "p"; 
+							break;
+						case Constants.BLACK_KNIGHT:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "n";
+							break;
+						case Constants.BLACK_BISHOP:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "b";
+							break;
+						case Constants.BLACK_ROOK:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "r"; 
+							break;
+						case Constants.BLACK_QUEEN:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "q"; 
+							break;
+						case Constants.BLACK_KING:
+							FEN_String += emptyCounter != 0 ? Convert.ToString(emptyCounter) : "";
+							emptyCounter = 0;
+							FEN_String += "k"; 
+							break;
+						case Constants.EMPTY:
+							emptyCounter++;
+							break;
+					}
+					//If we have reached the H file, add on the number of empty spaces (if any), along with the slash
+			        if (j == 0) {
+
+				        FEN_String += (emptyCounter != 0) ? Convert.ToString(emptyCounter) : "";
+				        FEN_String += (i != 0) ? "/" : "";
+			        }
+		        }     
+	        }
+			// adds the side to move to the FEN string
+	        FEN_String += " ";
+			FEN_String += (sideToMove == Constants.WHITE) ? "w" : "b";
+
+			// adds the castling rights to the FEN string
+	        if (whiteLongCastleRights == 1 || whiteLongCastleRights == 1 || blackShortCastleRights == 1 || blackLongCastleRights == 1) {
+		        FEN_String += " ";
+	        }
+			FEN_String += (whiteShortCastleRights == 1) ? "K" : "";
+	        FEN_String += (whiteLongCastleRights == 1) ? "Q" : "";
+	        FEN_String += (blackShortCastleRights == 1) ? "k" : "";
+	        FEN_String += (blackLongCastleRights == 1) ? "q" : "";
+
+			// adds the en passant square to the FEN string
+	        FEN_String += " ";
+	        if (enPassantSquareBitboard != 0) {
+		        int enPassantIndex = Constants.bitScan(enPassantSquareBitboard).ElementAt(0);
+		        string firstChar = char.ConvertFromUtf32((int) ('h' - (enPassantIndex%8))).ToString();
+		        string secondChar = ((enPassantIndex/8) + 1).ToString();
+		        FEN_String += (firstChar + secondChar);
+	        } else {
+		        FEN_String += "-";
+	        }
+
+			// adds the fifty move rule clock to the FEN string
+	        FEN_String += " " + fiftyMoveRule;
+
+			// adds the fullmove number to the string
+	        FEN_String += " " + fullMoveNumber;
+
+            //Goes through the 8x8 chessboard array and prints its contents
             for (int i = 0; i < 8; i++) {
 
                 if (i == 0) {
@@ -445,28 +544,19 @@ namespace Chess_Engine {
             //Prints out the side to move, castling rights, en-pessant square, halfmoves since capture/pawn advance, and fullmove number
 
             //side to move
-            int sideToMove = inputBoard.sideToMove;
             String colour = (sideToMove == Constants.WHITE) ? "WHITE" : "BLACK";
             Console.WriteLine("Side to move: " + colour);
 
             //castle rights
-	        int whiteShortCastleRights = inputBoard.whiteShortCastleRights;
-			int whiteLongCastleRights = inputBoard.whiteLongCastleRights;
-			int blackShortCastleRights = inputBoard.blackShortCastleRights;
-			int blackLongCastleRights = inputBoard.blackLongCastleRights;
-
-            Console.WriteLine("White Short Castle Rights: " + whiteShortCastleRights);
+			Console.WriteLine("White Short Castle Rights: " + whiteShortCastleRights);
             Console.WriteLine("White Long Castle Rights: " + whiteLongCastleRights);
             Console.WriteLine("Black Short Castle Rights: " + blackShortCastleRights);
             Console.WriteLine("Black Long Castle Rights: " + blackLongCastleRights);
 
             //en passant square
-            ulong enPassantSquareBitboard = inputBoard.enPassantSquare;
-
-
             if (enPassantSquareBitboard != 0) {
                 int enPassantIndex = Constants.bitScan(enPassantSquareBitboard).ElementAt(0);
-                string firstChar = char.ConvertFromUtf32((int)('H' - (enPassantIndex % 8))).ToString();
+                string firstChar = char.ConvertFromUtf32((int)('h' - (enPassantIndex % 8))).ToString();
                 string secondChar = ((enPassantIndex / 8) + 1).ToString();
                 Console.WriteLine("En Passant Square: " + firstChar + secondChar);
             } else if (enPassantSquareBitboard == 0) {
@@ -476,14 +566,8 @@ namespace Chess_Engine {
 
             //prints move data (fullmove number, half-moves since last pawn push/capture, repetitions of position)
             //If no move number data or halfmove clock data, then prints N/A
-            int fullMoveNumber = inputBoard.fullMoveNumber;
             Console.WriteLine("Fullmove number: " + fullMoveNumber);
-
-	        int fiftyMoveRule = inputBoard.fiftyMoveRule;
-            Console.WriteLine("Half moves since last pawn push/capture: " + fiftyMoveRule);
-
-	        int repetitionOfPosition = inputBoard.getRepetitionNumber();
-			
+			Console.WriteLine("Half moves since last pawn push/capture: " + fiftyMoveRule);
 			Console.WriteLine("Repetitions of this position: " + repetitionOfPosition);
 	        if (repetitionOfPosition >= 3) {
 		        Console.WriteLine("Draw by threefold repetition");
@@ -491,6 +575,7 @@ namespace Chess_Engine {
 
             Console.WriteLine("Zobrist key: " + inputBoard.zobristKey.ToString("x"));
 			Console.WriteLine("Polyglot key: " + OpeningBook.calculatePolyglotKey(inputBoard).ToString("x"));
+			Console.WriteLine("FEN String: " + FEN_String);
 			Console.WriteLine("");
 
             inputBoard.kingInCheckTest(inputBoard.sideToMove);
