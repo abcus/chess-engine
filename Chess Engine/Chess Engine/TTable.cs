@@ -14,6 +14,7 @@ namespace Chess_Engine {
 		internal TTEntry[] hashTable;
 		internal TTEntry[] PVTable;
 
+
 		// Constructor
 		public TTable() {
 			this.hashTable = new TTEntry[Constants.TT_SIZE];

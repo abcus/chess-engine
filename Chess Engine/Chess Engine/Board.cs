@@ -2265,9 +2265,10 @@ namespace Chess_Engine {
 
 		public int[] generateQuiescencelMoves(int flag) {
 
+			// if the side to move is white
 			if (this.sideToMove == Constants.WHITE) {
 
-				//Gets the indices of all of the pieces
+				// Gets the bitboard of all of the white pieces 
 				Bitboard tempWhitePawnBitboard = this.arrayOfBitboards[Constants.WHITE_PAWN];
 				Bitboard tempWhiteKnightBitboard = this.arrayOfBitboards[Constants.WHITE_KNIGHT];
 				Bitboard tempWhiteBishopBitboard = this.arrayOfBitboards[Constants.WHITE_BISHOP];
@@ -2275,33 +2276,38 @@ namespace Chess_Engine {
 				Bitboard tempWhiteQueenBitboard = this.arrayOfBitboards[Constants.WHITE_QUEEN];
 				Bitboard tempWhiteKingBitboard = this.arrayOfBitboards[Constants.WHITE_KING];
 				Bitboard tempAllPieceBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
+				
+				//Gets the bitboard of the black bishop, rook, queen, and king (for generating checks)
 				Bitboard tempBlackRookAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
 				Bitboard tempBlackBishopAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_BISHOP] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
 				Bitboard blackKingBitboard = this.arrayOfBitboards[Constants.BLACK_KING];
 				int whiteKingIndex = Constants.findFirstSet(tempWhiteKingBitboard);
 				int blackKingIndex = Constants.findFirstSet(blackKingBitboard);
 
+				// declares an array to hold the almost legal moves
 				int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
 				int index = 0;
 
+				// Calculates the squares that a white rook could stand on to check the black king
 				ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[blackKingIndex];
 				int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[blackKingIndex]) >> Constants.rookMagicShiftNumber[blackKingIndex]);
 				ulong rookCheckSquares = Constants.rookMoves[blackKingIndex][rookMoveIndex];
 
-				// Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
+				//  Calculates the squares that a white bishop could stand on to check the black king
 				ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[blackKingIndex];
 				int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[blackKingIndex]) >> Constants.bishopMagicShiftNumber[blackKingIndex]);
 				ulong bishopCheckSquares = Constants.bishopMoves[blackKingIndex][bishopMoveIndex];
 
+				// Calculates the squares that a white queen could stand on to check the black king
 				ulong queenCheckSquares = rookCheckSquares | bishopCheckSquares;
 
-				// Looks up knight attack set from square, and intersects with opponent's knight bitboard
+				// Calculates the squares that a white knight could stand on to check the black king
 				ulong knightCheckSquares = Constants.knightMoves[blackKingIndex];
 
-				// Looks up white pawn attack set from square, and intersects with opponent's pawn bitboard
+				// Calculates the squares that a white pawn could stand on to check the black king
 				ulong pawnCheckSquares = Constants.blackCapturesAndCapturePromotions[blackKingIndex];
 
-				// Finds rook moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
+				// Finds rook moves from the white king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
 				Bitboard potentiallyPinnedPiecesByRook = ((this.generateRookMovesFromIndex(tempAllPieceBitboard, whiteKingIndex)) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 
 				// Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again

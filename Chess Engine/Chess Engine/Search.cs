@@ -90,7 +90,7 @@ namespace Chess_Engine {
 			
 			// If there is a book move, then return it
 			// Otherwise, start iterative deepening
-			if (bookMove != 0) {
+			if (bookMove < 0) {//!= 0) {
 				UCI_IO.plyOutOfBook = 0;
 				result.move = bookMove;
 			} else {
@@ -179,7 +179,7 @@ namespace Chess_Engine {
 				return tableResult;
 			}
 
-			movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.ALL_MOVES);
+			movePicker mPicker = new movePicker(Search.board, depth, ply);
 		    int movesMade = 0;
 			List<int> bestMoves = new List<int>();
 			stateVariables restoreData = new stateVariables(Search.board);
@@ -368,7 +368,7 @@ namespace Chess_Engine {
 				
 
 				stateVariables restoreData = new stateVariables(Search.board);
-				movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.ALL_MOVES);
+				movePicker mPicker = new movePicker(Search.board, depth, ply);
 				int bestMove = 0;
 				int movesMade = 0;
 				int boardScore = 0;
@@ -508,7 +508,7 @@ namespace Chess_Engine {
 			}
 
 			stateVariables restoreData = new stateVariables(Search.board);
-			movePicker mPicker = new movePicker(Search.board, depth, ply, Constants.CAP_AND_QUEEN_PROMO);
+			movePickerQuiescence mPickerQuiescence = new movePickerQuiescence(Search.board, depth, ply, Constants.CAP_AND_QUEEN_PROMO);
 			int movesMade = 0;
 			int boardScore = 0;
 			bool firstMove = true;
@@ -518,7 +518,7 @@ namespace Chess_Engine {
 
 			// Loops through all moves
 			while (true) {
-				int move = mPicker.getNextMove();
+				int move = mPickerQuiescence.getNextMove();
 
 				// If the move picker returns a 0, then no more moves left, so break out of loop
 				if (move == 0) {
@@ -616,11 +616,10 @@ namespace Chess_Engine {
 		internal int[] pseudoLegalMoveList;
 		internal int index = 0;
 		private int depth;
-		private int flag;
 		private int ply;
 
 		// Constructor
-		public movePicker(Board inputBoard, int depth, int ply, int flag) {
+		public movePicker(Board inputBoard, int depth, int ply) {
 			this.board = inputBoard;
 			this.restoreData = new stateVariables(inputBoard);
 			this.depth = depth;
@@ -628,11 +627,7 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
-				if (flag == Constants.ALL_MOVES) {
-					this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
-				} else if (flag == Constants.CAP_AND_QUEEN_PROMO) {
-					this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.CAP_AND_QUEEN_PROMO);
-				}
+				this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
@@ -663,12 +658,12 @@ namespace Chess_Engine {
 					
 					pseudoLegalMoveList[i] |= (Constants.HASH_MOVE_SCORE << Constants.MOVE_SCORE_SHIFT);
 					break;
-				} else if (move == Search.killerTable[ply, 0] && this.flag == Constants.ALL_MOVES) {
+				} else if (move == Search.killerTable[ply, 0]) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
 					Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
 					Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
 					break;
-				} else if (move == Search.killerTable[ply, 1] && this.flag == Constants.ALL_MOVES) {
+				} else if (move == Search.killerTable[ply, 1]) {
 					pseudoLegalMoveList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
 					Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
 					Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
@@ -699,6 +694,9 @@ namespace Chess_Engine {
 						tempIndex ++;
 					}
 
+					// Checks to see what piece moved, and what type of move was made
+					// If the move is a king move or en-passant capture, then it does a legality check before returning the move
+					// Otherwise it just returns the move
 					move = pseudoLegalMoveList[index];
 					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
 					int pieceMoved = (this.board.pieceArray[startSquare]);
@@ -729,6 +727,95 @@ namespace Chess_Engine {
 	// Ordering of moves are: hash moves (PV moves or refutation moves), good captures (SEE), promotions
 	// killer moves (that caused beta-cutoffs at different positions at the same depth), history moves (that raised alpha)
 	// Losing captures, all other moves
+
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	// MOVE PICKER CLASS
+	// Selects the move with the highest score and feeds it to the search function
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	//--------------------------------------------------------------------------------------------------------------------------------------------
+	public sealed class movePickerQuiescence {
+
+		internal Board board;
+		internal stateVariables restoreData;
+
+		internal int[] pseudoLegalMoveList;
+		internal int index = 0;
+		private int depth;
+		private int flag;
+		private int ply;
+
+		// Constructor
+		public movePickerQuiescence(Board inputBoard, int depth, int ply, int flag) {
+			this.board = inputBoard;
+			this.restoreData = new stateVariables(inputBoard);
+			this.depth = depth;
+
+			// If the side to move is not in check, then get list of moves from the almost legal move generator
+			// Otherwise, get list of moves from the check evasion generator
+			if (inputBoard.isInCheck() == false) {
+				this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.CAP_AND_QUEEN_PROMO);
+			} else {
+				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
+			}
+		}
+
+		public int getNextMove() {
+
+			while (true) {
+				int move = pseudoLegalMoveList[index];
+
+				if (move == 0) {
+					return 0;
+				} else if (move != 0) {
+
+					// Fix this later to swap only at the end of an interation
+					int bestMoveScore = (move & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT;
+					int tempIndex = index + 1;
+					while (pseudoLegalMoveList[tempIndex] != 0) {
+						if (((pseudoLegalMoveList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) > bestMoveScore) {
+							bestMoveScore = ((pseudoLegalMoveList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+							int bestMove = pseudoLegalMoveList[tempIndex];
+							pseudoLegalMoveList[tempIndex] = pseudoLegalMoveList[index];
+							pseudoLegalMoveList[index] = bestMove;
+						}
+						tempIndex++;
+					}
+
+					// When not in check, we only want to consider good captures and capture promotions
+					// Thus if highest score is less than the score of a good capture/capture promotion, then break
+					if (pseudoLegalMoveList[index] >> Constants.MOVE_SCORE_SHIFT <= Constants.BAD_PROMOTION_CAPTURE_SCORE && board.isInCheck() == false) {
+						return 0;
+					}
+
+					// Checks to see what piece moved, and what type of move was made
+					// If the move is a king move or en-passant capture, then it does a legality check before returning the move
+					// Otherwise it just returns the move
+					move = pseudoLegalMoveList[index];
+					int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+					int pieceMoved = (this.board.pieceArray[startSquare]);
+					int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+					int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+
+					if (flag == Constants.EN_PASSANT_CAPTURE || pieceMoved == Constants.WHITE_KING || pieceMoved == Constants.BLACK_KING) {
+						this.board.makeMove(move);
+						if (this.board.isMoveLegal(sideToMove) == true) {
+							board.unmakeMove(move, restoreData);
+							index++;
+							return move;
+						} else {
+							board.unmakeMove(move, restoreData);
+							index++;
+						}
+					} else {
+						index++;
+						return move;
+					}
+				}
+			}
+		}
+	}
+
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
