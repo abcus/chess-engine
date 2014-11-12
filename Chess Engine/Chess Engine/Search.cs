@@ -627,7 +627,7 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.generateAlmostLegalMoves();
+				this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.ALL_MOVES);
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
@@ -730,7 +730,7 @@ namespace Chess_Engine {
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------
-	// MOVE PICKER CLASS
+	// QUIESCENCE MOVE PICKER CLASS
 	// Selects the move with the highest score and feeds it to the search function
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 	//--------------------------------------------------------------------------------------------------------------------------------------------

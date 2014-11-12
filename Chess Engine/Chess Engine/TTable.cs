@@ -75,9 +75,9 @@ namespace Chess_Engine {
 				int[] pseudoLegalMoveList;
 
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = cloneBoard.generateAlmostLegalMoves();
+					pseudoLegalMoveList = cloneBoard.generateQuiescencelMoves(Constants.ALL_MOVES);
 				} else {
-					pseudoLegalMoveList = cloneBoard.generateAlmostLegalMoves();
+					pseudoLegalMoveList = cloneBoard.generateQuiescencelMoves(Constants.ALL_MOVES);
 				}
 				for (int i = 0; i < pseudoLegalMoveList.Length; i++) {
 					if (move == (pseudoLegalMoveList[i] & ~Constants.MOVE_SCORE_MASK)) {

@@ -192,7 +192,7 @@ namespace Chess_Engine {
                     // Generates all pseudo legal moves from the position
                     int[] pseudoLegalMoveList = null;
                     if (position.isInCheck() == false) {
-                        pseudoLegalMoveList = position.generateAlmostLegalMoves(); 
+                        pseudoLegalMoveList = position.generateQuiescencelMoves(Constants.ALL_MOVES); 
                     } else {
                         pseudoLegalMoveList = position.checkEvasionGenerator();
                     }
