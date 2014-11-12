@@ -536,7 +536,7 @@ namespace Chess_Engine {
         // Have to test if the move is legal or not
         public static void printLegalMove(Board inputBoard)
         {
-            int[] moveList = inputBoard.generateQuiescencelMoves(Constants.ALL_MOVES);
+            int[] moveList = inputBoard.moveGenerator(Constants.ALL_MOVES);
 
             Console.WriteLine("Number of legal moves in this position: " + moveList.Length);
             int moveCount = 0;

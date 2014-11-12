@@ -938,11 +938,32 @@ namespace Chess_Engine {
 	    public const int KILLER_1_SCORE = 13;
 	    public const int KILLER_2_SCORE = 12;
 
-		// Quiescence search constants
-	    public const int CAP_AND_QUEEN_PROMO = 0;
-	    public const int QUIET_CHECK = 1;
-	    public const int QUIET_NO_CHECK = 2;
-	    public const int ALL_MOVES = 3;
+		// Move Generator Constants
+	    public const int CAPTURE_AND_CAPTURE_PROMO_MOVES = 0;
+	    public const int QUIET_QUEEN_PROMO_MOVES = 1;
+	    public const int QUIET_UNDER_PROMO_MOVES = 2;
+		public const int QUIET_CHECK_MOVES = 3;
+	    public const int QUIET_NO_CHECK_MOVES = 4;
+	    public const int ALL_MOVES = 5;
+	    
+
+		// Phased Move Generator Constants
+
+		// Capture, en-passant capture, promotion capture, and promotion
+	    public const int MAIN_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_PROMO_MOVES = 0;
+		// Quiet move, double pawn push, short castle, long castle
+	    public const int MAIN_QUIET_MOVES = 1;
+
+		// capture, en-passant capture, promotion capture, quiet queen promotion
+		//		missing is quiet move, double pawn push, short castle, long castle, and quiet underpromotion
+	    public const int QUIESCENT_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_QUEEN_PROMOTION = 2;
+
+		// capture, en-passant capture, promotion capture, and quiet queen promotion
+		// quite moves, double pawn push that give check
+		//		missing is quiet moves that don't give check, double pawn push that don't give check, short castle, long castle, and quiet underpromotion
+	    public const int QUIESCENT_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_QUEEN_PROMOTION_AND_QUIET_CHECK = 3;
+
+	    public const int PERFT_ALL_MOVES = 4;
 
 		// Null move depth reduction
 	    public const int R = 2;

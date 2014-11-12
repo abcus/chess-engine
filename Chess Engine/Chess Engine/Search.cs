@@ -508,7 +508,7 @@ namespace Chess_Engine {
 			}
 
 			stateVariables restoreData = new stateVariables(Search.board);
-			movePickerQuiescence mPickerQuiescence = new movePickerQuiescence(Search.board, depth, ply, Constants.CAP_AND_QUEEN_PROMO);
+			movePickerQuiescence mPickerQuiescence = new movePickerQuiescence(Search.board, depth, ply, Constants.QUIESCENT_CAPTURE_AND_QUIET_QUEEN_PROMOTION);
 			int movesMade = 0;
 			int boardScore = 0;
 			bool firstMove = true;
@@ -627,7 +627,7 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.ALL_MOVES);
+				this.pseudoLegalMoveList = inputBoard.moveGenerator(Constants.ALL_MOVES);
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
@@ -754,7 +754,7 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.generateQuiescencelMoves(Constants.CAP_AND_QUEEN_PROMO);
+				this.pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.QUIESCENT_CAPTURE_AND_QUIET_QUEEN_PROMOTION);
 			} else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
