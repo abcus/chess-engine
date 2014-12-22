@@ -559,8 +559,8 @@ namespace Chess_Engine {
 
 		//Extracts the piece moved from the integer that encodes the move
 		private static int getPieceMoved(int moveRepresentation, Board inputBoard) {
-			int startSquare = ((moveRepresentation & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
-			int pieceMoved = (inputBoard.pieceArray[startSquare]);
+			int destinationSquare = ((moveRepresentation & Constants.DESTINATION_SQUARE_MASK) >> Constants.DESTINATION_SQUARE_SHIFT);
+			int pieceMoved = (inputBoard.pieceArray[destinationSquare]);
 			return pieceMoved;
 		}
 		//Extracts the start square from the integer that encodes the move
@@ -712,7 +712,7 @@ namespace Chess_Engine {
                     moveString += "O-O-O";
                 }
             }
-            return moveString;
+			return moveString;
         }
     }
 }

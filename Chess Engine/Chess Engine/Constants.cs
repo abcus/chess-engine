@@ -939,34 +939,30 @@ namespace Chess_Engine {
 	    public const int KILLER_2_SCORE = 12;
 
 		// Move Generator Constants
-	    public const int CAPTURE_AND_CAPTURE_PROMO_MOVES = 0;
-	    public const int QUIET_QUEEN_PROMO_MOVES = 1;
-	    public const int QUIET_UNDER_PROMO_MOVES = 2;
-		public const int QUIET_CHECK_MOVES = 3;
-	    public const int QUIET_NO_CHECK_MOVES = 4;
-	    public const int ALL_MOVES = 5;
+		// For the main search:
+		//    First generate captures, en-passant captures, capture-promotions, and promotions
+		//    Then generate quiet moves, double pawn pushes, short castle, and long castle
+		// For the quiescence search:
+		//    For depth = 0, generate captures, en-passant captures, capture promotions, quiet queen promotions, and quiet checks (from quiet moves or double pawn pushes)
+		//    For depth < 0, generate captures, en-passant captures, capture promotions, and quiet queen promotions
+		//    Missing is quiet underpromotions, short castle, long castle, quiet no check (quiet move and double pawn push)
+		
+	    public const int MAIN_CAP_EPCAP_CAPPROMO_PROMO = 0;
+	    public const int MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS = 1;
+
+	    public const int QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK = 2;
+		public const int QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO = 3;
+		public const int QUIESCENCE_QUIETUNDERPROMO_SHORTCAS_LONGCAS_QUIETNOCHECK = 4;
 	    
-
-		// Phased Move Generator Constants
-
-		// Capture, en-passant capture, promotion capture, and promotion
-	    public const int MAIN_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_PROMO_MOVES = 0;
-		// Quiet move, double pawn push, short castle, long castle
-	    public const int MAIN_QUIET_MOVES = 1;
-
-		// capture, en-passant capture, promotion capture, quiet queen promotion
-		//		missing is quiet move, double pawn push, short castle, long castle, and quiet underpromotion
-	    public const int QUIESCENT_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_QUEEN_PROMOTION = 2;
-
-		// capture, en-passant capture, promotion capture, and quiet queen promotion
-		// quite moves, double pawn push that give check
-		//		missing is quiet moves that don't give check, double pawn push that don't give check, short castle, long castle, and quiet underpromotion
-	    public const int QUIESCENT_CAPTURE_AND_PROMO_CAPTURE_AND_QUIET_QUEEN_PROMOTION_AND_QUIET_CHECK = 3;
-
-	    public const int PERFT_ALL_MOVES = 4;
+		public const int ALL_MOVES = 5;
+	    
+		// Perft testing constants
+	    public const int PERFT_ALL_MOVES = 0;
+		public const int PERFT_MAIN = 1;
+		public const int PERFT_QUIESCENCE = 2;
 
 		// Null move depth reduction
-	    public const int R = 2;
+	    public const int R = 3;
 
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {

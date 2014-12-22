@@ -70,7 +70,10 @@ namespace Chess_Engine {
             } else if (string0 == "perftsuite") {
               Perft.perftSuite1(position);
               Perft.perftSuite2(position);
-            } 
+            } else if (string0 == "divide") {
+				Perft.perftDivide(position, Convert.ToInt32(stringList[1]));
+            }
+
 			// Prints the board along with other state variables (castling rights, etc.)
 			else if (string0 == "print") {
                 UCI_IO.drawBoard(position);

@@ -42,7 +42,7 @@ namespace Chess_Engine {
 				// If the node is not found in the TTable, then get a list of almost legal moves
 				int[] pseudoLegalMoveList = null;
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_ALL_MOVES);
+					pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_QUIESCENCE);
 				} else {
 					pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 				}
@@ -91,7 +91,7 @@ namespace Chess_Engine {
 				// If the result is not found in the transposition table, then get a list of almost legal moves
 				int[] pseudoLegalMoveList = null;
 				if (inputBoard.isInCheck() == false) {
-					pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_ALL_MOVES);
+					pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_QUIESCENCE);
 				} else {
 					pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 				}
@@ -126,36 +126,46 @@ namespace Chess_Engine {
 				return nodes;
 			}
 		}
-		/*
+		
 		public static void perftDivide(Board inputBoard, int depth) {
 
 			int[] pseudoLegalMoveList;
 			if (inputBoard.isInCheck() == false) {
-				pseudoLegalMoveList = inputBoard.generateListOfAlmostLegalMoves(); 
+				pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_QUIESCENCE); 
 			} else {
 				pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
 			int index = 0;
 
-			int count = 0;
-			int boardRestoreData = inputBoard.encodeBoardRestoreData();
+			stateVariables boardRestoreData = new stateVariables(inputBoard);
 
 			while (pseudoLegalMoveList[index] != 0) {
 
 				int move = pseudoLegalMoveList[index];
-				count++;
-				int pieceMoved = (move & Constants.PIECE_MOVED_MASK) >> 0;
+				int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+				int pieceMoved = (inputBoard.pieceArray[startSquare]);
 				int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+				int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+				
 
 				inputBoard.makeMove(move);
+
 				if (inputBoard.isMoveLegal(sideToMove) == true) {
-					Console.WriteLine(printMoveStringFromMoveRepresentation(move) + "\t" + perft(inputBoard, depth - 1));
+
+					if (depth > 1) {
+						Console.WriteLine(Test.printMoveStringFromMoveRepresentation(move, inputBoard) + "\t" + perft(inputBoard, depth - 1));
+					} else if (depth == 1) {
+						Console.WriteLine(Test.printMoveStringFromMoveRepresentation(move, inputBoard));
+					}
+					
 				}
+					
+				
 				inputBoard.unmakeMove(move, boardRestoreData);
 				index ++;
 			}
 		}
-		*/
+		
 		public static void printPerft(Board inputBoard, int depth) {
 			Stopwatch s = Stopwatch.StartNew();
 			int numberOfNodes = Perft.perftInit(inputBoard, depth);
