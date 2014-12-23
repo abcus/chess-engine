@@ -1597,7 +1597,8 @@ namespace Chess_Engine {
 				if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
 				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-					flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+					flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+					flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK];
 				} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK];
