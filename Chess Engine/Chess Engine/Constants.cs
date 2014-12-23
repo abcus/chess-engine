@@ -901,7 +901,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-	    public const int MAX_DEPTH = 11;
+	    public const int MAX_DEPTH = 64;
 
 	    public const int ASP_WINDOW = Constants.PAWN_VALUE_MG/4;
 
@@ -967,12 +967,12 @@ namespace Chess_Engine {
 		// Search phase constants
 	    public const int PHASE_HASH = 0;
 	    public const int PHASE_CAPTURE = 1;
-	    public const int PHASE_KILLER = 2;
-	    public const int PHASE_QUIET = 3;
-	    public const int PHASE_CHECK_EVADE = 4;
+	    public const int PHASE_KILLER_1 = 2;
+	    public const int PHASE_KILLER_2 = 3;
+	    public const int PHASE_QUIET = 4;
+	    public const int PHASE_CHECK_EVADE = 5;
 
-	    public const int PHASE_GENERATE = 6;
-
+	    
 		// Extension method that generates a random ulong
 	    public static UInt64 NextUInt64(this Random rnd) {
 		    var buffer = new byte[sizeof (UInt64)];

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
@@ -625,6 +626,7 @@ namespace Chess_Engine {
 		internal int hashMove = 0;
 		internal int killer1 = 0;
 		internal int killer2 = 0;
+		internal int[] tempKiller;
 
 		// Constructor
 		public movePicker(Board inputBoard, int depth, int ply) {
@@ -632,38 +634,43 @@ namespace Chess_Engine {
 			this.restoreData = new stateVariables(inputBoard);
 			this.depth = depth;
 			this.ply = ply;
+			this.tempKiller = board.moveGenerator(Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS);
 
-			// retrieves the hash move from the transposition table
-			// If the entry's key matches the board's current key, then probe the move
-			// If the entry from the transposition table doesn't have a move, then probe the PV table
-			// Have to remove any previous score from the hashmove
-			TTEntry entry = UCI_IO.transpositionTable.probeTTable(inputBoard.zobristKey);
-			TTEntry PVTableEntry = UCI_IO.transpositionTable.probePVTTable(inputBoard.zobristKey);
-			if (entry.key == inputBoard.zobristKey && entry.move != 0) {
-				this.hashMove = (entry.move & ~Constants.MOVE_SCORE_MASK);
-			} else if (PVTableEntry.key == inputBoard.zobristKey && PVTableEntry.move != 0) {
-				this.hashMove = (PVTableEntry.move & ~Constants.MOVE_SCORE_MASK);
-			}
 		}
 
 		public int getNextMove() {
 
+			// Start in the hash move phase
 			if (this.phase == Constants.PHASE_HASH) {
+
+
+				// retrieves the hash move from the transposition table
+				// If the entry's key matches the board's current key, then probe the move
+				// If the entry from the transposition table doesn't have a move, then probe the PV table
+				// Have to remove any previous score from the hashmove
+				TTEntry entry = UCI_IO.transpositionTable.probeTTable(board.zobristKey);
+				TTEntry PVTableEntry = UCI_IO.transpositionTable.probePVTTable(board.zobristKey);
+				if (entry.key == board.zobristKey && entry.move != 0) {
+					this.hashMove = (entry.move & ~Constants.MOVE_SCORE_MASK);
+				} else if (PVTableEntry.key == board.zobristKey && PVTableEntry.move != 0) {
+					this.hashMove = (PVTableEntry.move & ~Constants.MOVE_SCORE_MASK);
+				}
 
 				// If no hash move, then set phase = PHASE_CAPTURE if not in check, and phase = PHASE_CHECK_EVADE if in check
 				// If the hash move is illegal, then set phase = PHASE_CAPTURE if not in check, and phase = PHASE_CHECK_EVADE if in check
 				// If the hash move is legal, then setphase = PHASE_CAPTURE if not in check, and phase = PHASE_CHECK_EVADE if in check and return the move
 				if (this.hashMove == 0) {
-					this.phase = Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
 				} else if (this.isMoveLegal(hashMove) == false) {
-					this.phase = Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
 				} else {
-					this.phase = Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
 					return this.hashMove;
 				}
 				
 			}
 
+			// Capture phase
 			if (this.phase == Constants.PHASE_CAPTURE) {
 
 				if (captureIndex == 0) {
@@ -674,7 +681,8 @@ namespace Chess_Engine {
 					int move = pseudoLegalCaptureList[captureIndex];
 
 					if (move == 0) {
-						return 0;
+						this.phase = Constants.PHASE_KILLER_1;
+						break;
 					} else if (move != 0) {
 
 						// Fix this later to swap only at the end of an interation
@@ -723,36 +731,244 @@ namespace Chess_Engine {
 				}
 			}
 
+			if (this.phase == Constants.PHASE_KILLER_1) {
+				
+				this.killer1 = Search.killerTable[ply, 0];
+
+				if (this.killer1 == 0) {
+					this.phase = Constants.PHASE_KILLER_2;
+				} else {
+					for (int i = 0; i < this.tempKiller.Length; i++) {
+						if (this.tempKiller[i] == 0) {
+							this.phase = Constants.PHASE_KILLER_2;
+							break;
+						} else if (this.tempKiller[i] == this.killer1 && this.isMoveLegal(killer1) == true) {
+							this.phase = Constants.PHASE_KILLER_2;
+							return killer1;
+						} else {
+							this.phase = Constants.PHASE_KILLER_2;
+						}
+					}
+				}
+			}
+
+			if (this.phase == Constants.PHASE_KILLER_2) {
+				
+				this.killer2 = Search.killerTable[ply, 1];
+
+				if (this.killer2 == 0) {
+					this.phase = Constants.PHASE_QUIET;
+				} else {
+					for (int i = 0; i < this.tempKiller.Length; i++) {
+						if (this.tempKiller[i] == 0) {
+							this.phase = Constants.PHASE_QUIET;
+							break;
+						} else if (this.tempKiller[i] == this.killer2 && this.isMoveLegal(killer2) == true) {
+							this.phase = Constants.PHASE_QUIET;
+							return killer2;
+						} else {
+							this.phase = Constants.PHASE_QUIET;
+						}
+					}
+				}
+			}
+
+			// Quiet phase
+			if (this.phase == Constants.PHASE_QUIET) {
+
+				if (quietIndex == 0) {
+					this.generateMoves();
+				}
+
+				while (true) {
+					int move = pseudoLegalQuietList[quietIndex];
+
+					if (move == 0) {
+						return 0;
+					} else if (move != 0) {
+
+						// Fix this later to swap only at the end of an interation
+						int bestMoveScore = (move & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT;
+						int tempIndex = quietIndex + 1;
+						while (pseudoLegalQuietList[tempIndex] != 0) {
+							if (((pseudoLegalQuietList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) > bestMoveScore) {
+								bestMoveScore = ((pseudoLegalQuietList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+								int bestMove = pseudoLegalQuietList[tempIndex];
+								pseudoLegalQuietList[tempIndex] = pseudoLegalQuietList[quietIndex];
+								pseudoLegalQuietList[quietIndex] = bestMove;
+							}
+							tempIndex++;
+						}
+
+						// Checks to see what piece moved, and what type of move was made
+						// If the move is a king move or en-passant capture, then it does a legality check before returning the move
+						// Otherwise it just returns the move
+						move = pseudoLegalQuietList[quietIndex];
+						int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+						int pieceMoved = (this.board.pieceArray[startSquare]);
+						int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+						int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+
+						if (flag == Constants.EN_PASSANT_CAPTURE ||
+							pieceMoved == Constants.WHITE_KING ||
+							pieceMoved == Constants.BLACK_KING) {
+							this.board.makeMove(move);
+							if (this.board.isMoveLegal(sideToMove) == true && move != this.hashMove) {
+								board.unmakeMove(move, restoreData);
+								quietIndex++;
+								return move;
+							} else {
+								board.unmakeMove(move, restoreData);
+								quietIndex++;
+							}
+						} else {
+							if (move != this.hashMove) {
+								quietIndex++;
+								return move;
+							} else {
+								quietIndex++;
+							}
+						}
+					}
+				}
+			}
+
+			if (this.phase == Constants.PHASE_CHECK_EVADE) {
+				if (checkEvasionIndex == 0) {
+					this.generateMoves();
+				}
+
+				while (true) {
+					int move = pseudoLegalCheckEvasionList[checkEvasionIndex];
+
+					if (move == 0) {
+						return 0;
+					} else if (move != 0) {
+
+						// Fix this later to swap only at the end of an interation
+						int bestMoveScore = (move & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT;
+						int tempIndex = checkEvasionIndex + 1;
+						while (pseudoLegalCheckEvasionList[tempIndex] != 0) {
+							if (((pseudoLegalCheckEvasionList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) > bestMoveScore) {
+								bestMoveScore = ((pseudoLegalCheckEvasionList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+								int bestMove = pseudoLegalCheckEvasionList[tempIndex];
+								pseudoLegalCheckEvasionList[tempIndex] = pseudoLegalCheckEvasionList[checkEvasionIndex];
+								pseudoLegalCheckEvasionList[checkEvasionIndex] = bestMove;
+							}
+							tempIndex++;
+						}
+
+						// Checks to see what piece moved, and what type of move was made
+						// If the move is a king move or en-passant capture, then it does a legality check before returning the move
+						// Otherwise it just returns the move
+						move = pseudoLegalCheckEvasionList[checkEvasionIndex];
+						int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+						int pieceMoved = (this.board.pieceArray[startSquare]);
+						int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+						int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+
+						if (flag == Constants.EN_PASSANT_CAPTURE ||
+							pieceMoved == Constants.WHITE_KING ||
+							pieceMoved == Constants.BLACK_KING) {
+							this.board.makeMove(move);
+							if (this.board.isMoveLegal(sideToMove) == true && move != this.hashMove) {
+								board.unmakeMove(move, restoreData);
+								checkEvasionIndex++;
+								return move;
+							} else {
+								board.unmakeMove(move, restoreData);
+								checkEvasionIndex++;
+							}
+						} else {
+							if (move != this.hashMove) {
+								checkEvasionIndex++;
+								return move;
+							} else {
+								checkEvasionIndex++;
+							}
+						}
+					}
+				}
+			}
+
 			return 0;
 		}
 
 		private void generateMoves() {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
-			if (board.isInCheck() == false) {
-				this.pseudoLegalCaptureList = board.moveGenerator(Constants.ALL_MOVES);
-			} else {
-				this.pseudoLegalCaptureList = board.checkEvasionGenerator();
+			if (this.phase == Constants.PHASE_CAPTURE) {
+				this.pseudoLegalCaptureList = board.moveGenerator(Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO);
+
+				for (int i = 0; i < pseudoLegalCaptureList.Length; i++) {
+					// Have to remove any score from the move mask
+					int move = pseudoLegalCaptureList[i] & ~Constants.MOVE_SCORE_MASK;
+
+					// Loop through all moves in the pseudo legal move list (until it hits a 0)
+					// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
+					if (move == 0) {
+						break;
+					} else if (move == killer1 && move != this.hashMove) {
+						pseudoLegalCaptureList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((killer1 & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((killer1) != hashMove);
+						break;
+					} else if (move == killer2 && move != this.hashMove) {
+						pseudoLegalCaptureList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((killer2 & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((killer2) != hashMove);
+						break;
+					}
+				}
 			}
 
-			for (int i = 0; i < pseudoLegalCaptureList.Length; i++) {
-				// Have to remove any score from the move mask
-				int move = pseudoLegalCaptureList[i] & ~Constants.MOVE_SCORE_MASK;
+			else if (this.phase == Constants.PHASE_QUIET) {
+				this.pseudoLegalQuietList = board.moveGenerator(Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS);
 
-				// Loop through all moves in the pseudo legal move list (until it hits a 0)
-				// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
-				if (move == 0) {
-					break;
-				} else if (move == Search.killerTable[ply, 0] && move != this.hashMove) {
-					pseudoLegalCaptureList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
-					Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
-					Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
-					break;
-				} else if (move == Search.killerTable[ply, 1] && move != this.hashMove) {
-					pseudoLegalCaptureList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
-					Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
-					Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
-					break;
+				for (int i = 0; i < pseudoLegalQuietList.Length; i++) {
+					// Have to remove any score from the move mask
+					int move = pseudoLegalQuietList[i] & ~Constants.MOVE_SCORE_MASK;
+
+					// Loop through all moves in the pseudo legal move list (until it hits a 0)
+					// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
+					if (move == 0) {
+						break;
+					} else if (move == Search.killerTable[ply, 0] && move != this.hashMove) {
+						pseudoLegalQuietList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
+						break;
+					} else if (move == Search.killerTable[ply, 1] && move != this.hashMove) {
+						pseudoLegalQuietList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
+						break;
+					}
+				}
+			} 
+
+			else if (this.phase == Constants.PHASE_CHECK_EVADE) {
+				this.pseudoLegalCheckEvasionList = board.checkEvasionGenerator();
+
+				for (int i = 0; i < pseudoLegalCheckEvasionList.Length; i++) {
+					// Have to remove any score from the move mask
+					int move = pseudoLegalCheckEvasionList[i] & ~Constants.MOVE_SCORE_MASK;
+
+					// Loop through all moves in the pseudo legal move list (until it hits a 0)
+					// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
+					if (move == 0) {
+						break;
+					} else if (move == Search.killerTable[ply, 0] && move != this.hashMove) {
+						pseudoLegalCheckEvasionList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
+						break;
+					} else if (move == Search.killerTable[ply, 1] && move != this.hashMove) {
+						pseudoLegalCheckEvasionList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
+						Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
+						Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
+						break;
+					}
 				}
 			}
 		}
@@ -773,9 +989,12 @@ namespace Chess_Engine {
 			int colourOfPieceOnSquare = (this.board.pieceArray[startSquare] <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
 
 			// If king is in check at the end of the move, then it is illegal
+			
+			board.makeMove(move);
 			if (this.board.isMoveLegal(sideToMove) == false) {
 				moveLegal = false;
 			}
+			board.unmakeMove(move, restoreData);
 
 			// If the colour of the side to move is not the same as the colour of the piece on the start square, then it is illegal
 			if (sideToMove != colourOfPieceOnSquare) {
