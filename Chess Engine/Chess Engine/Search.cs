@@ -613,36 +613,34 @@ namespace Chess_Engine {
 		
 		internal Board board;
 		internal stateVariables restoreData;
-		
+		internal int depth;
+		internal int ply;
+		internal int phase = Constants.PHASE_HASH;
+
 		internal int[] pseudoLegalCaptureList;
 		internal int[] pseudoLegalQuietList;
 		internal int[] pseudoLegalCheckEvasionList;
 		internal int captureIndex = 0;
 		internal int quietIndex = 0;
 		internal int checkEvasionIndex = 0;
-		internal int depth;
-		internal int ply;
-		internal int phase = Constants.PHASE_HASH;
+
 		internal int hashMove = 0;
 		internal int killer1 = 0;
 		internal int killer2 = 0;
-		internal int[] tempKiller;
-
+		
 		// Constructor
 		public movePicker(Board inputBoard, int depth, int ply) {
 			this.board = inputBoard;
 			this.restoreData = new stateVariables(inputBoard);
 			this.depth = depth;
 			this.ply = ply;
-			this.tempKiller = board.moveGenerator(Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS);
-
 		}
 
+		// Method called by the 
 		public int getNextMove() {
 
 			// Start in the hash move phase
 			if (this.phase == Constants.PHASE_HASH) {
-
 
 				// retrieves the hash move from the transposition table
 				// If the entry's key matches the board's current key, then probe the move
@@ -733,16 +731,18 @@ namespace Chess_Engine {
 
 			if (this.phase == Constants.PHASE_KILLER_1) {
 				
+				this.generateMoves();
+
 				this.killer1 = Search.killerTable[ply, 0];
 
 				if (this.killer1 == 0) {
 					this.phase = Constants.PHASE_KILLER_2;
 				} else {
-					for (int i = 0; i < this.tempKiller.Length; i++) {
-						if (this.tempKiller[i] == 0) {
+					for (int i = 0; i < this.pseudoLegalQuietList.Length; i++) {
+						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_KILLER_2;
 							break;
-						} else if (this.tempKiller[i] == this.killer1 && this.isMoveLegal(killer1) == true) {
+						} else if (this.pseudoLegalQuietList[i] == this.killer1 && this.isMoveLegal(killer1) == true) {
 							this.phase = Constants.PHASE_KILLER_2;
 							return killer1;
 						} else {
@@ -759,11 +759,11 @@ namespace Chess_Engine {
 				if (this.killer2 == 0) {
 					this.phase = Constants.PHASE_QUIET;
 				} else {
-					for (int i = 0; i < this.tempKiller.Length; i++) {
-						if (this.tempKiller[i] == 0) {
+					for (int i = 0; i < this.pseudoLegalQuietList.Length; i++) {
+						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_QUIET;
 							break;
-						} else if (this.tempKiller[i] == this.killer2 && this.isMoveLegal(killer2) == true) {
+						} else if (this.pseudoLegalQuietList[i] == this.killer2 && this.isMoveLegal(killer2) == true) {
 							this.phase = Constants.PHASE_QUIET;
 							return killer2;
 						} else {
@@ -813,7 +813,7 @@ namespace Chess_Engine {
 							pieceMoved == Constants.WHITE_KING ||
 							pieceMoved == Constants.BLACK_KING) {
 							this.board.makeMove(move);
-							if (this.board.isMoveLegal(sideToMove) == true && move != this.hashMove) {
+							if (this.board.isMoveLegal(sideToMove) == true && move != this.hashMove && move != this.killer1 && move != this.killer2) {
 								board.unmakeMove(move, restoreData);
 								quietIndex++;
 								return move;
@@ -822,7 +822,7 @@ namespace Chess_Engine {
 								quietIndex++;
 							}
 						} else {
-							if (move != this.hashMove) {
+							if (move != this.hashMove && move != this.killer1 && move != this.killer2) {
 								quietIndex++;
 								return move;
 							} else {
@@ -922,29 +922,9 @@ namespace Chess_Engine {
 				}
 			}
 
-			else if (this.phase == Constants.PHASE_QUIET) {
+			else if (this.phase == Constants.PHASE_KILLER_1) {
 				this.pseudoLegalQuietList = board.moveGenerator(Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS);
 
-				for (int i = 0; i < pseudoLegalQuietList.Length; i++) {
-					// Have to remove any score from the move mask
-					int move = pseudoLegalQuietList[i] & ~Constants.MOVE_SCORE_MASK;
-
-					// Loop through all moves in the pseudo legal move list (until it hits a 0)
-					// If the move is the same as the first or second killer, give it a value of 13 and 12 respectively (only in main search, not in quiescence since almost no quiet moves are played)
-					if (move == 0) {
-						break;
-					} else if (move == Search.killerTable[ply, 0] && move != this.hashMove) {
-						pseudoLegalQuietList[i] |= (Constants.KILLER_1_SCORE << Constants.MOVE_SCORE_SHIFT);
-						Debug.Assert((Search.killerTable[ply, 0] & Constants.MOVE_SCORE_MASK) == 0);
-						Debug.Assert((Search.killerTable[ply, 0]) != hashMove);
-						break;
-					} else if (move == Search.killerTable[ply, 1] && move != this.hashMove) {
-						pseudoLegalQuietList[i] |= (Constants.KILLER_2_SCORE << Constants.MOVE_SCORE_SHIFT);
-						Debug.Assert((Search.killerTable[ply, 1] & Constants.MOVE_SCORE_MASK) == 0);
-						Debug.Assert((Search.killerTable[ply, 1]) != hashMove);
-						break;
-					}
-				}
 			} 
 
 			else if (this.phase == Constants.PHASE_CHECK_EVADE) {
