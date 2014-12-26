@@ -1056,9 +1056,9 @@ namespace Chess_Engine {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
 			if (inputBoard.isInCheck() == false && this.depth == 0) {
-				this.pseudoLegalMoveList = inputBoard.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK);
+				this.pseudoLegalMoveList = inputBoard.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK);
 			} else if (inputBoard.isInCheck() == false && this.depth < 0) {
-				this.pseudoLegalMoveList = inputBoard.moveGenerator((Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO));
+				this.pseudoLegalMoveList = inputBoard.moveGenerator((Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO));
 			} 
 			else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();

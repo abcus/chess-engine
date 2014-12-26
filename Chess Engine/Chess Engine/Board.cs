@@ -1197,7 +1197,7 @@ namespace Chess_Engine {
 
 								if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 									pawnMoveSquares = (Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay & (~pawnCheckSquares));
-								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 									pawnMoveSquares = (Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay & (pawnCheckSquares));
 								} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 									flag == Constants.ALL_MOVES) {
@@ -1215,7 +1215,7 @@ namespace Chess_Engine {
 								if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
 									if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay & (~pawnCheckSquares));
-									} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+									} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay & pawnCheckSquares);
 									} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 										flag == Constants.ALL_MOVES) {
@@ -1233,9 +1233,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~rookCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1254,9 +1254,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~queenCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 							}  else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1318,8 +1318,8 @@ namespace Chess_Engine {
 
 								Bitboard pawnCaptureSquares = 0;
 
-								if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-									flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+								if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+									flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 									flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 									flag == Constants.ALL_MOVES) {
 									//Generates white pawn captures (will be a maximum of 1 along the pin ray)
@@ -1333,8 +1333,8 @@ namespace Chess_Engine {
 
 									Bitboard pawnEPSquares = 0;
 
-									if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-										flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+									if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+										flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 										flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 										flag == Constants.ALL_MOVES) {
 										pawnEPSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.enPassantSquare & pinRay);
@@ -1347,14 +1347,20 @@ namespace Chess_Engine {
 
 								Bitboard pawnPromoCapSquares = 0;
 
-								if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-									flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-									flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
+								if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 									flag == Constants.ALL_MOVES) {
 									//Generates white pawn capture promotions
 									pawnPromoCapSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
-								} 
-								this.generatePawnPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+									this.generatePawnPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+									flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO) {
+									pawnPromoCapSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
+									this.generatePawnQueenPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								} else if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+									pawnPromoCapSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
+									this.generatePawnUnderPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								}
+								
 							}
 							// Removes the white pawn from the list of white pawns
 							tempWhitePawnBitboard &= (~pinnedPiece);
@@ -1365,9 +1371,9 @@ namespace Chess_Engine {
 							Bitboard bishopMoveSquares = 0;
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~bishopCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1387,9 +1393,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~queenCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1434,7 +1440,7 @@ namespace Chess_Engine {
 							// Passes a bitboard of possible pawn single moves to the generate move method (bitboard could be 0)
 							// Method reads bitboard of possible moves, encodes them, adds them to the list, and increments the index by 1
 							pawnMoveSquares = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL] & (~pawnCheckSquares));
-						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 							pawnMoveSquares = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL] & (pawnCheckSquares));
 						} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 							flag == Constants.ALL_MOVES) {
@@ -1444,8 +1450,8 @@ namespace Chess_Engine {
 
 						// Passes a bitboard of possible pawn captures to the generate move method (bitboard could be 0)
 						Bitboard pawnCaptureSquares = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.BLACK]);
-						if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-							flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+						if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+							flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 							flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 							flag == Constants.ALL_MOVES) {
 							this.generatePawnCaptures(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
@@ -1460,7 +1466,7 @@ namespace Chess_Engine {
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								pawnMoveSquares = doublePawnMovementFromIndex & (~pawnCheckSquares);
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								pawnMoveSquares = doublePawnMovementFromIndex & (pawnCheckSquares);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 								flag == Constants.ALL_MOVES) {
@@ -1475,8 +1481,8 @@ namespace Chess_Engine {
 
 							Bitboard pawnEPSquare = 0;
 
-							if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-								flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+								flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 								flag == Constants.ALL_MOVES) {
 								pawnEPSquare = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare;
@@ -1491,13 +1497,16 @@ namespace Chess_Engine {
 						if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 							pawnPromotionSquare = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
 							this.generatePawnUnderpromotion(pawnIndex, pawnPromotionSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-							flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+
+							Bitboard pawnPromoCapSquare = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.BLACK]);
+							this.generatePawnUnderPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
+							flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 							pawnPromotionSquare = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
 							this.generatePawnQueenPromotion(pawnIndex, pawnPromotionSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							Bitboard pawnPromoCapSquare = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.BLACK]);
-							this.generatePawnPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnQueenPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 						} else if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 							flag == Constants.ALL_MOVES) {
 							pawnPromotionSquare = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
@@ -1516,9 +1525,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~knightCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & ((knightCheckSquares)|(this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & (this.arrayOfAggregateBitboards[Constants.BLACK]));
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1537,9 +1546,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~bishopCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK]);
@@ -1556,9 +1565,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~rookCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1579,9 +1588,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~queenCheckSquares);
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK]));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & this.arrayOfAggregateBitboards[Constants.BLACK];
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1596,8 +1605,8 @@ namespace Chess_Engine {
 
 				if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-					flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
+					flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK];
 				} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK];
@@ -1705,7 +1714,7 @@ namespace Chess_Engine {
 
 								if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 									pawnMoveSquares = (Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay & (~pawnCheckSquares));
-								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 									pawnMoveSquares = (Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay & (pawnCheckSquares));
 								} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 									flag == Constants.ALL_MOVES) {
@@ -1723,7 +1732,7 @@ namespace Chess_Engine {
 								if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
 									if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay & (~pawnCheckSquares));
-									} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+									} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay & pawnCheckSquares);
 									} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 										flag == Constants.ALL_MOVES) {
@@ -1741,9 +1750,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~rookCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & ((rookCheckSquares)|(this.arrayOfAggregateBitboards[Constants.WHITE])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1763,9 +1772,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~queenCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & ((queenCheckSquares)|(this.arrayOfAggregateBitboards[Constants.WHITE])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1826,8 +1835,8 @@ namespace Chess_Engine {
 
 								Bitboard pawnCaptureSquares = 0;
 
-								if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-									flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+								if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+									flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 									flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 									flag == Constants.ALL_MOVES) {
 									//Generates white pawn captures (will be a maximum of 1 along the pin ray)
@@ -1841,8 +1850,8 @@ namespace Chess_Engine {
 
 									Bitboard pawnEPSquares = 0;
 
-									if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-										flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+									if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+										flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 										flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 										flag == Constants.ALL_MOVES) {
 										pawnEPSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.enPassantSquare & pinRay);
@@ -1855,14 +1864,20 @@ namespace Chess_Engine {
 
 								Bitboard pawnPromoCapSquares = 0;
 
-								if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-									flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-									flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
+								if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 									flag == Constants.ALL_MOVES) {
 									//Generates black pawn capture promotions
 									pawnPromoCapSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
-								} 
-								this.generatePawnPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+									this.generatePawnPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+									flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO) {
+									pawnPromoCapSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
+									this.generatePawnQueenPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								} else if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+									pawnPromoCapSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
+									this.generatePawnUnderPromotionCapture(indexOfPinnedPiece, pawnPromoCapSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								}
+								
 							}
 							// Removes the black pawn from the list of white pawns
 							tempBlackPawnBitboard &= (~pinnedPiece);
@@ -1873,9 +1888,9 @@ namespace Chess_Engine {
 							Bitboard bishopMoveSquares = 0;
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~bishopCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & ((bishopCheckSquares)|(this.arrayOfAggregateBitboards[Constants.WHITE])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1895,9 +1910,9 @@ namespace Chess_Engine {
 
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~queenCheckSquares));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -1942,7 +1957,7 @@ namespace Chess_Engine {
 							// Passes a bitboard of possible pawn single moves to the generate move method (bitboard could be 0)
 							// Method reads bitboard of possible moves, encodes them, adds them to the list, and increments the index by 1
 							pawnMoveSquares = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL] & (~pawnCheckSquares));
-						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 							pawnMoveSquares = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL] & (pawnCheckSquares));
 						} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 							flag == Constants.ALL_MOVES) {
@@ -1952,8 +1967,8 @@ namespace Chess_Engine {
 
 						// Passes a bitboard of possible pawn captures to the generate move method (bitboard could be 0)
 						Bitboard pawnCaptureSquares = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.WHITE]);
-						if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-							flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+						if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+							flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 							flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 							flag == Constants.ALL_MOVES) {
 							this.generatePawnCaptures(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
@@ -1968,7 +1983,7 @@ namespace Chess_Engine {
 						if (((singlePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0) && ((doublePawnMovementFromIndex & this.arrayOfAggregateBitboards[Constants.ALL]) == 0)) {
 							if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 								pawnMoveSquares = doublePawnMovementFromIndex & (~pawnCheckSquares);
-							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+							} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 								pawnMoveSquares = doublePawnMovementFromIndex & (pawnCheckSquares);
 							} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 								flag == Constants.ALL_MOVES) {
@@ -1983,8 +1998,8 @@ namespace Chess_Engine {
 						Bitboard pawnEPSquare = 0;
 
 						if (pawnIndex >= Constants.H4 && pawnIndex <= Constants.A4) {
-							if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
-								flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
+							if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || 
+								flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 								flag == Constants.ALL_MOVES) {
 								pawnEPSquare = Constants.blackCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare;
@@ -1999,12 +2014,15 @@ namespace Chess_Engine {
 						if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 							pawnPromotionSquare = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
 							this.generatePawnUnderpromotion(pawnIndex, pawnPromotionSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+
+							Bitboard pawnPromoCapSquare = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.WHITE]);
+							this.generatePawnUnderPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+						} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 							pawnPromotionSquare = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
 							this.generatePawnQueenPromotion(pawnIndex, pawnPromotionSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 						
 							Bitboard pawnPromoCapSquare = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.WHITE]);
-							this.generatePawnPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnQueenPromotionCapture(pawnIndex, pawnPromoCapSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 						} else if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO ||
 							flag == Constants.ALL_MOVES) {
 							pawnPromotionSquare = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
@@ -2023,9 +2041,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~knightCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK] & ((knightCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (this.arrayOfAggregateBitboards[Constants.WHITE]);
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -2044,9 +2062,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~bishopCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -2064,9 +2082,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~rookCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -2087,9 +2105,9 @@ namespace Chess_Engine {
 
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~queenCheckSquares);
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE]));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO ||
+					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
 						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & this.arrayOfAggregateBitboards[Constants.WHITE];
 					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
@@ -2104,8 +2122,8 @@ namespace Chess_Engine {
 
 				if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
 					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO || 
-					flag == Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
+					flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
 					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE];
 				} else if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
 					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE];
@@ -2740,7 +2758,7 @@ namespace Chess_Engine {
 		    }
 
 			if (flag == Constants.PERFT_QUIESCENCE) {
-				int[] quiescentCapQuietCheck = this.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK);
+				int[] quiescentCapQuietCheck = this.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK);
 				int[] quiescentQuietNoCheck = this.moveGenerator(Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK);
 				
 				for (int i = 0; i < quiescentCapQuietCheck.Length; i++) {
@@ -2812,7 +2830,6 @@ namespace Chess_Engine {
 				}
 				
 				// Score will always equal 75 (MVV/LVA = 15, and PxP is always a good capture so SEE = 60)
-
 				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, moveScore);
                 listOfPseudoLegalMoves[index++] = moveRepresentation;
             }

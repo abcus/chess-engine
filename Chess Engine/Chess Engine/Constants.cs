@@ -926,12 +926,11 @@ namespace Chess_Engine {
 		public static int[] victimScore = { 0, 10, 20, 30, 40, 50, 60, 10, 20, 30, 40, 50, 60 };
 		public static int[,] MvvLvaScore = new int[13, 13];
 
-	    public const int HASH_MOVE_SCORE = 127;
-		public const int GOOD_PROMOTION_SCORE = 125;
-	    public const int GOOD_PROMOTION_CAPTURE_SCORE = 125;
+		public const int GOOD_PROMOTION_CAPTURE_SCORE = 125;
+		public const int GOOD_PROMOTION_SCORE = 70;
 		public const int GOOD_CAPTURE_SCORE = 60;
-		public const int BAD_PROMOTION_SCORE = 69;
 		public const int BAD_PROMOTION_CAPTURE_SCORE = 69;
+		public const int BAD_PROMOTION_SCORE = 14;
 	    public const int BAD_CAPTURE_SCORE = 4;
 		
 		// Have to experiment with ordering of killer and bad capture
@@ -950,8 +949,8 @@ namespace Chess_Engine {
 	    public const int MAIN_CAP_EPCAP_CAPPROMO_PROMO = 0;
 	    public const int MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS = 1;
 
-	    public const int QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK = 2;
-		public const int QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO = 3;
+	    public const int QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK = 2;
+		public const int QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO = 3;
 		public const int QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK = 4;
 	    
 		public const int ALL_MOVES = 5;
