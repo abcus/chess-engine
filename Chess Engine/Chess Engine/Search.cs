@@ -480,6 +480,8 @@ namespace Chess_Engine {
 
 		private static int quiescence(int depth, int ply, int alpha, int beta, int nodeType) {
 
+			Debug.Assert(depth <= 0);
+
 			// Probe the hash table, and if a match is found then return the score
 			// (validate the key to prevent type 2 collision)
 			/*Zobrist zobristKey = Search.cloneBoard.zobristKey;
@@ -671,6 +673,7 @@ namespace Chess_Engine {
 			// Capture phase
 			if (this.phase == Constants.PHASE_CAPTURE) {
 
+				// The first time the move generator enters this phase, it generates the list of captures
 				if (captureIndex == 0) {
 					this.generateMoves();
 				}
@@ -678,6 +681,8 @@ namespace Chess_Engine {
 				while (true) {
 					int move = pseudoLegalCaptureList[captureIndex];
 
+					// If there is no move at the capture index, then set the phase = PHASE_KILLER and break
+					// Otherwise, loop through the whole array and swap the move with the highest score to the front position
 					if (move == 0) {
 						this.phase = Constants.PHASE_KILLER_1;
 						break;
@@ -735,9 +740,14 @@ namespace Chess_Engine {
 
 				this.killer1 = Search.killerTable[ply, 0];
 
+				// If the first killer move is null, then there are no killer moves and we move onto phase 3
+				// If the first killer move is not null, then test it for legality
 				if (this.killer1 == 0) {
 					this.phase = Constants.PHASE_KILLER_2;
 				} else {
+
+					// If the first killer is legal and the same as a move in the move list, then set the killer position to point to the second killer move and return it
+					// If the first killer is illegal, then set the killer position to point to the second killer move
 					for (int i = 0; i < this.pseudoLegalQuietList.Length; i++) {
 						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_KILLER_2;
@@ -756,9 +766,14 @@ namespace Chess_Engine {
 				
 				this.killer2 = Search.killerTable[ply, 1];
 
+				// If the second killer move is null, then set the phase = PHASE_QUIET
+				// If the second killer move is not null, then test it for legality
 				if (this.killer2 == 0) {
 					this.phase = Constants.PHASE_QUIET;
 				} else {
+
+					// If the second killer is legal and is the same as a move in the move list, then set the phase = PHASE_QUIET and return it
+					// If the second killer is illegal, then set the phase = PHASE_QUIET
 					for (int i = 0; i < this.pseudoLegalQuietList.Length; i++) {
 						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_QUIET;
@@ -776,6 +791,7 @@ namespace Chess_Engine {
 			// Quiet phase
 			if (this.phase == Constants.PHASE_QUIET) {
 
+				// The first time the move generator enters this phase, it generates the list of captures
 				if (quietIndex == 0) {
 					this.generateMoves();
 				}
@@ -783,6 +799,8 @@ namespace Chess_Engine {
 				while (true) {
 					int move = pseudoLegalQuietList[quietIndex];
 
+					// If there is no move at the quiet index, then return 0
+					// Otherwise, loop through the whole array and swap the move with the highest score to the front position
 					if (move == 0) {
 						return 0;
 					} else if (move != 0) {
@@ -834,6 +852,8 @@ namespace Chess_Engine {
 			}
 
 			if (this.phase == Constants.PHASE_CHECK_EVADE) {
+
+				// The first time the move generator enters this phase, it generates the list of check evasions
 				if (checkEvasionIndex == 0) {
 					this.generateMoves();
 				}
@@ -1035,9 +1055,12 @@ namespace Chess_Engine {
 
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
-			if (inputBoard.isInCheck() == false) {
-				this.pseudoLegalMoveList = inputBoard.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO);
-			} else {
+			if (inputBoard.isInCheck() == false && this.depth == 0) {
+				this.pseudoLegalMoveList = inputBoard.moveGenerator(Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO_QUIETCHECK);
+			} else if (inputBoard.isInCheck() == false && this.depth < 0) {
+				this.pseudoLegalMoveList = inputBoard.moveGenerator((Constants.QUIESCENCE_CAP_EPCAP_CAPPROMO_QUIETQUEENPROMO));
+			} 
+			else {
 				this.pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
 		}
