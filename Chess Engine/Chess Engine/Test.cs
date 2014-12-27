@@ -560,7 +560,7 @@ namespace Chess_Engine {
 					inputBoard.unmakeMove(moveRepresentation, restoreData);
 
 		            if (moveLegal == true) {
-						Console.Write(moveCount + ". " + Test.printMoveStringFromMoveRepresentation(moveRepresentation, inputBoard));
+						Console.Write(moveCount + ". " + Test.printMoveStringFromMoveRepresentation(moveRepresentation, inputBoard) + "\t" + ((moveRepresentation & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) + "\t");
 						Console.WriteLine(inputBoard.staticExchangeEval(startSquare, destinationSquare, sideToMove));
 						moveCount++;
 		            }

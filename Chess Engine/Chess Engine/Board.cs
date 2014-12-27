@@ -1203,7 +1203,7 @@ namespace Chess_Engine {
 									flag == Constants.ALL_MOVES) {
 									pawnMoveSquares = (Constants.whiteSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay);
 								}
-								this.generatePawnMove(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							}
 							//For pawns that are on the 2nd rank, generate double pawn pushes
@@ -1222,7 +1222,7 @@ namespace Chess_Engine {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay);
 									} 
 								}
-								this.generatePawnDoubleMove(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE, Constants.DOUBLE_PAWN_PUSH);
 							}
 							// Removes the white pawn from the list of white pawns
 							tempWhitePawnBitboard &= (~pinnedPiece);
@@ -1243,7 +1243,7 @@ namespace Chess_Engine {
 							} else if (flag == Constants.ALL_MOVES) {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
 							}
-							this.generateRookMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white rook from the list of white rooks
 							tempWhiteRookBitboard &= (~pinnedPiece);
@@ -1264,7 +1264,7 @@ namespace Chess_Engine {
 							} else if (flag == Constants.ALL_MOVES) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
 							}
-							this.generateQueenMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 							// Removes the white queen from the list of white queens
 							tempWhiteQueenBitboard &= (~pinnedPiece);
 						}
@@ -1324,8 +1324,8 @@ namespace Chess_Engine {
 									flag == Constants.ALL_MOVES) {
 									//Generates white pawn captures (will be a maximum of 1 along the pin ray)
 									pawnCaptureSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.BLACK] & pinRay);
-								} 
-								this.generatePawnCaptures(indexOfPinnedPiece, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								}
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 							}
 							//For pawns that are on the 5th rank, generate en passant captures
 							if ((this.enPassantSquare & Constants.RANK_6) != 0) {
@@ -1339,7 +1339,7 @@ namespace Chess_Engine {
 										flag == Constants.ALL_MOVES) {
 										pawnEPSquares = (Constants.whiteCapturesAndCapturePromotions[indexOfPinnedPiece] & this.enPassantSquare & pinRay);
 									} 
-									this.generatePawnEnPassant(indexOfPinnedPiece, pawnEPSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+									this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnEPSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE, Constants.EN_PASSANT_CAPTURE);
 								}
 							}
 							//For pawns on the 7th rank, generate promotion captures
@@ -1381,7 +1381,7 @@ namespace Chess_Engine {
 							}else if (flag == Constants.ALL_MOVES) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
 							}
-						this.generateBishopMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+						this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white bishop from the list of white rooks
 							tempWhiteBishopBitboard &= (~pinnedPiece);
@@ -1404,7 +1404,7 @@ namespace Chess_Engine {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (pinRay));
 							}
 
-							this.generateQueenMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white queen from the list of white queens
 							tempWhiteQueenBitboard &= (~pinnedPiece);
@@ -1445,8 +1445,8 @@ namespace Chess_Engine {
 						} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 							flag == Constants.ALL_MOVES) {
 							pawnMoveSquares = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
-						} 
-						this.generatePawnMove(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+						}
+						this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 						// Passes a bitboard of possible pawn captures to the generate move method (bitboard could be 0)
 						Bitboard pawnCaptureSquares = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.BLACK]);
@@ -1454,7 +1454,7 @@ namespace Chess_Engine {
 							flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 							flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 							flag == Constants.ALL_MOVES) {
-							this.generatePawnCaptures(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+								this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 						} 
 					}
 					//For pawns that are on the 2nd rank, generate double pawn pushes
@@ -1472,7 +1472,7 @@ namespace Chess_Engine {
 								flag == Constants.ALL_MOVES) {
 								pawnMoveSquares = doublePawnMovementFromIndex;
 							}
-							this.generatePawnDoubleMove(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE, Constants.DOUBLE_PAWN_PUSH);
 						}
 					}
 					//If en passant is possible, For pawns that are on the 5th rank, generate en passant captures
@@ -1487,7 +1487,7 @@ namespace Chess_Engine {
 								flag == Constants.ALL_MOVES) {
 								pawnEPSquare = Constants.whiteCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare;
 							} 
-							this.generatePawnEnPassant(pawnIndex, pawnEPSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnEPSquare, listOfAlmostLegalMoves, ref index, Constants.WHITE, Constants.EN_PASSANT_CAPTURE);
 						}
 					}
 					//For pawns on the 7th rank, generate promotions and promotion captures
@@ -1535,7 +1535,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
 					}
-					this.generateKnightMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+					this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 				}
 				//generates white bishop moves and captures
@@ -1555,7 +1555,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
 					}
-					this.generateBishopMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+					this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 				}
 				//generates white rook moves and captures
 				while (tempWhiteRookBitboard != 0) {
@@ -1575,7 +1575,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
 					}
-					this.generateRookMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+					this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 				}
 				//generates white queen moves and captures
@@ -1598,7 +1598,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex);
 					}
-					this.generateQueenMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+					this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 				}
 				//generates white king moves and captures
 				Bitboard kingMoveSquares = 0;
@@ -1613,7 +1613,7 @@ namespace Chess_Engine {
 				} else if (flag == Constants.ALL_MOVES) {
 					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
 				}
-				this.generateKingMoves(whiteKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
+				this.generatePawnKnightBishopRookQueenKingMoves(whiteKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 				//Generates white king castling moves (if the king is not in check)
 				if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
@@ -1621,7 +1621,9 @@ namespace Chess_Engine {
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
 						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 						flag == Constants.ALL_MOVES) {
-						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY);
+
+						int moveScore = Constants.GOOD_QUIET_SCORE;
+						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
 
 						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
 							listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -1633,7 +1635,9 @@ namespace Chess_Engine {
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
 						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 						flag == Constants.ALL_MOVES) {
-						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY);
+
+						int moveScore = Constants.GOOD_QUIET_SCORE;
+						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
 
 						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
 							listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -1719,8 +1723,8 @@ namespace Chess_Engine {
 								} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 									flag == Constants.ALL_MOVES) {
 									pawnMoveSquares = (Constants.blackSinglePawnMovesAndPromotionMoves[indexOfPinnedPiece] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & pinRay);
-								} 
-								this.generatePawnMove(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								}
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							}
 							//For pawns that are on the 7th rank, generate double pawn pushes
@@ -1739,7 +1743,7 @@ namespace Chess_Engine {
 										pawnMoveSquares = (doublePawnMovementFromIndex & pinRay);
 									} 
 								}
-								this.generatePawnDoubleMove(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK, Constants.DOUBLE_PAWN_PUSH);
 							}
 							// Removes the black pawn from the list of white pawns
 							tempBlackPawnBitboard &= (~pinnedPiece);
@@ -1761,7 +1765,7 @@ namespace Chess_Engine {
 								rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
 							}
 
-							this.generateRookMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white rook from the list of white rooks
 							tempBlackRookBitboard &= (~pinnedPiece);
@@ -1782,7 +1786,7 @@ namespace Chess_Engine {
 							} else if (flag == Constants.ALL_MOVES) {
 								queenMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
 							}
-							this.generateQueenMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 							// Removes the white queen from the list of black queens
 							tempBlackQueenBitboard &= (~pinnedPiece);
 						}
@@ -1841,8 +1845,8 @@ namespace Chess_Engine {
 									flag == Constants.ALL_MOVES) {
 									//Generates white pawn captures (will be a maximum of 1 along the pin ray)
 									pawnCaptureSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.arrayOfAggregateBitboards[Constants.WHITE] & pinRay);
-								} 
-								this.generatePawnCaptures(indexOfPinnedPiece, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								}
+								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 							}
 							//For pawns that are on the 4th rank, generate en passant captures
 							if ((this.enPassantSquare & Constants.RANK_3) != 0) {
@@ -1856,7 +1860,7 @@ namespace Chess_Engine {
 										flag == Constants.ALL_MOVES) {
 										pawnEPSquares = (Constants.blackCapturesAndCapturePromotions[indexOfPinnedPiece] & this.enPassantSquare & pinRay);
 									} 
-									this.generatePawnEnPassant(indexOfPinnedPiece, pawnEPSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+									this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnEPSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK, Constants.EN_PASSANT_CAPTURE);
 								}
 							}
 							//For pawns on the 2nd rank, generate promotion captures
@@ -1898,7 +1902,7 @@ namespace Chess_Engine {
 							} else if (flag == Constants.ALL_MOVES) {
 								bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
 							}
-							this.generateBishopMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white bishop from the list of white rooks
 							tempBlackBishopBitboard &= (~pinnedPiece);
@@ -1921,7 +1925,7 @@ namespace Chess_Engine {
 								queenMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], indexOfPinnedPiece) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (pinRay));
 							}
 
-							this.generateQueenMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white queen from the list of white queens
 							tempBlackQueenBitboard &= (~pinnedPiece);
@@ -1962,8 +1966,8 @@ namespace Chess_Engine {
 						} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 							flag == Constants.ALL_MOVES) {
 							pawnMoveSquares = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]);
-						} 
-						this.generatePawnMove(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+						}
+						this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 						// Passes a bitboard of possible pawn captures to the generate move method (bitboard could be 0)
 						Bitboard pawnCaptureSquares = Constants.blackCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.WHITE]);
@@ -1971,7 +1975,7 @@ namespace Chess_Engine {
 							flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
 							flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 							flag == Constants.ALL_MOVES) {
-							this.generatePawnCaptures(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+								this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnCaptureSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 						}
 					}
 					//For pawns that are on the 7th rank, generate double pawn pushes
@@ -1989,7 +1993,7 @@ namespace Chess_Engine {
 								flag == Constants.ALL_MOVES) {
 								pawnMoveSquares = doublePawnMovementFromIndex;
 							}
-							this.generatePawnDoubleMove(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK, Constants.DOUBLE_PAWN_PUSH);
 						}
 					}
 					//If en passant is possible, For pawns that are on the 4th rank, generate en passant captures
@@ -2003,8 +2007,8 @@ namespace Chess_Engine {
 								flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO || 
 								flag == Constants.ALL_MOVES) {
 								pawnEPSquare = Constants.blackCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare;
-							} 
-							this.generatePawnEnPassant(pawnIndex, pawnEPSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+							}
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pawnEPSquare, listOfAlmostLegalMoves, ref index, Constants.BLACK, Constants.EN_PASSANT_CAPTURE);
 						}
 					}
 					//For pawns on the 2nd rank, generate promotions and promotion captures
@@ -2051,7 +2055,7 @@ namespace Chess_Engine {
 					}else if (flag == Constants.ALL_MOVES) {
 						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
 					}
-					this.generateKnightMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+					this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 				}
 				//generates black bishop moves and captures
@@ -2072,7 +2076,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
 					}
-					this.generateBishopMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+					this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 				}
 				//generates black rook moves and captures
 				while (tempBlackRookBitboard != 0) {
@@ -2092,7 +2096,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
 					}
-					this.generateRookMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+					this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 				}
 				//generates white queen moves and captures
@@ -2115,7 +2119,7 @@ namespace Chess_Engine {
 					} else if (flag == Constants.ALL_MOVES) {
 						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex);
 					}
-					this.generateQueenMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+					this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 				}
 				//generates black king moves and captures
 				Bitboard kingMoveSquares = 0;
@@ -2133,7 +2137,7 @@ namespace Chess_Engine {
 					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
 				}
 
-				this.generateKingMoves(blackKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
+				this.generatePawnKnightBishopRookQueenKingMoves(blackKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 				//Generates black king castling moves (if the king is not in check)
 				if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
@@ -2141,7 +2145,9 @@ namespace Chess_Engine {
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
 						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 						flag == Constants.ALL_MOVES) {
-						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY);
+
+						int moveScore = Constants.GOOD_QUIET_SCORE;
+						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
 
 						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
 							listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -2153,7 +2159,9 @@ namespace Chess_Engine {
 					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
 						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
 						flag == Constants.ALL_MOVES) {
-						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY);
+
+						int moveScore = Constants.GOOD_QUIET_SCORE;
+						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
 
 						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
 							listOfAlmostLegalMoves[index++] = moveRepresentation;
@@ -2365,10 +2373,10 @@ namespace Chess_Engine {
                         if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A6) {
 
                             Bitboard possiblePawnSingleMoves = (Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & blockOrCaptureSquares);
-                            this.generatePawnMove(pawnIndex, possiblePawnSingleMoves,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, possiblePawnSingleMoves, listOfCheckEvasionMoves, ref index, Constants.WHITE);
 
                             Bitboard possiblePawnCaptures = (Constants.whiteCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.BLACK]) & blockOrCaptureSquares);
-                            this.generatePawnCaptures(pawnIndex, possiblePawnCaptures,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, possiblePawnCaptures, listOfCheckEvasionMoves, ref index, Constants.WHITE);
                         }
                         if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
                             Bitboard singlePawnMovementFromIndex = Constants.whiteSinglePawnMovesAndPromotionMoves[pawnIndex];
@@ -2379,12 +2387,12 @@ namespace Chess_Engine {
                                 pseudoLegalDoubleMoveFromIndex = (doublePawnMovementFromIndex & blockOrCaptureSquares);
                             }
 
-                            this.generatePawnDoubleMove(pawnIndex, pseudoLegalDoubleMoveFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pseudoLegalDoubleMoveFromIndex, listOfCheckEvasionMoves, ref index, Constants.WHITE, Constants.DOUBLE_PAWN_PUSH);
                         }
                         if ((this.enPassantSquare & Constants.RANK_6) != 0) {
                             if (pawnIndex >= Constants.H5 && pawnIndex <= Constants.A5) {
                                 Bitboard pseudoLegalEnPassantFromIndex = (Constants.whiteCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare);
-                                this.generatePawnEnPassant(pawnIndex, pseudoLegalEnPassantFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+								this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pseudoLegalEnPassantFromIndex, listOfCheckEvasionMoves, ref index, Constants.WHITE, Constants.EN_PASSANT_CAPTURE);
                             }
                         }
                         if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
@@ -2401,7 +2409,7 @@ namespace Chess_Engine {
                         int knightIndex = Constants.findFirstSet(tempWhiteKnightBitboard);
                         tempWhiteKnightBitboard &= (tempWhiteKnightBitboard - 1);
                         Bitboard pseudoLegalKnightMovementFromIndex = (Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & blockOrCaptureSquares);
-                        this.generateKnightMoves(knightIndex, pseudoLegalKnightMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                        this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, pseudoLegalKnightMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
                     }
 
                     //generates white bishop moves and captures
@@ -2409,7 +2417,7 @@ namespace Chess_Engine {
                         int bishopIndex = Constants.findFirstSet(tempWhiteBishopBitboard);
                         tempWhiteBishopBitboard &= (tempWhiteBishopBitboard - 1);
                         Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & blockOrCaptureSquares);
-                        this.generateBishopMoves(bishopIndex, pseudoLegalBishopMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                        this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, pseudoLegalBishopMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
                     }
 
                     //generates white rook moves and captures
@@ -2417,7 +2425,7 @@ namespace Chess_Engine {
                         int rookIndex = Constants.findFirstSet(tempWhiteRookBitboard);
                         tempWhiteRookBitboard &= (tempWhiteRookBitboard - 1);
                         Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & blockOrCaptureSquares);
-                        this.generateRookMoves(rookIndex, pseudoLegalRookMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                        this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, pseudoLegalRookMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
                     }
 
                     //generates white queen moves and captures
@@ -2427,12 +2435,12 @@ namespace Chess_Engine {
                         Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex));
                         Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex));
                         Bitboard pseudoLegalQueenMovementFromIndex = ((pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & blockOrCaptureSquares);
-                        this.generateQueenMoves(queenIndex, pseudoLegalQueenMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                        this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, pseudoLegalQueenMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
                     }
 
                     //generates white king moves and captures
                     Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-                    this.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                    this.generatePawnKnightBishopRookQueenKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
 
                     //returns the list of legal moves
                     return listOfCheckEvasionMoves;
@@ -2444,7 +2452,7 @@ namespace Chess_Engine {
 
                     // Only generates king moves
                     Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-                    this.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
+                    this.generatePawnKnightBishopRookQueenKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.WHITE);
 
                     return listOfCheckEvasionMoves;
                 }
@@ -2640,10 +2648,10 @@ namespace Chess_Engine {
                         if (pawnIndex >= Constants.H3 && pawnIndex <= Constants.A7) {
 
                             Bitboard possiblePawnSingleMoves = (Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex] & (~this.arrayOfAggregateBitboards[Constants.ALL]) & blockOrCaptureSquares);
-                            this.generatePawnMove(pawnIndex, possiblePawnSingleMoves,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, possiblePawnSingleMoves, listOfCheckEvasionMoves, ref index, Constants.BLACK);
 
                             Bitboard possiblePawnCaptures = (Constants.blackCapturesAndCapturePromotions[pawnIndex] & (this.arrayOfAggregateBitboards[Constants.WHITE]) & blockOrCaptureSquares);
-                            this.generatePawnCaptures(pawnIndex, possiblePawnCaptures,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, possiblePawnCaptures, listOfCheckEvasionMoves, ref index, Constants.BLACK);
                         }
                         if (pawnIndex >= Constants.H7 && pawnIndex <= Constants.A7) {
                             Bitboard singlePawnMovementFromIndex = Constants.blackSinglePawnMovesAndPromotionMoves[pawnIndex];
@@ -2654,12 +2662,12 @@ namespace Chess_Engine {
                                 pseudoLegalDoubleMoveFromIndex = (doublePawnMovementFromIndex & blockOrCaptureSquares);
                             }
 
-                            this.generatePawnDoubleMove(pawnIndex, pseudoLegalDoubleMoveFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+							this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pseudoLegalDoubleMoveFromIndex, listOfCheckEvasionMoves, ref index, Constants.BLACK, Constants.DOUBLE_PAWN_PUSH);
                         }
                         if ((this.enPassantSquare & Constants.RANK_3) != 0) {
                             if (pawnIndex >= Constants.H4 && pawnIndex <= Constants.A4) {
                                 Bitboard pseudoLegalEnPassantFromIndex = (Constants.blackCapturesAndCapturePromotions[pawnIndex] & this.enPassantSquare);
-                                this.generatePawnEnPassant(pawnIndex, pseudoLegalEnPassantFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+								this.generatePawnKnightBishopRookQueenKingMoves(pawnIndex, pseudoLegalEnPassantFromIndex, listOfCheckEvasionMoves, ref index, Constants.BLACK, Constants.EN_PASSANT_CAPTURE);
                             }
                         }
                         if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A2) {
@@ -2676,7 +2684,7 @@ namespace Chess_Engine {
                         int knightIndex = Constants.findFirstSet(tempBlackKnightBitboard);
                         tempBlackKnightBitboard &= (tempBlackKnightBitboard - 1);
                         Bitboard pseudoLegalKnightMovementFromIndex = (Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & blockOrCaptureSquares);
-                        this.generateKnightMoves(knightIndex, pseudoLegalKnightMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                        this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, pseudoLegalKnightMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
                     }
 
                     //generates black bishop moves and captures
@@ -2684,7 +2692,7 @@ namespace Chess_Engine {
                         int bishopIndex = Constants.findFirstSet(tempBlackBishopBitboard);
                         tempBlackBishopBitboard &= (tempBlackBishopBitboard - 1);
                         Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & blockOrCaptureSquares);
-                        this.generateBishopMoves(bishopIndex, pseudoLegalBishopMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                        this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, pseudoLegalBishopMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
                     }
 
                     //generates black rook moves and captures
@@ -2692,7 +2700,7 @@ namespace Chess_Engine {
                         int rookIndex = Constants.findFirstSet(tempBlackRookBitboard);
                         tempBlackRookBitboard &= (tempBlackRookBitboard - 1);
                         Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & blockOrCaptureSquares);
-                        this.generateRookMoves(rookIndex, pseudoLegalRookMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                        this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, pseudoLegalRookMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
                     }
 
                     //generates black queen moves and captures
@@ -2702,12 +2710,12 @@ namespace Chess_Engine {
                         Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex));
                         Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex));
                         Bitboard pseudoLegalQueenMovementFromIndex = ((pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & blockOrCaptureSquares);
-                        this.generateQueenMoves(queenIndex, pseudoLegalQueenMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                        this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, pseudoLegalQueenMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
                     }
 
                     //generates black king moves and captures
                     Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-                    this.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                    this.generatePawnKnightBishopRookQueenKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
 
                     //returns the list of legal moves
                     return listOfCheckEvasionMoves;
@@ -2719,7 +2727,7 @@ namespace Chess_Engine {
 
                     // Only generates king moves
                     Bitboard pseudoLegalKingMovementFromIndex = Constants.kingMoves[kingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-                    this.generateKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
+                    this.generatePawnKnightBishopRookQueenKingMoves(kingIndex, pseudoLegalKingMovementFromIndex,listOfCheckEvasionMoves, ref index, Constants.BLACK);
 
                     return listOfCheckEvasionMoves;
                 }
@@ -2776,66 +2784,7 @@ namespace Chess_Engine {
 		    return move;
 	    }
 
-
-
-	    // Takes in the index of the pawn and the bitboard of all pieces, and generates single pawn pushes
-        private void generatePawnMove(int pawnIndex, Bitboard pseudoLegalSinglePawnMoveFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            if (pseudoLegalSinglePawnMoveFromIndex != 0) {
-                int indexOfWhitePawnSingleMoveFromIndex = Constants.findFirstSet(pseudoLegalSinglePawnMoveFromIndex);
-                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhitePawnSingleMoveFromIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        
-        private void generatePawnCaptures(int pawnIndex, Bitboard pseudoLegalPawnCapturesFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            while (pseudoLegalPawnCapturesFromIndex != 0) {
-
-                int pawnMoveIndex = Constants.findFirstSet(pseudoLegalPawnCapturesFromIndex);
-                pseudoLegalPawnCapturesFromIndex &= (pseudoLegalPawnCapturesFromIndex - 1);
-
-	            int moveScore = Constants.MvvLvaScore[pieceArray[pawnMoveIndex], pieceArray[pawnIndex]];
-				if (this.staticExchangeEval(pawnIndex, pawnMoveIndex, pieceColour) >= 0) {
-					moveScore += Constants.GOOD_CAPTURE_SCORE;
-				} else {
-					moveScore += Constants.BAD_CAPTURE_SCORE;
-				}
-
-				int moveRepresentation = this.moveEncoder(pawnIndex, pawnMoveIndex, Constants.CAPTURE, pieceArray[pawnMoveIndex], Constants.EMPTY, moveScore);
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generatePawnDoubleMove(int pawnIndex, Bitboard pseudoLegalDoubleMoveFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            if (pseudoLegalDoubleMoveFromIndex != 0) {
-                int indexOfWhitePawnDoubleMoveFromIndex = Constants.findFirstSet(pseudoLegalDoubleMoveFromIndex);
-                int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhitePawnDoubleMoveFromIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY, Constants.EMPTY);
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generatePawnEnPassant(int pawnIndex, Bitboard pseudoLegalEnPassantFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            if (pseudoLegalEnPassantFromIndex != 0) {
-                int indexOfWhiteEnPassantCaptureFromIndex = Constants.findFirstSet(pseudoLegalEnPassantFromIndex);
-
-				int moveScore = Constants.MvvLvaScore[Constants.PAWN, Constants.PAWN];
-				if (this.staticExchangeEval(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, pieceColour) >= 0) {
-					moveScore += Constants.GOOD_CAPTURE_SCORE;
-				} else {
-					moveScore += Constants.BAD_CAPTURE_SCORE;
-				}
-				
-				// Score will always equal 75 (MVV/LVA = 15, and PxP is always a good capture so SEE = 60)
-				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, moveScore);
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generatePawnPromotion(int pawnIndex, Bitboard pseudoLegalPromotionFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
+		private void generatePawnPromotion(int pawnIndex, Bitboard pseudoLegalPromotionFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
             
             //Generates white pawn promotions
             if (pseudoLegalPromotionFromIndex != 0) {
@@ -2967,142 +2916,56 @@ namespace Chess_Engine {
 		}
 
 
-        private void generateKnightMoves(int knightIndex, Bitboard pseudoLegalKnightMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColor) {
-            
-            while (pseudoLegalKnightMovementFromIndex != 0) {
+		// Generates knight, bisohp, rook, queen, and king moves
+		// Takes in the index of the piece, the bitboard of possible move squares
+		// Loops through all of the move squares and generates a move int for each, and then adds it to the list of pseudo legal moves
+	    private void generatePawnKnightBishopRookQueenKingMoves(int pieceIndex, Bitboard pseudoLegalPieceMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour, int flag = -1) {
+			while (pseudoLegalPieceMovementFromIndex != 0) {
 
-                int knightMoveIndex = Constants.findFirstSet(pseudoLegalKnightMovementFromIndex);
-                pseudoLegalKnightMovementFromIndex &= (pseudoLegalKnightMovementFromIndex - 1);
+				int pieceMoveIndex = Constants.findFirstSet(pseudoLegalPieceMovementFromIndex);
+				pseudoLegalPieceMovementFromIndex &= (pseudoLegalPieceMovementFromIndex - 1);
 
-                int moveRepresentation = 0x0;
+				int moveRepresentation = 0x0;
 
-                if (this.pieceArray[knightMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                } else if (this.pieceArray[knightMoveIndex] != Constants.EMPTY) {
-
-	                int moveScore = Constants.MvvLvaScore[pieceArray[knightMoveIndex], pieceArray[knightIndex]];
-	                if (this.staticExchangeEval(knightIndex, knightMoveIndex, pieceColor) >= 0) {
-		                moveScore += Constants.GOOD_CAPTURE_SCORE;
-	                } else {
-		                moveScore += Constants.BAD_CAPTURE_SCORE;
-	                }
+				if (this.pieceArray[pieceMoveIndex] == Constants.EMPTY) {
 					
-					moveRepresentation = this.moveEncoder(knightIndex, knightMoveIndex, Constants.CAPTURE, pieceArray[knightMoveIndex], Constants.EMPTY, moveScore);
-                }
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generateBishopMoves(int bishopIndex, ulong pseudoLegalBishopMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            while (pseudoLegalBishopMovementFromIndex != 0) {
-
-                int bishopMoveIndex = Constants.findFirstSet(pseudoLegalBishopMovementFromIndex);
-                pseudoLegalBishopMovementFromIndex &= (pseudoLegalBishopMovementFromIndex - 1);
-
-                int moveRepresentation = 0x0;
-
-                if (this.pieceArray[bishopMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                }
-                    //If not empty, then must be a black piece at that location, so generate a capture
-                else if (this.pieceArray[bishopMoveIndex] != Constants.EMPTY) {
-
-	                int moveScore = Constants.MvvLvaScore[pieceArray[bishopMoveIndex], pieceArray[bishopIndex]];
-					if (this.staticExchangeEval(bishopIndex, bishopMoveIndex, pieceColour) >= 0) {
-						moveScore += Constants.GOOD_CAPTURE_SCORE;
+					if (flag == Constants.DOUBLE_PAWN_PUSH) {
+						int moveScore = this.moveScoreQuiet(pieceColour, pieceIndex, pieceMoveIndex);
+						moveRepresentation = this.moveEncoder(pieceIndex, pieceMoveIndex, Constants.DOUBLE_PAWN_PUSH, Constants.EMPTY, Constants.EMPTY, moveScore);
+					} else if (flag == Constants.EN_PASSANT_CAPTURE) {
+						int moveScore = Constants.GOOD_CAPTURE_SCORE + Constants.MvvLvaScore[Constants.PAWN, Constants.PAWN];
+						moveRepresentation = this.moveEncoder(pieceIndex, pieceMoveIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, moveScore);
 					} else {
-						moveScore += Constants.BAD_CAPTURE_SCORE;
+						int moveScore = this.moveScoreQuiet(pieceColour, pieceIndex, pieceMoveIndex);
+						moveRepresentation = this.moveEncoder(pieceIndex, pieceMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY, moveScore);	
 					}
-					
-					moveRepresentation = this.moveEncoder(bishopIndex, bishopMoveIndex, Constants.CAPTURE, pieceArray[bishopMoveIndex], Constants.EMPTY, moveScore);
-                }
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
+				} else if (this.pieceArray[pieceMoveIndex] != Constants.EMPTY) {
+					int moveScore = this.moveScoreCapture(pieceColour, pieceIndex, pieceMoveIndex);
+					moveRepresentation = this.moveEncoder(pieceIndex, pieceMoveIndex, Constants.CAPTURE, pieceArray[pieceMoveIndex], Constants.EMPTY, moveScore);
+				}
+				listOfPseudoLegalMoves[index++] = moveRepresentation;
+			}
+	    }
 
-        private void generateRookMoves(int rookIndex, ulong pseudoLegalRookMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            while (pseudoLegalRookMovementFromIndex != 0) {
+		private void ageneratePawnEnPassant(int pawnIndex, Bitboard pseudoLegalEnPassantFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
 
-                int rookMoveIndex = Constants.findFirstSet(pseudoLegalRookMovementFromIndex);
-                pseudoLegalRookMovementFromIndex &= (pseudoLegalRookMovementFromIndex - 1);
+			if (pseudoLegalEnPassantFromIndex != 0) {
+				int indexOfWhiteEnPassantCaptureFromIndex = Constants.findFirstSet(pseudoLegalEnPassantFromIndex);
 
-                int moveRepresentation = 0x0;
+				int moveScore = Constants.MvvLvaScore[Constants.PAWN, Constants.PAWN];
+				if (this.staticExchangeEval(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, pieceColour) >= 0) {
+					moveScore += Constants.GOOD_CAPTURE_SCORE;
+				} else {
+					moveScore += Constants.BAD_CAPTURE_SCORE;
+				}
 
-                if (this.pieceArray[rookMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                }
-                    //If not empty, then must be a black piece at that location, so generate a capture
-                else if (this.pieceArray[rookMoveIndex] != Constants.EMPTY) {
+				// Score will always equal 75 (MVV/LVA = 15, and PxP is always a good capture so SEE = 60)
+				int moveRepresentation = this.moveEncoder(pawnIndex, indexOfWhiteEnPassantCaptureFromIndex, Constants.EN_PASSANT_CAPTURE, (Constants.PAWN + 6 - 6 * pieceColour), Constants.EMPTY, moveScore);
+				listOfPseudoLegalMoves[index++] = moveRepresentation;
+			}
+		}
 
-	                int moveScore = Constants.MvvLvaScore[pieceArray[rookMoveIndex], pieceArray[rookIndex]];
-					if (this.staticExchangeEval(rookIndex, rookMoveIndex, pieceColour) >= 0) {
-						moveScore += Constants.GOOD_CAPTURE_SCORE;
-					} else {
-						moveScore += Constants.BAD_CAPTURE_SCORE;
-					}
-					
-					moveRepresentation = this.moveEncoder(rookIndex, rookMoveIndex, Constants.CAPTURE, pieceArray[rookMoveIndex], Constants.EMPTY, moveScore);
-                }
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generateQueenMoves(int queenIndex, ulong pseudoLegalQueenMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            
-            while (pseudoLegalQueenMovementFromIndex != 0) {
-
-                int queenMoveIndex = Constants.findFirstSet(pseudoLegalQueenMovementFromIndex);
-                pseudoLegalQueenMovementFromIndex &= (pseudoLegalQueenMovementFromIndex - 1);
-
-                int moveRepresentation = 0x0;
-
-                if (this.pieceArray[queenMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                }
-                    //If not empty, then must be a black piece at that location, so generate a capture
-                else if (this.pieceArray[queenMoveIndex] != Constants.EMPTY) {
-
-	                int moveScore = Constants.MvvLvaScore[pieceArray[queenMoveIndex], pieceArray[queenIndex]];
-					if (this.staticExchangeEval(queenIndex, queenMoveIndex, pieceColour) >= 0) {
-						moveScore += Constants.GOOD_CAPTURE_SCORE;
-					} else {
-						moveScore += Constants.BAD_CAPTURE_SCORE;
-					}
-					
-					moveRepresentation = this.moveEncoder(queenIndex, queenMoveIndex, Constants.CAPTURE, pieceArray[queenMoveIndex], Constants.EMPTY, moveScore);
-                }
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-        private void generateKingMoves(int kingIndex, Bitboard pseudoLegalKingMovementFromIndex, int[] listOfPseudoLegalMoves, ref int index, int pieceColour) {
-            while (pseudoLegalKingMovementFromIndex != 0) {
-
-                int kingMoveIndex = Constants.findFirstSet(pseudoLegalKingMovementFromIndex);
-                pseudoLegalKingMovementFromIndex &= (pseudoLegalKingMovementFromIndex - 1);
-
-                int moveRepresentation = 0x0;
-
-                if (this.pieceArray[kingMoveIndex] == Constants.EMPTY) {
-                    moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.QUIET_MOVE, Constants.EMPTY, Constants.EMPTY);
-                } else if (this.pieceArray[kingMoveIndex] != Constants.EMPTY) {
-
-	                int moveScore = Constants.MvvLvaScore[pieceArray[kingMoveIndex], pieceArray[kingIndex]];
-					if (this.staticExchangeEval(kingIndex, kingMoveIndex, pieceColour) >= 0) {
-						moveScore += Constants.GOOD_CAPTURE_SCORE;
-					} else {
-						moveScore += Constants.BAD_CAPTURE_SCORE;
-					}
-					
-					moveRepresentation = this.moveEncoder(kingIndex, kingMoveIndex, Constants.CAPTURE, pieceArray[kingMoveIndex], Constants.EMPTY, moveScore);
-                }
-                listOfPseudoLegalMoves[index++] = moveRepresentation;
-            }
-        }
-
-       //Generate rook moves from index
+		//Generate rook moves from index
         private Bitboard generateRookMovesFromIndex(Bitboard allPieces, int index) {
             ulong horizontalVerticalOccupancy = allPieces & Constants.rookOccupancyMask[index];
             int indexOfRookMoveBitboard = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[index]) >> Constants.rookMagicShiftNumber[index]);
@@ -3116,6 +2979,30 @@ namespace Chess_Engine {
             return Constants.bishopMoves[index][indexOfBishopMoveBitboard];
         }
 
+		// Generates the move score for quiet moves
+	    private int moveScoreQuiet(int pieceColour, int pieceIndex, int pieceMoveIndex) {
+			
+			int moveScore = 0;
+			
+			/*
+			if (this.timesSquareIsAttacked(pieceColour, pieceMoveIndex) == 0 || this.staticExchangeEval(pieceIndex, pieceMoveIndex, pieceColour) >= 0) {
+				moveScore += Constants.GOOD_QUIET_SCORE;
+			} else {
+				moveScore += Constants.BAD_QUIET_SCORE;
+			}*/
+		    return moveScore;
+	    }
+
+		// Generates the move score for captures
+	    private int moveScoreCapture(int pieceColour, int pieceIndex, int pieceMoveIndex) {
+			int moveScore = Constants.MvvLvaScore[pieceArray[pieceMoveIndex], pieceArray[pieceIndex]];
+			if (this.staticExchangeEval(pieceIndex, pieceMoveIndex, pieceColour) >= 0) {
+				moveScore += Constants.GOOD_CAPTURE_SCORE;
+			} else {
+				moveScore += Constants.BAD_CAPTURE_SCORE;
+			}
+		    return moveScore;
+	    }
 
         //OTHER METHODS----------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------

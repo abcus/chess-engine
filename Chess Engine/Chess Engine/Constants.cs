@@ -932,11 +932,14 @@ namespace Chess_Engine {
 		public const int BAD_PROMOTION_CAPTURE_SCORE = 69;
 		public const int BAD_PROMOTION_SCORE = 14;
 	    public const int BAD_CAPTURE_SCORE = 4;
-		
+
+	    public const int GOOD_QUIET_SCORE = 0;
+	    public const int BAD_QUIET_SCORE = 0;
+
 		// Have to experiment with ordering of killer and bad capture
 	    public const int KILLER_1_SCORE = 13;
 	    public const int KILLER_2_SCORE = 12;
-
+		
 		// Move Generator Constants
 		// For the main search:
 		//    First generate captures, en-passant captures, capture-promotions, and promotions

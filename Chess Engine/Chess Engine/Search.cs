@@ -644,6 +644,7 @@ namespace Chess_Engine {
 			// Start in the hash move phase
 			if (this.phase == Constants.PHASE_HASH) {
 
+				
 				// retrieves the hash move from the transposition table
 				// If the entry's key matches the board's current key, then probe the move
 				// If the entry from the transposition table doesn't have a move, then probe the PV table
@@ -752,7 +753,8 @@ namespace Chess_Engine {
 						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_KILLER_2;
 							break;
-						} else if (this.pseudoLegalQuietList[i] == this.killer1 && this.isMoveLegal(killer1) == true) {
+						} else if ((this.pseudoLegalQuietList[i] & ~Constants.MOVE_SCORE_MASK) == this.killer1 && this.isMoveLegal(killer1) == true) {
+							
 							this.phase = Constants.PHASE_KILLER_2;
 							return killer1;
 						} else {
@@ -778,7 +780,7 @@ namespace Chess_Engine {
 						if (this.pseudoLegalQuietList[i] == 0) {
 							this.phase = Constants.PHASE_QUIET;
 							break;
-						} else if (this.pseudoLegalQuietList[i] == this.killer2 && this.isMoveLegal(killer2) == true) {
+						} else if ((this.pseudoLegalQuietList[i] & ~Constants.MOVE_SCORE_MASK) == this.killer2 && this.isMoveLegal(killer2) == true) {
 							this.phase = Constants.PHASE_QUIET;
 							return killer2;
 						} else {
