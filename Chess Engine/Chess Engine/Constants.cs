@@ -82,7 +82,15 @@ namespace Chess_Engine {
             EN_PASSANT_CAPTURE = 5,
             PROMOTION = 6,
             PROMOTION_CAPTURE = 7;
-        
+
+		// Enumerated types for the generatePawnKnightBishopRookQueenKingMoves method
+	    public const int
+		    UNDER_PROMOTION = 8,
+		    QUEEN_PROMOTION = 9,
+		    UNDER_PROMOTION_CAPTURE = 10,
+		    QUEEN_PROMOTION_CAPTURE = 11;
+			
+
 		//Move representation masks
         public const int
             START_SQUARE_MASK = 0x3F,

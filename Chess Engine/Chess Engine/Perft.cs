@@ -131,7 +131,7 @@ namespace Chess_Engine {
 
 			int[] pseudoLegalMoveList;
 			if (inputBoard.isInCheck() == false) {
-				pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_QUIESCENCE); 
+				pseudoLegalMoveList = inputBoard.phasedMoveGenerator(Constants.PERFT_MAIN); 
 			} else {
 				pseudoLegalMoveList = inputBoard.checkEvasionGenerator();
 			}
