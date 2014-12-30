@@ -198,6 +198,8 @@ namespace Chess_Engine {
 				Search.board.makeMove(move);
 				
 				if (movesMade == 0) {
+					// First move is assumed to be the best move 
+					// Search with full window
 					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
 
 					// The first move is assumed to be the best move
@@ -210,6 +212,10 @@ namespace Chess_Engine {
 						return failLowResult;
 					}
 				} else {
+					// Other moves are assumed to not raise alpha (set by the first move)
+					// Search with null window because it is faster than full-window search and only upper bound (alpha) is needed
+					// If score > alpha, then score > alpha + 1 leading to a fast beta cutoff
+					// Will have to re-search with full window to get exact score, and this node will be a PV node
 					boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
 					
 					if (boardScore > alpha) {
@@ -349,7 +355,10 @@ namespace Chess_Engine {
 				// Do only if side to move is not in check (otherwise next move would lead to king capture)
 				// Do only if depth is greater than or equal to (depth reduction + 1), otherwise we will get PVS called with depth = -1
 				// DO only if it is a non-PV node (if PV node then beta != alpha + 1, if non-PV node then beta == alpha + 1)
-				if (doNull == true && Search.board.isInCheck() == false && depth >= Constants.R + 1 && nodeType != Constants.PV_NODE) {
+				if (doNull == true 
+					&& Search.board.isInCheck() == false 
+					&& depth >= Constants.R + 1 
+					&& nodeType != Constants.PV_NODE) {
 					Search.board.makeNullMove();
 					int nullScore = -PVS(depth - 1 - Constants.R, ply + 1 + Constants.R, - beta, -beta + 1, false, nodeType);
 					Search.board.unmakeNullMove();
@@ -398,7 +407,7 @@ namespace Chess_Engine {
 						// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
 						// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
 						if (boardScore > alpha) {
-							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
+							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
 						}
 					}
 					Search.board.unmakeMove(move, restoreData);
@@ -661,18 +670,18 @@ namespace Chess_Engine {
 				// If the hash move is illegal, then set phase = PHASE_CAPTURE if not in check, and phase = PHASE_CHECK_EVADE if in check
 				// If the hash move is legal, then setphase = PHASE_CAPTURE if not in check, and phase = PHASE_CHECK_EVADE if in check and return the move
 				if (this.hashMove == 0) {
-					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
 				} else if (this.isMoveLegal(hashMove) == false) {
-					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
 				} else {
-					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_CAPTURE;
+					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
 					return this.hashMove;
 				}
 				
 			}
 
 			// Capture phase
-			if (this.phase == Constants.PHASE_CAPTURE) {
+			if (this.phase == Constants.PHASE_GOOD_CAPTURE) {
 
 				// The first time the move generator enters this phase, it generates the list of captures
 				if (captureIndex == 0) {
@@ -700,6 +709,12 @@ namespace Chess_Engine {
 								pseudoLegalCaptureList[captureIndex] = bestMove;
 							}
 							tempIndex++;
+						}
+
+						// If the score goes into the bad captures, then break
+						if (bestMoveScore < Constants.GOOD_PROMOTION_SCORE) {
+							this.phase = Constants.PHASE_KILLER_1;
+							break;
 						}
 
 						// Checks to see what piece moved, and what type of move was made
@@ -804,7 +819,8 @@ namespace Chess_Engine {
 					// If there is no move at the quiet index, then return 0
 					// Otherwise, loop through the whole array and swap the move with the highest score to the front position
 					if (move == 0) {
-						return 0;
+						this.phase = Constants.PHASE_BAD_CAPTURE;
+						break;
 					} else if (move != 0) {
 
 						// Fix this later to swap only at the end of an interation
@@ -852,6 +868,63 @@ namespace Chess_Engine {
 					}
 				}
 			}
+			// Capture phase
+			if (this.phase == Constants.PHASE_BAD_CAPTURE) {
+
+				while (true) {
+					int move = pseudoLegalCaptureList[captureIndex];
+
+					// If there is no move at the capture index, then set the phase = PHASE_KILLER and break
+					// Otherwise, loop through the whole array and swap the move with the highest score to the front position
+					if (move == 0) {
+						return 0;
+					} else if (move != 0) {
+
+						// Fix this later to swap only at the end of an interation
+						int bestMoveScore = (move & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT;
+						int tempIndex = captureIndex + 1;
+						while (pseudoLegalCaptureList[tempIndex] != 0) {
+							if (((pseudoLegalCaptureList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT) > bestMoveScore) {
+								bestMoveScore = ((pseudoLegalCaptureList[tempIndex] & Constants.MOVE_SCORE_MASK) >> Constants.MOVE_SCORE_SHIFT);
+								int bestMove = pseudoLegalCaptureList[tempIndex];
+								pseudoLegalCaptureList[tempIndex] = pseudoLegalCaptureList[captureIndex];
+								pseudoLegalCaptureList[captureIndex] = bestMove;
+							}
+							tempIndex++;
+						}
+						// Checks to see what piece moved, and what type of move was made
+						// If the move is a king move or en-passant capture, then it does a legality check before returning the move
+						// Otherwise it just returns the move
+						move = pseudoLegalCaptureList[captureIndex];
+						int startSquare = ((move & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
+						int pieceMoved = (this.board.pieceArray[startSquare]);
+						int sideToMove = (pieceMoved <= Constants.WHITE_KING) ? Constants.WHITE : Constants.BLACK;
+						int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+
+						if (flag == Constants.EN_PASSANT_CAPTURE ||
+							pieceMoved == Constants.WHITE_KING ||
+							pieceMoved == Constants.BLACK_KING) {
+							this.board.makeMove(move);
+							if (this.board.isMoveLegal(sideToMove) == true && move != this.hashMove) {
+								board.unmakeMove(move, restoreData);
+								captureIndex++;
+								return move;
+							} else {
+								board.unmakeMove(move, restoreData);
+								captureIndex++;
+							}
+						} else {
+							if (move != this.hashMove) {
+								captureIndex++;
+								return move;
+							} else {
+								captureIndex++;
+							}
+						}
+					}
+				}
+			}
+
 
 			if (this.phase == Constants.PHASE_CHECK_EVADE) {
 
@@ -919,7 +992,7 @@ namespace Chess_Engine {
 		private void generateMoves() {
 			// If the side to move is not in check, then get list of moves from the almost legal move generator
 			// Otherwise, get list of moves from the check evasion generator
-			if (this.phase == Constants.PHASE_CAPTURE) {
+			if (this.phase == Constants.PHASE_GOOD_CAPTURE) {
 				this.pseudoLegalCaptureList = board.moveGenerator(Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO);
 
 				for (int i = 0; i < pseudoLegalCaptureList.Length; i++) {

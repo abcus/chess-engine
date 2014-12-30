@@ -976,11 +976,12 @@ namespace Chess_Engine {
 
 		// Search phase constants
 	    public const int PHASE_HASH = 0;
-	    public const int PHASE_CAPTURE = 1;
+	    public const int PHASE_GOOD_CAPTURE = 1;
 	    public const int PHASE_KILLER_1 = 2;
 	    public const int PHASE_KILLER_2 = 3;
 	    public const int PHASE_QUIET = 4;
-	    public const int PHASE_CHECK_EVADE = 5;
+	    public const int PHASE_BAD_CAPTURE = 5;
+	    public const int PHASE_CHECK_EVADE = 6;
 
 	    
 		// Extension method that generates a random ulong

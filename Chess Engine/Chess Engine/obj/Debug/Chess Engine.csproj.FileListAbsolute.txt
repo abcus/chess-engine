@@ -11,8 +11,7 @@ C:\Users\Kevin\Desktop\chess\chess-engine\Chess Engine\Chess Engine\obj\Debug\Ch
 C:\Users\Kevin\Desktop\chess\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.exe
 C:\Users\Kevin\Desktop\chess\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.pdb
 C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\bin\Debug\Chess Engine.exe.config
-C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.exe
-C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.pdb
 C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\bin\Debug\Chess Engine.exe
 C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\bin\Debug\Chess Engine.pdb
-C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.csprojResolveAssemblyReference.cache
+C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.exe
+C:\Users\Kevin\Desktop\chess\chess-engine\chess-engine\Chess Engine\Chess Engine\obj\Debug\Chess Engine.pdb
