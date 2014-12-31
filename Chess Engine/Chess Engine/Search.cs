@@ -279,7 +279,11 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
 		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull, int nodeType) {
-		    
+
+			if (beta - alpha > 1) {
+				Debug.Assert(nodeType == Constants.PV_NODE);
+			}
+
 			// At the leaf nodes
 			if (depth == 0) {
 
@@ -382,6 +386,7 @@ namespace Chess_Engine {
 				int bestMove = 0;
 				int movesMade = 0;
 				int boardScore = 0;
+				bool isInCheckBeforeMove = Search.board.isInCheck();
 				// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
 				bool raisedAlpha = false;
 
@@ -394,20 +399,40 @@ namespace Chess_Engine {
 						break;
 					}
 
+					// Make the move
 					Search.board.makeMove(move);
 
 					// If it is the first move, search with a full window
 					if (movesMade == 0) {
-						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
-					}
-						// Otherwise, search with a zero window search
-					else {
-						boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
 						
-						// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
-						// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
+						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
+					} else {
+						// Late move reduction
+						if (movesMade >= 4
+						    && depth >= 3
+						    && nodeType != Constants.PV_NODE
+						    && Search.board.isInCheck() == false
+						    && isInCheckBeforeMove == false
+						    && ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.PROMOTION_CAPTURE
+						    && ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.PROMOTION
+						    && ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.CAPTURE
+						    && ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.EN_PASSANT_CAPTURE) {
+
+							
+							boardScore = -PVS(depth - 2, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+						} else {
+							boardScore = alpha + 1;
+						}
+
 						if (boardScore > alpha) {
-							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
+							boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+
+							// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
+							// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
+							if (boardScore > alpha) {
+
+								boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
+							}
 						}
 					}
 					Search.board.unmakeMove(move, restoreData);
@@ -478,7 +503,7 @@ namespace Chess_Engine {
 					UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 				}
 				return alpha; //return alpha whether it was raised or not (fail-hard)	
-			}
+			} 
 		}
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
