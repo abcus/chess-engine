@@ -641,6 +641,7 @@ namespace Chess_Engine {
         public const Value DRAW = 0;
         public const Value STALEMATE = 0;
         public const Value CHECKMATE = 30000;
+	    public const Value INFINITE = 30001;
 
         public const Value KING_VALUE = 12500;
 
@@ -910,6 +911,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
 	    public const int MAX_DEPTH = 64;
+	    public const int MAX_PLY = 64;
 
 	    public const int ASP_WINDOW = Constants.PAWN_VALUE_MG/4;
 

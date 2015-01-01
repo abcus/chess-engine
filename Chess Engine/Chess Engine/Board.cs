@@ -3239,5 +3239,14 @@ namespace Chess_Engine {
 				return 1;
 			}
 		}
+
+	    internal bool isDraw() {
+		    if ((this.isInCheck() == false && this.moveGenerator(Constants.ALL_MOVES)[0] == 0)
+		        || Search.board.fiftyMoveRule >= 100
+		        || Search.board.getRepetitionNumber() > 1) {
+			    return true;
+		    }
+		    return false;
+	    }
 	}
 }

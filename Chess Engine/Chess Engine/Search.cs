@@ -200,7 +200,7 @@ namespace Chess_Engine {
 				if (movesMade == 0) {
 					// First move is assumed to be the best move 
 					// Search with full window
-					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
+					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true);
 
 					// The first move is assumed to be the best move
 					// If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
@@ -216,10 +216,10 @@ namespace Chess_Engine {
 					// Search with null window because it is faster than full-window search and only upper bound (alpha) is needed
 					// If score > alpha, then score > alpha + 1 leading to a fast beta cutoff
 					// Will have to re-search with full window to get exact score, and this node will be a PV node
-					boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+					boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true);
 					
 					if (boardScore > alpha) {
-						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.PV_NODE);
+						boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true);
 					}
 				}
 				Search.board.unmakeMove(move, restoreData);
@@ -278,19 +278,20 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull, int nodeType) {
+		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull) {
 
-		
+			Debug.Assert(alpha < beta);
+			
+			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 
 			// At the leaf nodes
-			if (depth == 0) {
-
-				return quiescence(depth, ply, alpha, beta, nodeType);
+			if (depth <= 0 || depth >= Constants.MAX_DEPTH) {
+				return quiescence(depth, ply, alpha, beta);
 
 			}
 			// return 0 if repetition or draw
-			if (Search.board.fiftyMoveRule >= 100 || Search.board.getRepetitionNumber() > 1) {
-				return 0;
+			if (Search.board.isDraw() == true) {
+				return Constants.DRAW;
 			}
 
 			// At the interior nodes
@@ -299,56 +300,17 @@ namespace Chess_Engine {
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 			int TTmove = entry.move;
 
-			// If we set it to entry.depth >= depth, then get a slightly different (perhaps move accurate?) result???
-			if (entry.key == zobristKey && entry.depth >= depth) {
-				// If it is a PV node, see if it is greater than beta (if so return beta), less than alpha (if so return alpha), or in between (if so return the exact score)
-				// If it is a CUT node, see if this lower bound is greater than beta (if so return beta)
-				// If it is an ALL node, see if this upper bound is less than alpha (is so return alpha)
-				// Using a fail-hard here so need those extra conditions instead of just returning the score
-				if (entry.flag == Constants.EXACT) {
-					int evaluationScore = entry.evaluationScore;
+			if (Search.canReturnTT(entry, depth, alpha, beta, zobristKey)) {
+				int evaluationScore = Search.scoreFromTT(entry.evaluationScore, ply);
 
-					if (evaluationScore == -Constants.CHECKMATE) {
-						return -Constants.CHECKMATE + ply;
-					} else if (evaluationScore == Constants.STALEMATE) {
-						return Constants.STALEMATE;
-					}
-
+				if (evaluationScore > alpha) {
 					if (evaluationScore >= beta) {
-
-						// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
-						// Moves in the killer table shouldn't have a score, so don't need to take it out
-						int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-						if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[ply, 0])) {
-							Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
-							Search.killerTable[ply, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
-						}
-						return beta;
-					} else if (evaluationScore <= alpha) {
-						return alpha;
-					} else if (evaluationScore > alpha && evaluationScore < beta) {
-						return evaluationScore;
-					}
-				} else if (entry.flag == Constants.L_BOUND) {
-					int evaluationScore = entry.evaluationScore;
-					if (evaluationScore >= beta) {
-
-						// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
-						// Moves in the killer table shouldn't have a score, so don't need to take it out
-						int flag = ((TTmove & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-						if (TTmove != 0 && (flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (TTmove != Search.killerTable[ply, 0])) {
-							Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
-							Search.killerTable[ply, 0] = (TTmove & ~Constants.MOVE_SCORE_MASK);
-						}
-
+						updateKillers(TTmove, ply);
 						return beta;
 					}
-				} else if (entry.flag == Constants.U_BOUND) {
-					int evaluationScore = entry.evaluationScore;
-					if (evaluationScore <= alpha) {
-						return alpha;
-					}
+					return evaluationScore;
 				}
+				return alpha;
 			}
 
 			// Null move pruning
@@ -362,7 +324,7 @@ namespace Chess_Engine {
 				&& depth >= Constants.R + 1
 				&& nodeType != Constants.PV_NODE) {
 				Search.board.makeNullMove();
-				int nullScore = -PVS(depth - 1 - Constants.R, ply + 1 + Constants.R, -beta, -beta + 1, false, nodeType);
+				int nullScore = -PVS(depth - 1 - Constants.R, ply + 1 + Constants.R, -beta, -beta + 1, false);
 				Search.board.unmakeNullMove();
 
 				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
@@ -377,8 +339,7 @@ namespace Chess_Engine {
 					return beta;
 				}
 			}
-
-
+			
 			stateVariables restoreData = new stateVariables(Search.board);
 			movePicker mPicker = new movePicker(Search.board, depth, ply);
 			int bestMove = 0;
@@ -403,7 +364,7 @@ namespace Chess_Engine {
 				// If it is the first move, search with a full window
 				if (movesMade == 0) {
 
-					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
+					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true);
 				} else {
 					// Late move reduction
 					if (movesMade >= 4
@@ -417,19 +378,19 @@ namespace Chess_Engine {
 						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.EN_PASSANT_CAPTURE) {
 
 
-						boardScore = -PVS(depth - 2, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+						boardScore = -PVS(depth - 2, ply + 1, -alpha - 1, -alpha, true);
 					} else {
 						boardScore = alpha + 1;
 					}
 
 					if (boardScore > alpha) {
-						boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_PV_NODE);
+						boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true);
 
 						// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
 						// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
 						if (boardScore > alpha) {
 
-							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, nodeType);
+							boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true);
 						}
 					}
 				}
@@ -460,14 +421,7 @@ namespace Chess_Engine {
 						} else {
 							failHigh++;
 						}
-						// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
-						// Moves in the killer table shouldn't have a score, so don't need to take it out
-						int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
-						if ((flag == Constants.QUIET_MOVE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) && (move != Search.killerTable[ply, 0])) {
-							Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
-							Search.killerTable[ply, 0] = (move & ~Constants.MOVE_SCORE_MASK);
-						}
-
+						updateKillers(move, ply);
 						// return beta and not best score (fail-hard)
 						return beta;
 					}
@@ -509,8 +463,9 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
-		private static int quiescence(int depth, int ply, int alpha, int beta, int nodeType) {
+		private static int quiescence(int depth, int ply, int alpha, int beta) {
 
+			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 			Debug.Assert(depth <= 0);
 
 			// Probe the hash table, and if a match is found then return the score
@@ -561,7 +516,7 @@ namespace Chess_Engine {
 
 				Search.board.makeMove(move);
 
-				boardScore = -quiescence(depth - 1, ply + 1, -beta, -alpha, nodeType);
+				boardScore = -quiescence(depth - 1, ply + 1, -beta, -alpha);
 
 				Search.board.unmakeMove(move, restoreData);
 				movesMade++;
@@ -666,15 +621,30 @@ namespace Chess_Engine {
 		    return score;
 	    }
 		// Returns a bool do determine whether or not a TT score can be used to cut off the search
-	    static bool canReturnTT(TTEntry entry, int depth, int beta, Zobrist key) {
+	    static bool canReturnTT(TTEntry entry, int depth, int alpha, int beta, Zobrist key) {
 		    if (entry.depth < depth || (entry.key != key)) {
 			    return false;
 		    }
 		    int ttScore = entry.evaluationScore;
 		    return (entry.flag == Constants.EXACT
 					|| (entry.flag == Constants.L_BOUND && ttScore >= beta)
-					|| (entry.flag == Constants.U_BOUND && ttScore < beta));
+					|| (entry.flag == Constants.U_BOUND && ttScore <= alpha));
 	    }
+
+		// Stores the move in the killer table if it is not a capture, en passant capture, promotion, capture promotion and if it's not already in the killer table
+		// Have to remove the score before storing it in the table
+	    static void updateKillers(int move, int ply) {
+			int flag = ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
+			if ((flag == Constants.QUIET_MOVE
+				|| flag == Constants.DOUBLE_PAWN_PUSH
+				|| flag == Constants.SHORT_CASTLE
+				|| flag == Constants.LONG_CASTLE)
+				&& move != Search.killerTable[ply, 0]
+				&& move != 0) {
+				Search.killerTable[ply, 1] = Search.killerTable[ply, 0];
+				Search.killerTable[ply, 0] = (move & ~Constants.MOVE_SCORE_MASK);
+			}
+		}
     }
 }
 
