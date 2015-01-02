@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,12 +14,13 @@ namespace Chess_Engine {
 
 		internal TTEntry[] hashTable;
 		internal TTEntry[] PVTable;
-
+		internal int[] depthFrequency;
 
 		// Constructor
 		public TTable() {
-			this.hashTable = new TTEntry[Constants.TT_SIZE];
+			this.hashTable = new TTEntry[Constants.TT_SIZE + Constants.CLUSTER_SIZE];
 			this.PVTable = new TTEntry[Constants.PV_TT_SIZE];
+			this.depthFrequency = new int[300];
 		}
 
 		// Method that stores an entry in the hash table
@@ -28,12 +30,20 @@ namespace Chess_Engine {
 		}
 
 		// Method that retrieves an entry from the hash table
-		public TTEntry probeTTable(Zobrist key) {
-			int index = (int)(key % Constants.TT_SIZE);
-			return this.hashTable[index];
+		// Starts at index and loops over 4 entries and returns if the keys match
+		public TTEntry probeTTable(Zobrist zobristKey) {
+
+			Debug.Assert(zobristKey != 0);
+			int index = (int)(zobristKey % Constants.TT_SIZE);
+
+			for (int i = index; i < index + Constants.CLUSTER_SIZE; i ++) {
+				if (this.hashTable[i].key == zobristKey) {
+					return this.hashTable[i];
+				}	
+			}
+			return Constants.EMPTY_ENTRY;	
 		}
-
-
+		
 
 		// Method that stores an entry in the PV table
 		public void storePVTTable(Zobrist key, TTEntry entry) {

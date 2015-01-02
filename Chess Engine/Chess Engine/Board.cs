@@ -113,6 +113,7 @@ namespace Chess_Engine {
         internal Zobrist zobristKey = 0x0UL;
 
 	    internal List<Zobrist> gameHistory = new List<Zobrist>();
+		internal List<int> moveHistory = new List<int>(); 
 
 		// History hash is used to determine whether or not a check of game history is needed
 		internal int[] historyHash = new int[16381];
@@ -427,6 +428,8 @@ namespace Chess_Engine {
 			// Adds the zobrist key to the game history array list
 			this.gameHistory.Add(this.zobristKey);
 
+			this.moveHistory.Add(moveRepresentationInput);
+
 	        // Have a history hash of 2^14 = 16384 elements
 			// Take the least significant 14 bits of the zobrist key to get an index, and increment the corresponding element in the history hash by 1
 			// When checking for repetitions, convert the zobrist of the current position to an index and check the history hash 
@@ -615,6 +618,8 @@ namespace Chess_Engine {
 
 			// Removes the last element of the game history list
 			this.gameHistory.RemoveAt(this.gameHistory.Count-1);
+
+			this.moveHistory.RemoveAt(this.moveHistory.Count-1);
 
             // Updates the piece square tables (faster to recalculate than to copy into the state variable object and copy back)
             if (flag == Constants.QUIET_MOVE || flag == Constants.CAPTURE || flag == Constants.DOUBLE_PAWN_PUSH || flag == Constants.EN_PASSANT_CAPTURE || flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
@@ -3241,8 +3246,7 @@ namespace Chess_Engine {
 		}
 
 	    internal bool isDraw() {
-		    if ((this.isInCheck() == false && this.moveGenerator(Constants.ALL_MOVES)[0] == 0)
-		        || Search.board.fiftyMoveRule >= 100
+		    if (Search.board.fiftyMoveRule >= 100
 		        || Search.board.getRepetitionNumber() > 1) {
 			    return true;
 		    }

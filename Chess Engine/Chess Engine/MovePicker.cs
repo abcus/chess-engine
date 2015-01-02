@@ -46,7 +46,6 @@ namespace Chess_Engine {
 			// Start in the hash move phase
 			if (this.phase == Constants.PHASE_HASH) {
 
-				
 				// retrieves the hash move from the transposition table
 				// If the entry's key matches the board's current key, then probe the move
 				// If the entry from the transposition table doesn't have a move, then probe the PV table
@@ -66,7 +65,7 @@ namespace Chess_Engine {
 					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
 				} else if (this.isMoveLegal(hashMove) == false) {
 					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
-				} else {
+				} else if (this.isMoveLegal(hashMove) == true) {
 					this.phase = board.isInCheck() ? Constants.PHASE_CHECK_EVADE : Constants.PHASE_GOOD_CAPTURE;
 					return this.hashMove;
 				}

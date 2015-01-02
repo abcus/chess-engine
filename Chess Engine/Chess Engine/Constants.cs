@@ -917,6 +917,8 @@ namespace Chess_Engine {
 
 		public const int TT_SIZE = 15485867;
 	    public const int PV_TT_SIZE = 1000003;
+	    public const int CLUSTER_SIZE = 4;
+		public static TTEntry EMPTY_ENTRY = new TTEntry(0,0,0,0,0);
 
 	    public const int EXACT = 1;
 	    public const int L_BOUND = 2;

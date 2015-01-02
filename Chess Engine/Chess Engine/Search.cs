@@ -127,12 +127,12 @@ namespace Chess_Engine {
 					if (tempResult == null) {
 						return;
 					} if (tempResult.evaluationScore == alpha) {
-						currentWindow *= 2;
+						currentWindow *= 4;
 						alpha -= (int)(0.5 * currentWindow);
 						researches++;
 						continue;
 					} else if (tempResult.evaluationScore == beta) {
-						currentWindow *= 2;
+						currentWindow *= 4;
 						beta += (int)(0.5 * currentWindow);
 						researches++;
 						continue;
@@ -281,8 +281,7 @@ namespace Chess_Engine {
 		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull) {
 
 			Debug.Assert(alpha < beta);
-			
-			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
+						int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 
 			// At the leaf nodes
 			if (depth <= 0 || depth >= Constants.MAX_DEPTH) {
@@ -298,6 +297,7 @@ namespace Chess_Engine {
 			// Probe the hash table and if the entry's depth is greater than or equal to current depth:
 			Zobrist zobristKey = Search.board.zobristKey;
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
+			
 			int TTmove = entry.move;
 
 			if (Search.canReturnTT(entry, depth, alpha, beta, zobristKey)) {
@@ -375,9 +375,10 @@ namespace Chess_Engine {
 						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.PROMOTION_CAPTURE
 						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.PROMOTION
 						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.CAPTURE
-						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.EN_PASSANT_CAPTURE) {
-
-
+						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.EN_PASSANT_CAPTURE
+						&& move != Search.killerTable[ply, 0]
+						&& move != Search.killerTable[ply, 1]) {
+						
 						boardScore = -PVS(depth - 2, ply + 1, -alpha - 1, -alpha, true);
 					} else {
 						boardScore = alpha + 1;
@@ -467,6 +468,7 @@ namespace Chess_Engine {
 
 			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 			Debug.Assert(depth <= 0);
+			Debug.Assert(alpha < beta);
 
 			// Probe the hash table, and if a match is found then return the score
 			// (validate the key to prevent type 2 collision)
