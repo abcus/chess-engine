@@ -77,9 +77,7 @@ namespace Chess_Engine {
 			// Prints the board along with other state variables (castling rights, etc.)
 			else if (string0 == "print") {
                 UCI_IO.drawBoard(position);
-				foreach (int move in position.moveHistory) {
-					Console.WriteLine(UCI_IO.getMoveStringFromMoveRepresentation(move));
-				}
+				UCI_IO.transpositionTable.printDepthFrequency();
             } else if (string0 == "moves") {
 				Test.printLegalMove(position);
             }
