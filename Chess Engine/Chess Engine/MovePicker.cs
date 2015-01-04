@@ -52,7 +52,7 @@ namespace Chess_Engine {
 				// Have to remove any previous score from the hashmove
 				TTEntry entry = UCI_IO.transpositionTable.probeTTable(board.zobristKey);
 				TTEntry PVTableEntry = UCI_IO.transpositionTable.probePVTTable(board.zobristKey);
-				if (entry.key == board.zobristKey && entry.move != 0) {
+				if (entry.key == board.zobristKey && entry.move != 0 && entry.depth > 0) {
 					this.hashMove = (entry.move & ~Constants.MOVE_SCORE_MASK);
 				} else if (PVTableEntry.key == board.zobristKey && PVTableEntry.move != 0) {
 					this.hashMove = (PVTableEntry.move & ~Constants.MOVE_SCORE_MASK);
