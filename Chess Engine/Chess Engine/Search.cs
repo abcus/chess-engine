@@ -479,7 +479,7 @@ namespace Chess_Engine {
 			// Probe the hash table, and if a match is found then return the score
 			// Probe the hash table and if the entry's depth is greater than or equal to current depth:
 			// At PV nodes, we don't use the TT for pruning, but only for move ordering
-			/*Zobrist zobristKey = Search.board.zobristKey;
+			Zobrist zobristKey = Search.board.zobristKey;
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 
 			if (nodeType != Constants.PV_NODE && Search.canReturnTT(entry, depth, alpha, beta, zobristKey)) {
@@ -492,7 +492,7 @@ namespace Chess_Engine {
 					return evaluationScore;
 				}
 				return alpha;
-			}*/
+			}
 
 
 			if (Search.board.isInCheck() == false) {
@@ -546,10 +546,10 @@ namespace Chess_Engine {
 					// If the score was greater than beta, we have a beta cutoff (fail high)
 					if (boardScore >= beta) {
 
-						/*
+						
 						TTEntry newEntry = new TTEntry(zobristKey, Constants.L_BOUND, depth, beta, move);
 						UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
-						*/
+						
 
 						// Increment fail high first if first move produced cutoff, otherwise increment fail high
 						if (firstMove == true) {
@@ -573,7 +573,7 @@ namespace Chess_Engine {
 					return -Constants.CHECKMATE + ply;
 				}
 			}
-			/*
+			
 			if (raisedAlpha == true) {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMove);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
@@ -581,7 +581,7 @@ namespace Chess_Engine {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.U_BOUND, depth, alpha);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 			}
-			 */
+			 
 			return alpha; //return alpha whether it was raised or not (fail-hard)	 
 	    }
 
