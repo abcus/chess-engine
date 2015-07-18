@@ -111,7 +111,7 @@ namespace Chess_Engine {
 						return;
 					}
 
-					int tempResult = PVSRoot(i, ply, alpha, beta, Constants.ROOT);
+					int tempResult = PVS(i, ply, alpha, beta, true, Constants.ROOT);
 
 					// If PVSRoot at depth i returned null
 					// that means that the search wasn't completed and time has run out, so terminate the thread
@@ -162,104 +162,7 @@ namespace Chess_Engine {
 
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
-		// PVS ROOT
-		// Returns both the best move and the evaluation score
-		//--------------------------------------------------------------------------------------------------------------------------------------------
-		//--------------------------------------------------------------------------------------------------------------------------------------------
-
-	    public static int PVSRoot(int depth, int ply, int alpha, int beta, int nodeType) {
-		    Zobrist zobristKey = Search.board.zobristKey;
-
-			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
-
-			// Make sure that the node is a PV node 
-			if (entry.key == zobristKey && entry.depth >= depth && entry.flag == Constants.EXACT) {
-				return entry.evaluationScore;
-			}
-
-			movePicker mPicker = new movePicker(Search.board, depth, ply);
-		    int movesMade = 0;
-			List<int> bestMoves = new List<int>();
-			stateVariables restoreData = new stateVariables(Search.board);
-			bool raisedAlpha = false;
-
-			while (true) {
-
-				int move = mPicker.getNextMove();
-				int boardScore;
-
-				if (move == 0) {
-					break;
-				}
-
-				Search.board.makeMove(move);
-				
-				if (movesMade == 0) {
-					// First move is assumed to be the best move 
-					// Search with full window
-					boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.NON_ROOT);
-
-					// The first move is assumed to be the best move
-					// If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
-					// Other approach is to wait until you search all moves to return
-					if (boardScore < alpha) {
-						Search.board.unmakeMove(move, restoreData);
-						return alpha;
-					}
-				} else {
-					// Other moves are assumed to not raise alpha (set by the first move)
-					// Search with null window because it is faster than full-window search and only upper bound (alpha) is needed
-					// If score > alpha, then score > alpha + 1 leading to a fast beta cutoff
-					// Will have to re-search with full window to get exact score, and this node will be a PV node
-                    boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_ROOT);
-					
-					if (boardScore > alpha) {
-                        boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.NON_ROOT);
-					}
-				}
-				Search.board.unmakeMove(move, restoreData);
-				movesMade++;
-
-				// At the end of every move, check to see if there is a cancellation pending; if so then return null 
-				// A null value will signify that the search for that depth wasn't completed
-				if (quitSearch() == true) {
-					return Constants.SEARCH_ABORTED;
-				}
-
-				nodesVisited++;
-
-				if (boardScore > alpha) {
-					raisedAlpha = true;
-
-					if (boardScore >= beta) {
-						// return beta and not best score (fail-hard)
-						return beta;
-					}
-					alpha = boardScore;
-					bestMoves.Clear();
-					bestMoves.Add(move);
-				} else if (boardScore == alpha) {
-				    bestMoves.Add(move);
-			    }
-		    }
-
-			// If score was greater than alpha but less than beta, then it is a PV node and we can store the information
-			// Otherwise, we failed low and return alpha without storing any information
-		    if (raisedAlpha == true) {
-			    TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMoves[0]);
-			    UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
-				UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
-                return alpha;
-		    }
-		    else {
-				// return alpha and not best score (fail-hard)
-				return alpha;
-		    }
-	    }
-
-		//--------------------------------------------------------------------------------------------------------------------------------------------
-		//--------------------------------------------------------------------------------------------------------------------------------------------
-		// PVS INTERIOR
+		// PVS 
 		// Returns the evaluation score
 		// It is fail hard (if score > beta it returns beta, if score < alpha it returns alpha)
 		//--------------------------------------------------------------------------------------------------------------------------------------------
@@ -268,12 +171,11 @@ namespace Chess_Engine {
 		public static int PVS(int depth, int ply, int alpha, int beta, bool doNull, int nodeTypeRootOrNot) {
 
 			Debug.Assert(alpha < beta);
-						int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
+			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 
 			// At the leaf nodes
 			if (depth <= 0 || depth >= Constants.MAX_DEPTH) {
 				return quiescence(depth, ply, alpha, beta);
-
 			}
 			// return 0 if repetition or draw
 			if (Search.board.isDraw() == true) {
@@ -285,11 +187,9 @@ namespace Chess_Engine {
 			Zobrist zobristKey = Search.board.zobristKey;
 			TTEntry entry = UCI_IO.transpositionTable.probeTTable(zobristKey);
 			
-			int TTmove = entry.move;
-
-			if (nodeType != Constants.PV_NODE && Search.canReturnTT(entry, depth, alpha, beta, zobristKey)) {
+			if (nodeType != Constants.PV_NODE && Search.canReturnTT(entry, depth, alpha, beta, zobristKey) && nodeTypeRootOrNot == Constants.NON_ROOT) {
 				int evaluationScore = Search.scoreFromTT(entry.evaluationScore, ply);
-
+                int TTmove = entry.move;
 				if (evaluationScore > alpha) {
 					if (evaluationScore >= beta) {
 						updateKillers(TTmove, ply);
@@ -298,7 +198,9 @@ namespace Chess_Engine {
 					return evaluationScore;
 				}
 				return alpha;
-			}
+            } else if (entry.key == zobristKey && entry.depth >= depth && entry.flag == Constants.EXACT && nodeType == Constants.ROOT) {
+                return entry.evaluationScore;
+            }
 
 			// Null move pruning
 			// The flag is set to true when a non-null search is called (regular PVS), and false when a null search is called
@@ -309,7 +211,8 @@ namespace Chess_Engine {
 			if (doNull == true
 				&& Search.board.isInCheck() == false
 				&& depth >= Constants.R + 1
-				&& nodeType != Constants.PV_NODE) {
+				&& nodeType != Constants.PV_NODE
+                && nodeTypeRootOrNot != Constants.ROOT) {
 				Search.board.makeNullMove();
                 int nullScore = -PVS(depth - 1 - Constants.R, ply + 1 + Constants.R, -beta, -beta + 1, false, Constants.NON_ROOT);
 				Search.board.unmakeNullMove();
@@ -332,6 +235,7 @@ namespace Chess_Engine {
 			int bestMove = 0;
 			int movesMade = 0;
 			int boardScore = 0;
+            List<int> bestMoves = new List<int>();
 			bool isInCheckBeforeMove = Search.board.isInCheck();
 			// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
 			bool raisedAlpha = false;
@@ -348,15 +252,23 @@ namespace Chess_Engine {
 				// Make the move
 				Search.board.makeMove(move);
 
-				// If it is the first move, search with a full window
+				// If it is the first move, it is assumed to be the best move so search with a full window
 				if (movesMade == 0) {
-
                     boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.NON_ROOT);
+
+                    // The first move is assumed to be the best move
+                    // If it failed low, that means that the rest of the moves will probably fail low, so don't bother searching them and return alpha right away (to start research)
+                    // Other approach is to wait until you search all moves to return
+                    if (boardScore < alpha && nodeTypeRootOrNot == Constants.ROOT) {
+				        Search.board.unmakeMove(move, restoreData);
+				        return alpha;
+				    }
 				} else {
 					// Late move reduction
 					if (movesMade >= 4
 						&& depth >= 3
 						&& nodeType != Constants.PV_NODE
+                        && nodeTypeRootOrNot != Constants.ROOT
 						&& Search.board.isInCheck() == false
 						&& isInCheckBeforeMove == false
 						&& ((move & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT) != Constants.PROMOTION_CAPTURE
@@ -372,12 +284,15 @@ namespace Chess_Engine {
 					}
 
 					if (boardScore > alpha) {
+                        // Other moves are assumed to not raise alpha (set by the first move)
+                        // Search with null window because it is faster than full-window search and only upper bound (alpha) is needed
+                        // If score > alpha, then score > alpha + 1 leading to a fast beta cutoff
+                        // Will have to re-search with full window to get exact score, and this node will be a PV node
                         boardScore = -PVS(depth - 1, ply + 1, -alpha - 1, -alpha, true, Constants.NON_ROOT);
 
 						// If failed high in ZWS and score > alpha + 1 (beta of ZWS), then we only know the lower bound (alpha + 1 or beta of ZWS)
 						// Have to then do a full window search to determine exact value (to determine if the score is greater than beta)
 						if (boardScore > alpha) {
-
                             boardScore = -PVS(depth - 1, ply + 1, -beta, -alpha, true, Constants.NON_ROOT);
 
 						}
@@ -386,10 +301,10 @@ namespace Chess_Engine {
 				Search.board.unmakeMove(move, restoreData);
 				movesMade++;
 
-				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return 0
+				// Every 2047 nodes, check to see if there is a cancellation pending; if so then return a constant signifying an aborted search
 				if ((nodesVisited & 2047) == 0) {
 					if (quitSearch()) {
-						return 0;
+						return Constants.SEARCH_ABORTED;
 					}
 				}
 				nodesVisited++;
@@ -399,6 +314,11 @@ namespace Chess_Engine {
 
 					// If the score was greater than beta, we have a beta cutoff (fail high)
 					if (boardScore >= beta) {
+
+                        // If root node, then return straight away
+					    if (nodeTypeRootOrNot == Constants.ROOT) {
+					        return beta;
+					    }
 
 						// Store the value in the transposition table
 						TTEntry newEntry = new TTEntry(zobristKey, Constants.L_BOUND, depth, beta, move);
@@ -417,6 +337,10 @@ namespace Chess_Engine {
 					// If no beta cutoff but board score was higher than old alpha, then raise alpha
 					bestMove = move;
 					alpha = boardScore;
+				    bestMoves.Clear();
+                    bestMoves.Add(move);
+				} else if (boardScore == alpha && nodeTypeRootOrNot == Constants.ROOT) {
+				    bestMoves.Add(move); //multiple PV
 				}
 			}
 
@@ -439,7 +363,7 @@ namespace Chess_Engine {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMove);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 				UCI_IO.transpositionTable.storePVTTable(zobristKey, newEntry);
-			} else if (raisedAlpha == false) {
+			} else if (raisedAlpha == false && nodeTypeRootOrNot != Constants.ROOT) {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.U_BOUND, depth, alpha);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 			}
@@ -499,8 +423,7 @@ namespace Chess_Engine {
 			int boardScore = 0;
 			bool firstMove = true;
 			
-
-			// Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
+            // Keeps track to see whether or not alpha was raised (to see if we failed low or not); Necessary when storing entries in the transpositino table
 			bool raisedAlpha = false;
 
 			// Loops through all moves
@@ -533,11 +456,9 @@ namespace Chess_Engine {
 					// If the score was greater than beta, we have a beta cutoff (fail high)
 					if (boardScore >= beta) {
 
-						
 						TTEntry newEntry = new TTEntry(zobristKey, Constants.L_BOUND, depth, beta, move);
 						UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 						
-
 						// Increment fail high first if first move produced cutoff, otherwise increment fail high
 						if (firstMove == true) {
 							failHighFirst++;
@@ -560,7 +481,6 @@ namespace Chess_Engine {
 					return -Constants.CHECKMATE + ply;
 				}
 			}
-			
 			if (raisedAlpha == true) {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.EXACT, depth, alpha, bestMove);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
@@ -568,7 +488,6 @@ namespace Chess_Engine {
 				TTEntry newEntry = new TTEntry(zobristKey, Constants.U_BOUND, depth, alpha);
 				UCI_IO.transpositionTable.storeTTable(zobristKey, newEntry);
 			}
-			 
 			return alpha; //return alpha whether it was raised or not (fail-hard)	 
 	    }
 
