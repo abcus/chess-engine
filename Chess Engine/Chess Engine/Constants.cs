@@ -910,6 +910,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
+        public const int SEARCH_ABORTED = 99999;
 	    public const int MAX_DEPTH = 64;
 	    public const int MAX_PLY = 64;
 
@@ -926,6 +927,8 @@ namespace Chess_Engine {
 
 	    public const int PV_NODE = 1;
 	    public const int NON_PV_NODE = 2;
+        public const int ROOT = 3;
+        public const int NON_ROOT = 4;
 
 		public static ulong[,] pieceZobrist = new ulong[13,64];
 		public static ulong[] enPassantZobrist = new ulong[64];

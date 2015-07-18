@@ -108,14 +108,13 @@ namespace Chess_Engine {
 		}
 
 		// Method that returns an array of integers containing the principal variation from the PV table
-		public List<string> getPVLine(Board inputBoard, int maxDepth) {
+		public List<int> getPVLine(Board inputBoard, int maxDepth) {
 
 			// Later: don't actually have to make the move, can just calculate the new key and look up the table entry
 
 
-
-			Board cloneBoard = new Board(inputBoard);
-			List<string> PVLine = new List<string>();
+            Board cloneBoard = new Board(inputBoard);
+			List<int> PVLine = new List<int>();
 			int depth = 1;
 
 			while (true) {
@@ -154,7 +153,7 @@ namespace Chess_Engine {
 				if (cloneBoard.isMoveLegal(cloneBoard.sideToMove ^ 1) == false) {
 					break;
 				}
-				PVLine.Add(UCI_IO.getMoveStringFromMoveRepresentation(move));
+				PVLine.Add(move);
 			}
 			return PVLine;
 		}

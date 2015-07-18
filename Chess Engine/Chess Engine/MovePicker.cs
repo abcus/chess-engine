@@ -598,7 +598,6 @@ namespace Chess_Engine {
 	//--------------------------------------------------------------------------------------------------------------------------------------------
 
 	public class moveAndEval {
-		internal int move;
 		internal int evaluationScore;
 		internal int depthAchieved;
 		internal long time;

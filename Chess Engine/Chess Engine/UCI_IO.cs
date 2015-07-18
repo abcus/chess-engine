@@ -292,17 +292,17 @@ namespace Chess_Engine {
 			
 			// When the search thread has termined and "e.Cancel" is true, the best move will be printed
 			// Also the opponent's expected reply will be printed
-			Console.Write("bestmove " + getMoveStringFromMoveRepresentation(Search.result.move));
+			Console.Write("bestmove " + getMoveStringFromMoveRepresentation(Search.PVLine[0]));
 		    
 			// Check to see if there is an expected reply move; if so then print it out so that the UCI will set up pondering
 			if (Search.PVLine.Count > 1) {
-				Console.WriteLine(" ponder " + Search.PVLine[1]);
+                Console.WriteLine(" ponder " + UCI_IO.getMoveStringFromMoveRepresentation(Search.PVLine[1]));
 		    }
 			Console.WriteLine("");
 		}
 
 		// Prints out information during iterative deepening
-	    public static void printInfo(List<string> PVLine, int depth) {
+	    public static void printInfo(List<int> PVLine, int depth) {
 		    Console.WriteLine("");
 			Console.Write("info");
 			if (Constants.CHECKMATE - Search.result.evaluationScore < Constants.MAX_DEPTH) {
@@ -315,8 +315,8 @@ namespace Chess_Engine {
 			Console.Write(" depth " + depth);
 		    Console.Write(" nodes " + Search.result.nodesVisited);
 			Console.Write(" time " + Search.result.time + " pv ");
-			foreach (string move in PVLine) {
-				Console.Write(move + " ");
+			foreach (int move in PVLine) {
+				Console.Write(UCI_IO.getMoveStringFromMoveRepresentation(move) + " ");
 			}
 			Console.Write("nps " + Search.result.nodesVisited/(ulong)(Search.result.time + 1) * 1000);
 			Console.WriteLine("");
