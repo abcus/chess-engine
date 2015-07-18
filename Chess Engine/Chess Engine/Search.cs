@@ -100,62 +100,60 @@ namespace Chess_Engine {
 				int alpha = -Constants.LARGE_INT;
 				int beta = Constants.LARGE_INT;
 
-				// Declare and initialize the aspiration window
-				int currentWindow = Constants.ASP_WINDOW;
-
 				Stopwatch iterationTimer = Stopwatch.StartNew();
-				for (int i = 1; i <= Constants.MAX_DEPTH;) {
+				for (int i = 1; i <= Constants.MAX_DEPTH; i++) {
 
-					// Before each search, it sees if it should quit
-					if (quitSearch()) {
-						return;
-					}
+                    // Declare and initialize the aspiration window
+                    int currentWindow = Constants.ASP_WINDOW;
 
-					int tempResult = PVS(i, ply, alpha, beta, true, Constants.ROOT);
+				    while (true) {
+                        // Before each search, it sees if it should quit
+                        if (quitSearch()) {
+                            return;
+                        }
 
-					// If PVSRoot at depth i returned null
-					// that means that the search wasn't completed and time has run out, so terminate the thread
-					// The result variable will be from the last completed iteration
-					// If PVSRoot returned a value of alpha
-					// That means we failed low (no move had a score that exceeded alpha)
-					// Widen the window by a factor of 2, and search again (beta is untouched because otherwise it may lead to search instability)
-					// If PVSRoot returned a value of beta
-					// That means we failed high (there was a move whose score exceeded beta)
-					// Widen the window by a factor of 2, and search again (alpha is untouched because otherwise it may lead to search instability)
-					// If PVSRoot returned a value between alpha and beta, the search completed successfully
-					// We set the result variable equal to the return value of the function
-					if (tempResult == Constants.SEARCH_ABORTED) {
-						return;
-					} if (tempResult == alpha) {
-						currentWindow *= 4;
-						alpha -= (int)(0.5 * currentWindow);
-						researches++;
-						continue;
-					} else if (tempResult == beta) {
-						currentWindow *= 4;
-						beta += (int)(0.5 * currentWindow);
-						researches++;
-						continue;
-					}
-					result.evaluationScore = tempResult;
-					result.depthAchieved = i;
-					result.time = iterationTimer.ElapsedMilliseconds;
-					result.nodesVisited = nodesVisited;
+                        int tempResult = PVS(i, ply, alpha, beta, true, Constants.ROOT);
 
-					PVLine = UCI_IO.transpositionTable.getPVLine(Search.board, i);
-					UCI_IO.printInfo(PVLine, i);
-					failHighFirst = 0;
-					failHigh = 0;
+                        // If PVSRoot at depth i returned null
+                        // that means that the search wasn't completed and time has run out, so terminate the thread and the result variable will be from the last completed iteration
+                        // If PVSRoot returned a value of alpha or lower, then failed low
+                        // Widen the window by a factor of 2, and search again (beta is untouched because otherwise it may lead to search instability)
+                        // If PVSRoot returned a value of beta or higher, then failed high
+                        // Widen the window by a factor of 2, and search again (alpha is untouched because otherwise it may lead to search instability)
+                        // If PVSRoot returned a value between alpha and beta, the search completed successfully
+                        // We set the result variable equal to the return value of the function
+                        if (tempResult == Constants.SEARCH_ABORTED) {
+                            return;
+                        } if (tempResult <= alpha) {
+                            currentWindow *= 2;
+                            alpha -= (int)(0.5 * currentWindow);
+                            researches++;
+                        } else if (tempResult >= beta) {
+                            currentWindow *= 2;
+                            beta += (int)(0.5 * currentWindow);
+                            researches++;
+                        } else if (tempResult > alpha && tempResult < beta) {
+                            result.evaluationScore = tempResult;
+                            result.depthAchieved = i;
+                            result.time = iterationTimer.ElapsedMilliseconds;
+                            result.nodesVisited = nodesVisited;
 
-					// Reset the current window, and set alpha and beta for the next iteration
-					currentWindow = Constants.ASP_WINDOW;
-					alpha = result.evaluationScore - currentWindow;
-					beta = result.evaluationScore + currentWindow;
-					iterationTimer.Restart();
-					nodesVisited = 0;
-					researches = 0;
-					ply = 0;
-					i++;	
+                            PVLine = UCI_IO.transpositionTable.getPVLine(Search.board, i);
+                            UCI_IO.printInfo(PVLine, i);
+                            failHighFirst = 0;
+                            failHigh = 0;
+
+                            // Reset the current window, and set alpha and beta for the next depth
+                            currentWindow = Constants.ASP_WINDOW;
+                            alpha = result.evaluationScore - currentWindow;
+                            beta = result.evaluationScore + currentWindow;
+                            iterationTimer.Restart();
+                            nodesVisited = 0;
+                            researches = 0;
+                            ply = 0;
+                            break;
+                        }
+				    }
 				}	
 			}
 	    }
@@ -163,8 +161,7 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		// PVS 
-		// Returns the evaluation score
-		// It is fail hard (if score > beta it returns beta, if score < alpha it returns alpha)
+		// Returns the evaluation score (fail soft)
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -174,7 +171,7 @@ namespace Chess_Engine {
 			int nodeType = beta > alpha + 1 ? Constants.PV_NODE : Constants.NON_PV_NODE;
 
 			// At the leaf nodes
-			if (depth <= 0 || depth >= Constants.MAX_DEPTH) {
+			if (depth <= 0 || ply >= Constants.MAX_DEPTH) {
 				return quiescence(depth, ply, alpha, beta);
 			}
 			// return 0 if repetition or draw
