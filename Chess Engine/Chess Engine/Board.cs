@@ -817,70 +817,36 @@ namespace Chess_Engine {
         //--------------------------------------------------------------------------------------------------------------------------------------------
 
         public Bitboard getBitboardOfAttackers(int colourUnderAttack, int squareToCheck, Bitboard occupiedBitboard) {
-            ulong bitboardOfAttackers = 0x0UL;
+            int shift = colourUnderAttack == Constants.WHITE ? 0 : 6;
 
-            if (colourUnderAttack == Constants.WHITE) {
+            // Looks up horizontal/vertical attack set from square, and intersects with opponent's rook/queen bitboard
+            ulong horizontalVerticalOccupancy = occupiedBitboard & Constants.rookOccupancyMask[squareToCheck];
+            int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
+            ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
 
-                // Looks up horizontal/vertical attack set from square, and intersects with opponent's rook/queen bitboard
-                ulong horizontalVerticalOccupancy = occupiedBitboard & Constants.rookOccupancyMask[squareToCheck];
-                int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
-                ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
+            // Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
+            ulong diagonalOccupancy = occupiedBitboard & Constants.bishopOccupancyMask[squareToCheck];
+            int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
+            ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
 
-                // Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
-                ulong diagonalOccupancy = occupiedBitboard & Constants.bishopOccupancyMask[squareToCheck];
-                int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
-                ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
+            // Looks up knight attack set from square, and intersects with opponent's knight bitboard
+            ulong knightMoveFromSquare = Constants.knightMoves[squareToCheck];
 
-                // Looks up knight attack set from square, and intersects with opponent's knight bitboard
-                ulong knightMoveFromSquare = Constants.knightMoves[squareToCheck];
+            // Looks up white pawn attack set from square, and intersects with opponent's pawn bitboard
+            ulong pawnMoveFromSquare = Constants.capturesAndCapturePromotions[colourUnderAttack, squareToCheck];
 
-                // Looks up white pawn attack set from square, and intersects with opponent's pawn bitboard
-                ulong whitePawnMoveFromSquare = Constants.whiteCapturesAndCapturePromotions[squareToCheck];
+            // Looks up king attack set from square, and intersects with opponent's king bitboard
+            ulong kingMoveFromSquare = Constants.kingMoves[squareToCheck];
 
-                // Looks up king attack set from square, and intersects with opponent's king bitboard
-                ulong kingMoveFromSquare = Constants.kingMoves[squareToCheck];
+            ulong bitboardOfAttackers = ((rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_ROOK - shift])
+                                    | (rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - shift])
+                                    | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_BISHOP - shift])
+                                    | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN - shift])
+                                    | (knightMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KNIGHT - shift])
+                                    | (pawnMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_PAWN - shift])
+                                    | (kingMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KING - shift]));
 
-                bitboardOfAttackers |= ((rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_ROOK])
-                                    | (rookMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN])
-                                    | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_BISHOP])
-                                    | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.BLACK_QUEEN])
-                                    | (knightMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KNIGHT])
-                                    | (whitePawnMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_PAWN])
-                                    | (kingMoveFromSquare & this.arrayOfBitboards[Constants.BLACK_KING]));
-
-                return bitboardOfAttackers;
-
-            } else {
-
-                // Looks up horizontal/vertical attack set from square, and intersects with opponent's rook/queen bitboard
-                ulong horizontalVerticalOccupancy = occupiedBitboard & Constants.rookOccupancyMask[squareToCheck];
-                int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[squareToCheck]) >> Constants.rookMagicShiftNumber[squareToCheck]);
-                ulong rookMovesFromSquare = Constants.rookMoves[squareToCheck][rookMoveIndex];
-
-                // Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
-                ulong diagonalOccupancy = occupiedBitboard & Constants.bishopOccupancyMask[squareToCheck];
-                int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[squareToCheck]) >> Constants.bishopMagicShiftNumber[squareToCheck]);
-                ulong bishopMovesFromSquare = Constants.bishopMoves[squareToCheck][bishopMoveIndex];
-
-                // Looks up knight attack set from square, and intersects with opponent's knight bitboard
-                ulong knightMoveFromSquare = Constants.knightMoves[squareToCheck];
-
-                // Looks up black pawn attack set from square, and intersects with opponent's pawn bitboard
-                ulong blackPawnMoveFromSquare = Constants.blackCapturesAndCapturePromotions[squareToCheck];
-
-                // Looks up king attack set from square, and intersects with opponent's king bitboard
-                ulong kingMoveFromSquare = Constants.kingMoves[squareToCheck];
-
-                bitboardOfAttackers = ((rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_ROOK])
-                                       | (rookMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN])
-                                       | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_BISHOP])
-                                       | (bishopMovesFromSquare & this.arrayOfBitboards[Constants.WHITE_QUEEN])
-                                       | (knightMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KNIGHT])
-                                       | (blackPawnMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_PAWN])
-                                       | (kingMoveFromSquare & this.arrayOfBitboards[Constants.WHITE_KING]));
-
-                return bitboardOfAttackers;
-            }
+            return bitboardOfAttackers;
         }
 
         // Method determines how many times a square is attacked
@@ -1115,62 +1081,68 @@ namespace Chess_Engine {
 
 		public int[] moveGenerator(int flag) {
 
+		    int shift = this.sideToMove == Constants.WHITE ? 0 : 6;
+
+            // Gets the bitboard of all the side to move's pieces, and the bitboard of all pieces
+            Bitboard tempOwnPawnBitboard = this.arrayOfBitboards[Constants.WHITE_PAWN + shift];
+            Bitboard tempOwnKnightBitboard = this.arrayOfBitboards[Constants.WHITE_KNIGHT + shift];
+            Bitboard tempOwnBishopBitboard = this.arrayOfBitboards[Constants.WHITE_BISHOP + shift];
+            Bitboard tempOwnRookBitboard = this.arrayOfBitboards[Constants.WHITE_ROOK + shift];
+            Bitboard tempOwnQueenBitboard = this.arrayOfBitboards[Constants.WHITE_QUEEN + shift];
+            Bitboard tempOwnKingBitboard = this.arrayOfBitboards[Constants.WHITE_KING + shift];
+            Bitboard tempAllPieceBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
+
+            //Gets the bitboard of the opposing side's bishop, rook, queen, and king (for generating checks)
+            Bitboard tempOppRookAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_ROOK - shift] | this.arrayOfBitboards[Constants.BLACK_QUEEN - shift]);
+            Bitboard tempOppBishopAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_BISHOP - shift] | this.arrayOfBitboards[Constants.BLACK_QUEEN - shift]);
+            Bitboard oppKingBitboard = this.arrayOfBitboards[Constants.BLACK_KING - shift];
+
+            // Calculates the index of the own and opposing king
+            int ownKingIndex = Constants.findFirstSet(tempOwnKingBitboard);
+            int oppKingIndex = Constants.findFirstSet(oppKingBitboard);
+
+            // declares an array to hold the almost legal moves
+            int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
+            int index = 0;
+
+            // CALCULATES SQUARES THAT WHITE PIECES CAN GIVE CHECK FROM
+
+            // Calculates the squares that a white rook could stand on to check the black king
+            ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[oppKingIndex];
+            int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[oppKingIndex]) >> Constants.rookMagicShiftNumber[oppKingIndex]);
+            ulong rookCheckSquares = Constants.rookMoves[oppKingIndex][rookMoveIndex];
+
+            //  Calculates the squares that a white bishop could stand on to check the black king
+            ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[oppKingIndex];
+            int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[oppKingIndex]) >> Constants.bishopMagicShiftNumber[oppKingIndex]);
+            ulong bishopCheckSquares = Constants.bishopMoves[oppKingIndex][bishopMoveIndex];
+
+            // Calculates the squares that a white queen could stand on to check the black king
+            ulong queenCheckSquares = rookCheckSquares | bishopCheckSquares;
+
+            // Calculates the squares that a white knight could stand on to check the black king
+            ulong knightCheckSquares = Constants.knightMoves[oppKingIndex];
+
+            // Calculates the squares that a white pawn could stand on to check the black king
+            ulong pawnCheckSquares = Constants.capturesAndCapturePromotions[this.sideToMove ^ 1, oppKingIndex];
+
+
+
+
 			// if the side to move is white
 			if (this.sideToMove == Constants.WHITE) {
 
-				// Gets the bitboard of all of the white pieces, and the bitboard of all pieces
-				Bitboard tempWhitePawnBitboard = this.arrayOfBitboards[Constants.WHITE_PAWN];
-				Bitboard tempWhiteKnightBitboard = this.arrayOfBitboards[Constants.WHITE_KNIGHT];
-				Bitboard tempWhiteBishopBitboard = this.arrayOfBitboards[Constants.WHITE_BISHOP];
-				Bitboard tempWhiteRookBitboard = this.arrayOfBitboards[Constants.WHITE_ROOK];
-				Bitboard tempWhiteQueenBitboard = this.arrayOfBitboards[Constants.WHITE_QUEEN];
-				Bitboard tempWhiteKingBitboard = this.arrayOfBitboards[Constants.WHITE_KING];
-				Bitboard tempAllPieceBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
-
-				//Gets the bitboard of the black bishop, rook, queen, and king (for generating checks)
-				Bitboard tempBlackRookAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_ROOK] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
-				Bitboard tempBlackBishopAndQueenBitboard = (this.arrayOfBitboards[Constants.BLACK_BISHOP] | this.arrayOfBitboards[Constants.BLACK_QUEEN]);
-				Bitboard blackKingBitboard = this.arrayOfBitboards[Constants.BLACK_KING];
-
-				// Calculates the index of the white and black king
-				int whiteKingIndex = Constants.findFirstSet(tempWhiteKingBitboard);
-				int blackKingIndex = Constants.findFirstSet(blackKingBitboard);
-
-				// declares an array to hold the almost legal moves
-				int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
-				int index = 0;
-
-				// CALCULATES SQUARES THAT WHITE PIECES CAN GIVE CHECK FROM
-
-				// Calculates the squares that a white rook could stand on to check the black king
-				ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[blackKingIndex];
-				int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[blackKingIndex]) >> Constants.rookMagicShiftNumber[blackKingIndex]);
-				ulong rookCheckSquares = Constants.rookMoves[blackKingIndex][rookMoveIndex];
-
-				//  Calculates the squares that a white bishop could stand on to check the black king
-				ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[blackKingIndex];
-				int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[blackKingIndex]) >> Constants.bishopMagicShiftNumber[blackKingIndex]);
-				ulong bishopCheckSquares = Constants.bishopMoves[blackKingIndex][bishopMoveIndex];
-
-				// Calculates the squares that a white queen could stand on to check the black king
-				ulong queenCheckSquares = rookCheckSquares | bishopCheckSquares;
-
-				// Calculates the squares that a white knight could stand on to check the black king
-				ulong knightCheckSquares = Constants.knightMoves[blackKingIndex];
-
-				// Calculates the squares that a white pawn could stand on to check the black king
-				ulong pawnCheckSquares = Constants.blackCapturesAndCapturePromotions[blackKingIndex];
-
-				// FINDS POTENTIALLY PINNED PIECES
+				
+                // FINDS POTENTIALLY PINNED PIECES
 
 				// Finds rook moves from the white king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
-				Bitboard potentiallyPinnedPiecesByRook = ((this.generateRookMovesFromIndex(tempAllPieceBitboard, whiteKingIndex)) & this.arrayOfAggregateBitboards[Constants.WHITE]);
+				Bitboard potentiallyPinnedPiecesByRook = ((this.generateRookMovesFromIndex(tempAllPieceBitboard, ownKingIndex)) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 
 				// Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
 				// Intersect with black rook and queen to get bitboard of potential pinners
 				Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
-				Bitboard rookMovesFromIndexWithoutPinned = this.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, whiteKingIndex);
-				Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempBlackRookAndQueenBitboard);
+				Bitboard rookMovesFromIndexWithoutPinned = this.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, ownKingIndex);
+				Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempOppRookAndQueenBitboard);
 
 				// Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
 				while (potentialPinners != 0) {
@@ -1230,7 +1202,7 @@ namespace Chess_Engine {
 								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE, Constants.DOUBLE_PAWN_PUSH);
 							}
 							// Removes the white pawn from the list of white pawns
-							tempWhitePawnBitboard &= (~pinnedPiece);
+							tempOwnPawnBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a white rook, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.WHITE_ROOK) {
@@ -1251,7 +1223,7 @@ namespace Chess_Engine {
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white rook from the list of white rooks
-							tempWhiteRookBitboard &= (~pinnedPiece);
+							tempOwnRookBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a white queen, then generate moves along the pin ray (only rook moves)
 						else if (pinnedPieceType == Constants.WHITE_QUEEN) {
@@ -1271,30 +1243,30 @@ namespace Chess_Engine {
 							}
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 							// Removes the white queen from the list of white queens
-							tempWhiteQueenBitboard &= (~pinnedPiece);
+							tempOwnQueenBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a white knight, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
 							// Remove it from the knight list so that no night moves will be generated later on
-							tempWhiteKnightBitboard &= (~pinnedPiece);
+							tempOwnKnightBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a white bishop, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.WHITE_BISHOP) {
 							// Remove it from the bishop list so that no bishop moves will be generated later on
-							tempWhiteBishopBitboard &= (~pinnedPiece);
+							tempOwnBishopBitboard &= (~pinnedPiece);
 						}
 						// Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
 					}
 
 				}
 				// Finds bishop moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
-				Bitboard potentiallyPinnedPiecesByBishop = (this.generateBishopMovesFromIndex(tempAllPieceBitboard, whiteKingIndex) & this.arrayOfAggregateBitboards[Constants.WHITE]);
+				Bitboard potentiallyPinnedPiecesByBishop = (this.generateBishopMovesFromIndex(tempAllPieceBitboard, ownKingIndex) & this.arrayOfAggregateBitboards[Constants.WHITE]);
 
 				// Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
 				// Intersect with black rook and queen to get bitboard of potential pinners
 				Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
-				Bitboard bishopMovesFromIndexWithoutPinned = this.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, whiteKingIndex);
-				potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempBlackBishopAndQueenBitboard));
+				Bitboard bishopMovesFromIndexWithoutPinned = this.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, ownKingIndex);
+				potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempOppBishopAndQueenBitboard));
 
 				// Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
 				while (potentialPinners != 0) {
@@ -1368,7 +1340,7 @@ namespace Chess_Engine {
 								
 							}
 							// Removes the white pawn from the list of white pawns
-							tempWhitePawnBitboard &= (~pinnedPiece);
+							tempOwnPawnBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a white bishop, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.WHITE_BISHOP) {
@@ -1389,7 +1361,7 @@ namespace Chess_Engine {
 						this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white bishop from the list of white rooks
-							tempWhiteBishopBitboard &= (~pinnedPiece);
+							tempOwnBishopBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a white queen, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.WHITE_QUEEN) {
@@ -1412,28 +1384,28 @@ namespace Chess_Engine {
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
 
 							// Removes the white queen from the list of white queens
-							tempWhiteQueenBitboard &= (~pinnedPiece);
+							tempOwnQueenBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a white knight, then it isn't allowed to move
 					   else if (pinnedPieceType == Constants.WHITE_KNIGHT) {
 							// Remove it from the knight list so that no night moves will be generated later on
-							tempWhiteKnightBitboard &= (~pinnedPiece);
+							tempOwnKnightBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a white rook, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.WHITE_ROOK) {
 							// Remove it from the bishop list so that no bishop moves will be generated later on
-							tempWhiteRookBitboard &= (~pinnedPiece);
+							tempOwnRookBitboard &= (~pinnedPiece);
 						}
 						// Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
 					}
 
 				}
 				// Loops through all pawns and generates white pawn moves, captures, and promotions
-				while (tempWhitePawnBitboard != 0) {
+				while (tempOwnPawnBitboard != 0) {
 
 					// Finds the index of the first white pawn, then removes it from the temporary pawn bitboard
-					int pawnIndex = Constants.findFirstSet(tempWhitePawnBitboard);
-					tempWhitePawnBitboard &= (tempWhitePawnBitboard - 1);
+					int pawnIndex = Constants.findFirstSet(tempOwnPawnBitboard);
+					tempOwnPawnBitboard &= (tempOwnPawnBitboard - 1);
 
 					//For pawns that are between the 2nd and 6th ranks, generate single pushes and captures
 					if (pawnIndex >= Constants.H2 && pawnIndex <= Constants.A6) {
@@ -1522,176 +1494,16 @@ namespace Chess_Engine {
 						} 
 					}
 				}
-				//generates white knight moves and captures
-				while (tempWhiteKnightBitboard != 0) {
-					int knightIndex = Constants.findFirstSet(tempWhiteKnightBitboard);
-					tempWhiteKnightBitboard &= (tempWhiteKnightBitboard - 1);
-					Bitboard knightMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~knightCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & ((knightCheckSquares)|(this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & (this.arrayOfAggregateBitboards[Constants.BLACK]));
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE] & ~(this.arrayOfAggregateBitboards[Constants.BLACK]));
-					} else if (flag == Constants.ALL_MOVES) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-
-				}
-				//generates white bishop moves and captures
-				while (tempWhiteBishopBitboard != 0) {
-					int bishopIndex = Constants.findFirstSet(tempWhiteBishopBitboard);
-					tempWhiteBishopBitboard &= (tempWhiteBishopBitboard - 1);
-					Bitboard bishopMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~bishopCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK]);
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK]);
-					} else if (flag == Constants.ALL_MOVES) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-				}
-				//generates white rook moves and captures
-				while (tempWhiteRookBitboard != 0) {
-					int rookIndex = Constants.findFirstSet(tempWhiteRookBitboard);
-					tempWhiteRookBitboard &= (tempWhiteRookBitboard - 1);
-					Bitboard rookMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~rookCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK]);
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK]);
-					} else if (flag == Constants.ALL_MOVES) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-
-				}
-				//generates white queen moves and captures
-				while (tempWhiteQueenBitboard != 0) {
-					int queenIndex = Constants.findFirstSet(tempWhiteQueenBitboard);
-					tempWhiteQueenBitboard &= (tempWhiteQueenBitboard - 1);
-					Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
-					Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]));
-					Bitboard queenMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~queenCheckSquares);
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.BLACK]));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & this.arrayOfAggregateBitboards[Constants.BLACK];
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ~this.arrayOfAggregateBitboards[Constants.BLACK];
-					} else if (flag == Constants.ALL_MOVES) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex);
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-				}
-				//generates white king moves and captures
-				Bitboard kingMoveSquares = 0;
-
-				if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
-					flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & this.arrayOfAggregateBitboards[Constants.BLACK];
-				} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & ~this.arrayOfAggregateBitboards[Constants.BLACK];
-				} else if (flag == Constants.ALL_MOVES) {
-					kingMoveSquares = Constants.kingMoves[whiteKingIndex] & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-				}
-				this.generatePawnKnightBishopRookQueenKingMoves(whiteKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.WHITE);
-
-				//Generates white king castling moves (if the king is not in check)
-				if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
-						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
-						flag == Constants.ALL_MOVES) {
-
-						int moveScore = Constants.GOOD_QUIET_SCORE;
-						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
-
-						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
-							listOfAlmostLegalMoves[index++] = moveRepresentation;
-						}
-					} 
-				}
-				if ((this.whiteLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
-						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
-						flag == Constants.ALL_MOVES) {
-
-						int moveScore = Constants.GOOD_QUIET_SCORE;
-						int moveRepresentation = this.moveEncoder(Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
-
-						if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
-							listOfAlmostLegalMoves[index++] = moveRepresentation;
-						}
-					} 
-				}
-				return listOfAlmostLegalMoves;
 			} else if (this.sideToMove == Constants.BLACK) {
-				//Gets the indices of all of the pieces
-				Bitboard tempBlackPawnBitboard = this.arrayOfBitboards[Constants.BLACK_PAWN];
-				Bitboard tempBlackKnightBitboard = this.arrayOfBitboards[Constants.BLACK_KNIGHT];
-				Bitboard tempBlackBishopBitboard = this.arrayOfBitboards[Constants.BLACK_BISHOP];
-				Bitboard tempBlackRookBitboard = this.arrayOfBitboards[Constants.BLACK_ROOK];
-				Bitboard tempBlackQueenBitboard = this.arrayOfBitboards[Constants.BLACK_QUEEN];
-				Bitboard tempBlackKingBitboard = this.arrayOfBitboards[Constants.BLACK_KING];
-				Bitboard tempAllPieceBitboard = this.arrayOfAggregateBitboards[Constants.ALL];
-
-				Bitboard tempWhiteRookAndQueenBitboard = (this.arrayOfBitboards[Constants.WHITE_ROOK] | this.arrayOfBitboards[Constants.WHITE_QUEEN]);
-				Bitboard tempWhiteBishopAndQueenBitboard = (this.arrayOfBitboards[Constants.WHITE_BISHOP] | this.arrayOfBitboards[Constants.WHITE_QUEEN]);
-				Bitboard whiteKingBitboard = this.arrayOfBitboards[Constants.WHITE_KING];
-
-				int blackKingIndex = Constants.findFirstSet(tempBlackKingBitboard);
-				int whiteKingIndex = Constants.findFirstSet(whiteKingBitboard);
-
-				int[] listOfAlmostLegalMoves = new int[Constants.MAX_MOVES_FROM_POSITION];
-				int index = 0;
-
-				// Calculates the squares that can check the white king
-				ulong horizontalVerticalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.rookOccupancyMask[whiteKingIndex];
-				int rookMoveIndex = (int)((horizontalVerticalOccupancy * Constants.rookMagicNumbers[whiteKingIndex]) >> Constants.rookMagicShiftNumber[whiteKingIndex]);
-				ulong rookCheckSquares = Constants.rookMoves[whiteKingIndex][rookMoveIndex];
-
-				// Looks up diagonal attack set from square position, and intersects with opponent's bishop/queen bitboard
-				ulong diagonalOccupancy = this.arrayOfAggregateBitboards[Constants.ALL] & Constants.bishopOccupancyMask[whiteKingIndex];
-				int bishopMoveIndex = (int)((diagonalOccupancy * Constants.bishopMagicNumbers[whiteKingIndex]) >> Constants.bishopMagicShiftNumber[whiteKingIndex]);
-				ulong bishopCheckSquares = Constants.bishopMoves[whiteKingIndex][bishopMoveIndex];
-
-				ulong queenCheckSquares = rookCheckSquares | bishopCheckSquares;
-				ulong knightCheckSquares = Constants.knightMoves[whiteKingIndex];
-				ulong pawnCheckSquares = Constants.whiteCapturesAndCapturePromotions[whiteKingIndex];
 
 				// Finds rook moves from the king, and intersects with white (own) pieces to get bitboard of potentially pinned pieces
-				Bitboard potentiallyPinnedPiecesByRook = ((this.generateRookMovesFromIndex(tempAllPieceBitboard, blackKingIndex)) & this.arrayOfAggregateBitboards[Constants.BLACK]);
+				Bitboard potentiallyPinnedPiecesByRook = ((this.generateRookMovesFromIndex(tempAllPieceBitboard, ownKingIndex)) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 
 				// Removes potentially pinned pieces from the all pieces bitboard, and generates rook moves from king again
 				// Intersect with black rook and queen to get bitboard of potential pinners
 				Bitboard tempAllPieceExceptPotentiallyPinnedByRookBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByRook);
-				Bitboard rookMovesFromIndexWithoutPinned = this.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, blackKingIndex);
-				Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempWhiteRookAndQueenBitboard);
+				Bitboard rookMovesFromIndexWithoutPinned = this.generateRookMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByRookBitboard, ownKingIndex);
+				Bitboard potentialPinners = (rookMovesFromIndexWithoutPinned & tempOppRookAndQueenBitboard);
 
 				// Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
 				while (potentialPinners != 0) {
@@ -1751,7 +1563,7 @@ namespace Chess_Engine {
 								this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, pawnMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK, Constants.DOUBLE_PAWN_PUSH);
 							}
 							// Removes the black pawn from the list of white pawns
-							tempBlackPawnBitboard &= (~pinnedPiece);
+							tempOwnPawnBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a black rook, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.BLACK_ROOK) {
@@ -1773,7 +1585,7 @@ namespace Chess_Engine {
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white rook from the list of white rooks
-							tempBlackRookBitboard &= (~pinnedPiece);
+							tempOwnRookBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a black queen, then generate moves along the pin ray (only rook moves)
 						else if (pinnedPieceType == Constants.BLACK_QUEEN) {
@@ -1793,30 +1605,30 @@ namespace Chess_Engine {
 							}
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 							// Removes the white queen from the list of black queens
-							tempBlackQueenBitboard &= (~pinnedPiece);
+							tempOwnQueenBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a black knight, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
 							// Remove it from the knight list so that no night moves will be generated later on
-							tempBlackKnightBitboard &= (~pinnedPiece);
+							tempOwnKnightBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a black bishop, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.BLACK_BISHOP) {
 							// Remove it from the bishop list so that no bishop moves will be generated later on
-							tempBlackBishopBitboard &= (~pinnedPiece);
+							tempOwnBishopBitboard &= (~pinnedPiece);
 						}
 						// Note that pawn captures, en-passant captures, promotions, promotion-captures, knight moves, and bishop moves will all be illegal
 					}
 
 				}
 				// Finds bishop moves from the king, and intersects with black (own) pieces to get bitboard of potentially pinned pieces
-				Bitboard potentiallyPinnedPiecesByBishop = (this.generateBishopMovesFromIndex(tempAllPieceBitboard, blackKingIndex) & this.arrayOfAggregateBitboards[Constants.BLACK]);
+				Bitboard potentiallyPinnedPiecesByBishop = (this.generateBishopMovesFromIndex(tempAllPieceBitboard, ownKingIndex) & this.arrayOfAggregateBitboards[Constants.BLACK]);
 
 				// Removes potentially pinned pieces from the all pieces bitboard, and generates bishop moves from king again
 				// Intersect with white bishop and queen to get bitboard of potential pinners
 				Bitboard tempAllPieceExceptPotentiallyPinnedByBishopBitboard = tempAllPieceBitboard & (~potentiallyPinnedPiecesByBishop);
-				Bitboard bishopMovesFromIndexWithoutPinned = this.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, blackKingIndex);
-				potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempWhiteBishopAndQueenBitboard));
+				Bitboard bishopMovesFromIndexWithoutPinned = this.generateBishopMovesFromIndex(tempAllPieceExceptPotentiallyPinnedByBishopBitboard, ownKingIndex);
+				potentialPinners = (bishopMovesFromIndexWithoutPinned & (tempOppBishopAndQueenBitboard));
 
 				// Loop through bitboard of potential pinners and intersect with bitboard of potentially pinned
 				while (potentialPinners != 0) {
@@ -1889,7 +1701,7 @@ namespace Chess_Engine {
 								
 							}
 							// Removes the black pawn from the list of white pawns
-							tempBlackPawnBitboard &= (~pinnedPiece);
+							tempOwnPawnBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a black bishop, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.BLACK_BISHOP) {
@@ -1910,7 +1722,7 @@ namespace Chess_Engine {
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white bishop from the list of white rooks
-							tempBlackBishopBitboard &= (~pinnedPiece);
+							tempOwnBishopBitboard &= (~pinnedPiece);
 						}
 							// If the pinned piece is a black queen, then generate moves along the pin ray
 						else if (pinnedPieceType == Constants.BLACK_QUEEN) {
@@ -1933,28 +1745,28 @@ namespace Chess_Engine {
 							this.generatePawnKnightBishopRookQueenKingMoves(indexOfPinnedPiece, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
 
 							// Removes the white queen from the list of white queens
-							tempBlackQueenBitboard &= (~pinnedPiece);
+							tempOwnQueenBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a black knight, then it isn't allowed to move
 					   else if (pinnedPieceType == Constants.BLACK_KNIGHT) {
 							// Remove it from the knight list so that no night moves will be generated later on
-							tempBlackKnightBitboard &= (~pinnedPiece);
+							tempOwnKnightBitboard &= (~pinnedPiece);
 						}
 							// If pinned piece type is a black rook, then it isn't allowed to move
 						else if (pinnedPieceType == Constants.BLACK_ROOK) {
 							// Remove it from the rook list so that no rook moves will be generated later on
-							tempBlackRookBitboard &= (~pinnedPiece);
+							tempOwnRookBitboard &= (~pinnedPiece);
 						}
 						// Note that single pawn pushes, double pawn pushes, promotions, promotion-captures, knight moves, and rook moves will all be illegal
 					}
 
 				}
 				// Loops through all pawns and generates white pawn moves, captures, and promotions
-				while (tempBlackPawnBitboard != 0) {
+				while (tempOwnPawnBitboard != 0) {
 
 					// Finds the index of the first black pawn, then removes it from the temporary pawn bitboard
-					int pawnIndex = Constants.findFirstSet(tempBlackPawnBitboard);
-					tempBlackPawnBitboard &= (tempBlackPawnBitboard - 1);
+					int pawnIndex = Constants.findFirstSet(tempOwnPawnBitboard);
+					tempOwnPawnBitboard &= (tempOwnPawnBitboard - 1);
 
 					//For pawns that are between the 3rd and 7th ranks, generate single pushes and captures
 					if (pawnIndex >= Constants.H3 && pawnIndex <= Constants.A7) {
@@ -2042,140 +1854,164 @@ namespace Chess_Engine {
 						} 
 					}
 				}
-				//generates black knight moves and captures
-				while (tempBlackKnightBitboard != 0) {
-					int knightIndex = Constants.findFirstSet(tempBlackKnightBitboard);
-					tempBlackKnightBitboard &= (tempBlackKnightBitboard - 1);
-					Bitboard knightMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK] & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~knightCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK] & ((knightCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (this.arrayOfAggregateBitboards[Constants.WHITE]);
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ~(this.arrayOfAggregateBitboards[Constants.WHITE]);
-					}else if (flag == Constants.ALL_MOVES) {
-						knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-
-				}
-				//generates black bishop moves and captures
-				while (tempBlackBishopBitboard != 0) {
-					int bishopIndex = Constants.findFirstSet(tempBlackBishopBitboard);
-					tempBlackBishopBitboard &= (tempBlackBishopBitboard - 1);
-					Bitboard bishopMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~bishopCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE]);
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ~this.arrayOfAggregateBitboards[Constants.WHITE]);
-					} else if (flag == Constants.ALL_MOVES) {
-						bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-				}
-				//generates black rook moves and captures
-				while (tempBlackRookBitboard != 0) {
-					int rookIndex = Constants.findFirstSet(tempBlackRookBitboard);
-					tempBlackRookBitboard &= (tempBlackRookBitboard - 1);
-					Bitboard rookMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~rookCheckSquares));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE])));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE]);
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ~this.arrayOfAggregateBitboards[Constants.WHITE]);
-					} else if (flag == Constants.ALL_MOVES) {
-						rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-
-				}
-				//generates white queen moves and captures
-				while (tempBlackQueenBitboard != 0) {
-					int queenIndex = Constants.findFirstSet(tempBlackQueenBitboard);
-					tempBlackQueenBitboard &= (tempBlackQueenBitboard - 1);
-					Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
-					Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[Constants.BLACK]));
-					Bitboard queenMoveSquares = 0;
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[Constants.WHITE]) & (~queenCheckSquares);
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[Constants.WHITE]));
-					} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO ||
-						flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & this.arrayOfAggregateBitboards[Constants.WHITE];
-					} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ~this.arrayOfAggregateBitboards[Constants.WHITE];
-					} else if (flag == Constants.ALL_MOVES) {
-						queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex);
-					}
-					this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-				}
-				//generates black king moves and captures
-				Bitboard kingMoveSquares = 0;
-
-				if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
-					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & (~this.arrayOfAggregateBitboards[Constants.WHITE]);
-				} else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || 
-					flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
-					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE];
-				} else if (flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
-					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & this.arrayOfAggregateBitboards[Constants.WHITE];
-				} else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
-					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]) & ~this.arrayOfAggregateBitboards[Constants.WHITE];
-				} else if (flag == Constants.ALL_MOVES) {
-					kingMoveSquares = Constants.kingMoves[blackKingIndex] & (~this.arrayOfAggregateBitboards[Constants.BLACK]);
-				}
-
-				this.generatePawnKnightBishopRookQueenKingMoves(blackKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, Constants.BLACK);
-
-				//Generates black king castling moves (if the king is not in check)
-				if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
-						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
-						flag == Constants.ALL_MOVES) {
-
-						int moveScore = Constants.GOOD_QUIET_SCORE;
-						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
-
-						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
-							listOfAlmostLegalMoves[index++] = moveRepresentation;
-						}
-					} 
-				}
-				if ((this.blackLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
-
-					if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || 
-						flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || 
-						flag == Constants.ALL_MOVES) {
-
-						int moveScore = Constants.GOOD_QUIET_SCORE;
-						int moveRepresentation = this.moveEncoder(Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
-
-						if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
-							listOfAlmostLegalMoves[index++] = moveRepresentation;
-						}
-					}
-				}
-				return listOfAlmostLegalMoves;
 			}
-			return null;
+
+            //generates own side's knight moves and captures
+            while (tempOwnKnightBitboard != 0) {
+                int knightIndex = Constants.findFirstSet(tempOwnKnightBitboard);
+                tempOwnKnightBitboard &= (tempOwnKnightBitboard - 1);
+                Bitboard knightMoveSquares = 0;
+
+                if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+                    knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove] & (~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]) & (~knightCheckSquares));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+                    knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove] & ((knightCheckSquares) | (this.arrayOfAggregateBitboards[this.sideToMove ^ 1])));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+                    knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove] & (this.arrayOfAggregateBitboards[this.sideToMove ^ 1]));
+                } else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
+                    knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove] & ~(this.arrayOfAggregateBitboards[this.sideToMove ^ 1]));
+                } else if (flag == Constants.ALL_MOVES) {
+                    knightMoveSquares = Constants.knightMoves[knightIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove]);
+                } 
+                this.generatePawnKnightBishopRookQueenKingMoves(knightIndex, knightMoveSquares, listOfAlmostLegalMoves, ref index, this.sideToMove);
+            }
+
+            //generates own side's bishop moves and captures
+            while (tempOwnBishopBitboard != 0) {
+                int bishopIndex = Constants.findFirstSet(tempOwnBishopBitboard);
+                tempOwnBishopBitboard &= (tempOwnBishopBitboard - 1);
+                Bitboard bishopMoveSquares = 0;
+
+                if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+                    bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & (~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]) & (~bishopCheckSquares));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+                    bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & ((bishopCheckSquares) | (this.arrayOfAggregateBitboards[this.sideToMove ^ 1])));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+                    bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & this.arrayOfAggregateBitboards[this.sideToMove ^ 1]);
+                } else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
+                    bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & ~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]);
+                } else if (flag == Constants.ALL_MOVES) {
+                    bishopMoveSquares = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], bishopIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]));
+                }
+                this.generatePawnKnightBishopRookQueenKingMoves(bishopIndex, bishopMoveSquares, listOfAlmostLegalMoves, ref index, this.sideToMove);
+            }
+
+            //generates own side's rook moves and captures
+            while (tempOwnRookBitboard != 0) {
+                int rookIndex = Constants.findFirstSet(tempOwnRookBitboard);
+                tempOwnRookBitboard &= (tempOwnRookBitboard - 1);
+                Bitboard rookMoveSquares = 0;
+
+                if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+                    rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & (~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]) & (~rookCheckSquares));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+                    rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & ((rookCheckSquares) | (this.arrayOfAggregateBitboards[this.sideToMove ^ 1])));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+                    rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & this.arrayOfAggregateBitboards[this.sideToMove ^ 1]);
+                } else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
+                    rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]) & ~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]);
+                } else if (flag == Constants.ALL_MOVES) {
+                    rookMoveSquares = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], rookIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]));
+                }
+                this.generatePawnKnightBishopRookQueenKingMoves(rookIndex, rookMoveSquares, listOfAlmostLegalMoves, ref index, this.sideToMove);
+            }
+
+            //generates own side's queen moves and captures
+            while (tempOwnQueenBitboard != 0) {
+                int queenIndex = Constants.findFirstSet(tempOwnQueenBitboard);
+                tempOwnQueenBitboard &= (tempOwnQueenBitboard - 1);
+                Bitboard pseudoLegalBishopMovementFromIndex = (this.generateBishopMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]));
+                Bitboard pseudoLegalRookMovementFromIndex = (this.generateRookMovesFromIndex(this.arrayOfAggregateBitboards[Constants.ALL], queenIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove]));
+                Bitboard queenMoveSquares = 0;
+
+                if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+                    queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & (~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]) & (~queenCheckSquares);
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK) {
+                    queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ((queenCheckSquares) | (this.arrayOfAggregateBitboards[this.sideToMove ^ 1]));
+                } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+                    queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & this.arrayOfAggregateBitboards[this.sideToMove ^ 1];
+                } else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
+                    queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex) & ~this.arrayOfAggregateBitboards[this.sideToMove ^ 1];
+                } else if (flag == Constants.ALL_MOVES) {
+                    queenMoveSquares = (pseudoLegalBishopMovementFromIndex | pseudoLegalRookMovementFromIndex);
+                }
+                this.generatePawnKnightBishopRookQueenKingMoves(queenIndex, queenMoveSquares, listOfAlmostLegalMoves, ref index, this.sideToMove);
+            }
+
+            //generates own side's king moves and captures
+            Bitboard kingMoveSquares = 0;
+
+            if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK) {
+                kingMoveSquares = Constants.kingMoves[ownKingIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove]) & (~this.arrayOfAggregateBitboards[this.sideToMove ^ 1]);
+            } else if (flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO || flag == Constants.QUIESCENCE_CAP_EPCAP_QUEENCAPPROMO_QUIETQUEENPROMO_QUIETCHECK || flag == Constants.MAIN_CAP_EPCAP_CAPPROMO_PROMO) {
+                kingMoveSquares = Constants.kingMoves[ownKingIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove]) & this.arrayOfAggregateBitboards[this.sideToMove ^ 1];
+            } else if (flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS) {
+                kingMoveSquares = Constants.kingMoves[ownKingIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove]) & ~this.arrayOfAggregateBitboards[this.sideToMove ^ 1];
+            } else if (flag == Constants.ALL_MOVES) {
+                kingMoveSquares = Constants.kingMoves[ownKingIndex] & (~this.arrayOfAggregateBitboards[this.sideToMove]);
+            }
+            this.generatePawnKnightBishopRookQueenKingMoves(ownKingIndex, kingMoveSquares, listOfAlmostLegalMoves, ref index, this.sideToMove);
+
+
+		    if (this.sideToMove == Constants.WHITE) {
+
+                //Generates white king castling moves (if the king is not in check)
+                if ((this.whiteShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+
+                    if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || flag == Constants.ALL_MOVES) {
+
+                        int moveScore = Constants.GOOD_QUIET_SCORE;
+                        int moveRepresentation = this.moveEncoder(Constants.E1, Constants.G1, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
+
+                        if (this.timesSquareIsAttacked(Constants.WHITE, Constants.F1) == 0) {
+                            listOfAlmostLegalMoves[index++] = moveRepresentation;
+                        }
+                    }
+                }
+                if ((this.whiteLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.WHITE_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+
+                    if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || flag == Constants.ALL_MOVES) {
+
+                        int moveScore = Constants.GOOD_QUIET_SCORE;
+                        int moveRepresentation = this.moveEncoder(Constants.E1, Constants.C1, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
+
+                        if (this.timesSquareIsAttacked(Constants.WHITE, Constants.D1) == 0) {
+                            listOfAlmostLegalMoves[index++] = moveRepresentation;
+                        }
+                    }
+                }
+
+		    } else if (this.sideToMove == Constants.BLACK) {
+
+                //Generates black king castling moves (if the king is not in check)
+                if ((this.blackShortCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_SHORT_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+
+                    if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || flag == Constants.ALL_MOVES) {
+
+                        int moveScore = Constants.GOOD_QUIET_SCORE;
+                        int moveRepresentation = this.moveEncoder(Constants.E8, Constants.G8, Constants.SHORT_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
+
+                        if (this.timesSquareIsAttacked(Constants.BLACK, Constants.F8) == 0) {
+                            listOfAlmostLegalMoves[index++] = moveRepresentation;
+                        }
+                    }
+                }
+                if ((this.blackLongCastleRights == Constants.CAN_CASTLE) && ((this.arrayOfAggregateBitboards[Constants.ALL] & Constants.BLACK_LONG_CASTLE_REQUIRED_EMPTY_SQUARES) == 0)) {
+
+                    if (flag == Constants.QUIESCENCE_QUIETUNDERPROMO_UNDERPROMOCAP_SHORTCAS_LONGCAS_QUIETNOCHECK || flag == Constants.MAIN_QUIETMOVE_DOUBLEPAWNPUSH_SHORTCAS_LONGCAS || flag == Constants.ALL_MOVES) {
+
+                        int moveScore = Constants.GOOD_QUIET_SCORE;
+                        int moveRepresentation = this.moveEncoder(Constants.E8, Constants.C8, Constants.LONG_CASTLE, Constants.EMPTY, Constants.EMPTY, moveScore);
+
+                        if (this.timesSquareIsAttacked(Constants.BLACK, Constants.D8) == 0) {
+                            listOfAlmostLegalMoves[index++] = moveRepresentation;
+                        }
+                    }
+                }
+
+		    }
+
+            return listOfAlmostLegalMoves;
 		}
 
         //--------------------------------------------------------------------------------------------------------------------------------------------
