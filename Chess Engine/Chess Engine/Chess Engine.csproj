@@ -61,8 +61,10 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Engine.cs" />
     <Compile Include="Evaluate.cs" />
+    <Compile Include="Material.cs" />
     <Compile Include="MovePicker.cs" />
     <Compile Include="OpeningBook.cs" />
+    <Compile Include="PawnInfo.cs" />
     <Compile Include="Perft.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -70,7 +72,9 @@
     <Compile Include="Test.cs" />
     <Compile Include="TimeControl.cs" />
     <Compile Include="TTable.cs" />
+    <Compile Include="Types.cs" />
     <Compile Include="UCI_IO.cs" />
+    <Compile Include="Utilities.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

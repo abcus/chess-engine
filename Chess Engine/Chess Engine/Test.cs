@@ -390,19 +390,19 @@ namespace Chess_Engine {
 	        }
             Console.WriteLine("White pawn moves");
             for (int i = 0; i <= 63; i++) {
-                Test.printBitboard(Constants.whiteSinglePawnMovesAndPromotionMoves[i]);
+                Test.printBitboard(Constants.singlePawnMovesAndPromotions[Constants.WHITE, i]);
             }
             Console.WriteLine("Black pawn moves");
             for (int i = 0; i <= 63; i++) {
-                Test.printBitboard(Constants.blackSinglePawnMovesAndPromotionMoves[i]);
+                Test.printBitboard(Constants.singlePawnMovesAndPromotions[Constants.BLACK, i]);
             }
             Console.WriteLine("White pawn captures");
             for (int i = 0; i <= 63; i++) {
-                Test.printBitboard(Constants.whiteCapturesAndCapturePromotions[i]);
+                Test.printBitboard(Constants.capturesAndCapturePromotions[Constants.WHITE, i]);
             }
             Console.WriteLine("Black pawn captures");
             for (int i = 0; i <= 63; i++) {
-                Test.printBitboard(Constants.blackCapturesAndCapturePromotions[i]);
+                Test.printBitboard(Constants.capturesAndCapturePromotions[Constants.BLACK, i]);
             }
             Console.WriteLine("Rook occupancy mask");
             for (int i = 0; i <= 63; i++) {

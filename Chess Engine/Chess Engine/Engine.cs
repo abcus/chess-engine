@@ -28,6 +28,8 @@ namespace Chess_Engine {
             Constants.initEvalConstants();
 	        Constants.initSearchConstants();
 			OpeningBook.initOpeningBook();
+            Evaluate.initialize();
+            Board.initialize();
 
 			while (true) {
                 if (!UCI_IO.processGUIMessages(50)) {

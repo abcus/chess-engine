@@ -38,6 +38,7 @@ namespace Chess_Engine {
 	    internal int blackMidgameMaterial;
 	    internal int blackEndgameMaterial;
 
+        internal int material_PSQ_Value;
 
         // Constructor that sets all of the stateVariable's instance variables
         public stateVariables (Board inputBoard) {
@@ -59,6 +60,8 @@ namespace Chess_Engine {
 	        this.whiteEndgameMaterial = inputBoard.whiteEndgameMaterial;
 	        this.blackMidgameMaterial = inputBoard.blackMidgameMaterial;
 	        this.blackEndgameMaterial = inputBoard.blackEndgameMaterial;
+
+            this.material_PSQ_Value = inputBoard.material_PSQ_Value;
         } 
     }
 
@@ -109,7 +112,24 @@ namespace Chess_Engine {
 
 		internal int[] midgamePSQ = new int[13];
         internal int[] endgamePSQ = new int[13];
-        
+
+        internal Int32 material_PSQ_Value = 0;
+
+        // Material value arrays indexed by piece
+        internal static readonly Int32[] pieceValueMidgame = {
+            0,
+            Constants.PAWN_VALUE_MG, Constants.KNIGHT_VALUE_MG, Constants.BISHOP_VALUE_MG, Constants.ROOK_VALUE_MG, Constants.QUEEN_VALUE_MG, 0,
+            Constants.PAWN_VALUE_MG, Constants.KNIGHT_VALUE_MG, Constants.BISHOP_VALUE_MG, Constants.ROOK_VALUE_MG, Constants.QUEEN_VALUE_MG, 0
+        };
+
+        internal static readonly Int32[] pieceValueEndgame = {
+            0,
+            Constants.PAWN_VALUE_EG, Constants.KNIGHT_VALUE_EG, Constants.BISHOP_VALUE_EG, Constants.ROOK_VALUE_EG, Constants.QUEEN_VALUE_EG, 0,
+            Constants.PAWN_VALUE_EG, Constants.KNIGHT_VALUE_EG, Constants.BISHOP_VALUE_EG, Constants.ROOK_VALUE_EG, Constants.QUEEN_VALUE_EG, 0
+        };
+
+        internal static readonly Int32[][] pieceSquareTable = new Int32[13][];
+
         internal Zobrist zobristKey = 0x0UL;
 
 	    internal List<Zobrist> gameHistory = new List<Zobrist>();
@@ -130,6 +150,7 @@ namespace Chess_Engine {
             this.materialCount();
             this.pieceSquareValue();
 	        this.calculateZobristKey();
+            this.computeMatPSQScore();
         }
 
         // Copy constructor
@@ -160,6 +181,8 @@ namespace Chess_Engine {
 	        Array.Copy(inputBoard.midgamePSQ, this.midgamePSQ, inputBoard.midgamePSQ.Length);
             Array.Copy(inputBoard.endgamePSQ, this.endgamePSQ, inputBoard.endgamePSQ.Length);
 
+            this.material_PSQ_Value = inputBoard.material_PSQ_Value;
+
 			this.zobristKey = inputBoard.zobristKey;
 
 			// Copies the game history array list
@@ -183,8 +206,8 @@ namespace Chess_Engine {
 			int flag = ((moveRepresentationInput & Constants.FLAG_MASK) >> Constants.FLAG_SHIFT);
 			int pieceCaptured = ((moveRepresentationInput & Constants.PIECE_CAPTURED_MASK) >> Constants.PIECE_CAPTURED_SHIFT);
             int piecePromoted = ((moveRepresentationInput & Constants.PIECE_PROMOTED_MASK) >> Constants.PIECE_PROMOTED_SHIFT);
-
 	        int pieceMoved = this.pieceArray[startSquare];
+
 
             // Calculates bitboards for removing piece from start square and adding piece to destionation square
 			// "and" with ~startMask will remove piece from start square, and "or" with destinationMask will add piece to destination square
@@ -278,6 +301,52 @@ namespace Chess_Engine {
 			// sets the side to move to the other player (white = 0 and black = 1, so side ^ 1 = other side)
 			this.sideToMove ^= 1;
 			this.zobristKey ^= Constants.sideToMoveZobrist[0];
+
+
+
+
+
+            // If a piece was captured (move was a capture, EP capture, or promotion capture), then update the material balance
+            if (pieceCaptured != 0) {
+
+                Int32 captureSquare = destinationSquare;
+
+                if (pieceCaptured == Constants.WHITE_PAWN || pieceCaptured == Constants.BLACK_PAWN) {
+                    if (flag == Constants.EN_PASSANT_CAPTURE) {
+                        captureSquare += this.sideToMove == Constants.WHITE ? -8 : 8; // Adjust the capture square if it is an en-passant (different than destination square)
+                    }
+                }
+                this.material_PSQ_Value -= pieceSquareTable[pieceCaptured][captureSquare];
+            }
+            // If the piece moved was a pawn
+            if (pieceMoved == Constants.WHITE_PAWN || pieceMoved == Constants.BLACK_PAWN) {
+
+                if (flag == Constants.PROMOTION || flag == Constants.PROMOTION_CAPTURE) {
+                    this.material_PSQ_Value += pieceSquareTable[piecePromoted][destinationSquare] - pieceSquareTable[pieceMoved][destinationSquare]; // pieceSquareTable[PAWN][destination] is added later on, so have to subtract it here
+                }
+            }
+
+            // If the move was a short castle
+            if (flag == Constants.SHORT_CASTLE || flag == Constants.LONG_CASTLE) {
+                Int32 rookStart = flag == Constants.SHORT_CASTLE ? Constants.H1 : Constants.A1;
+                Int32 rookFinish = flag == Constants.SHORT_CASTLE ? Constants.F1 : Constants.D1;
+
+                // If side to move is black, then flip the rook start and finish squares 
+                if (this.sideToMove == Constants.BLACK) {
+                    rookStart = Utilities.flipSquare(rookStart);
+                    rookFinish = Utilities.flipSquare(rookFinish);
+                }
+                Int32 piece = this.sideToMove == Constants.WHITE ? Constants.WHITE_ROOK : Constants.BLACK_ROOK;
+
+                this.material_PSQ_Value += updatePieceSquare(piece, rookStart, rookFinish);
+            }
+
+            this.material_PSQ_Value += pieceSquareTable[pieceMoved][destinationSquare] - pieceSquareTable[pieceMoved][startSquare];
+
+
+
+
+
 
             // Updates the piece count and material fields
             if (flag == Constants.CAPTURE) {
@@ -578,6 +647,8 @@ namespace Chess_Engine {
 	        this.whiteEndgameMaterial = restoreData.whiteEndgameMaterial;
 	        this.blackMidgameMaterial = restoreData.blackMidgameMaterial;
 	        this.blackEndgameMaterial = restoreData.blackEndgameMaterial;
+
+            this.material_PSQ_Value = restoreData.material_PSQ_Value;
 
 		    //Gets the piece moved, start square, destination square,  flag, and piece captured from the int encoding the move
 		    int startSquare = ((unmoveRepresentationInput & Constants.START_SQUARE_MASK) >> Constants.START_SQUARE_SHIFT);
@@ -2086,6 +2157,23 @@ namespace Chess_Engine {
 		//--------------------------------------------------------------------------------------------------------
 		//--------------------------------------------------------------------------------------------------------
 
+        // initializes the piece Square tables (copy the values for white from the table in Utilities.cs, then generate the values for black by flipping and changing the sign)
+        internal static void initialize() {
+            
+            for (int pType = 0; pType < 13; pType++) {
+                pieceSquareTable[pType] = new Int32[64];
+            }
+
+            for (int pType = Constants.PAWN; pType <= Constants.KING; pType++) {
+                Int32 matValue = Utilities.makeScore(pieceValueMidgame[pType], pieceValueEndgame[pType]);
+
+                for (int sq = Constants.H1; sq <= Constants.A8; sq++) {
+                    pieceSquareTable[Utilities.makePieceIndex(Constants.WHITE, pType)][sq] = (matValue + Utilities.PIECE_SQUARE_TABLE[pType][sq]);
+                    pieceSquareTable[Utilities.makePieceIndex(Constants.BLACK, pType)][Utilities.flipSquare(sq)] = -(matValue + Utilities.PIECE_SQUARE_TABLE[pType][sq]);
+                }
+            }
+        }
+
         //takes in a FEN string, resets the board, and then sets all the instance variables based on it  
         public void FENToBoard(string FEN) {
 
@@ -2107,6 +2195,8 @@ namespace Chess_Engine {
 
 			this.midgamePSQ = new int[13];
 			this.endgamePSQ = new int[13];
+
+            this.material_PSQ_Value = 0;
 
             this.zobristKey = 0x0UL;
 			this.gameHistory.Clear();
@@ -2271,6 +2361,20 @@ namespace Chess_Engine {
             }
         }
 
+        // Returns an integer specifying the material and piece square scores (midgame and endgame values encoded in one integer)
+        // Called when a new position is set up
+        internal void computeMatPSQScore() {
+            Int32 score = 0;
+            UInt64 occupied = this.arrayOfAggregateBitboards[Constants.ALL];
+
+            for (UInt64 i = occupied; i != 0;) {
+                Int32 square = Constants.findFirstSet(i);
+                score += pieceSquareTable[this.pieceArray[square]][square];
+                i &= (i - 1);
+            }
+            this.material_PSQ_Value += score;
+        }
+
 		// Calculates the material fields
 		private void materialCount() {
 
@@ -2305,6 +2409,10 @@ namespace Chess_Engine {
 				}
 			}
 		}
+
+        internal static Int32 updatePieceSquare(Int32 piece, Int32 fromSquare, Int32 toSquare) {
+            return pieceSquareTable[piece][toSquare] - pieceSquareTable[piece][fromSquare];
+        }
 
 		// Calculates the zobrist key
 		private void calculateZobristKey() {

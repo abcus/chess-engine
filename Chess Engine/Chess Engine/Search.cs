@@ -404,7 +404,7 @@ namespace Chess_Engine {
 
 
 			if (Search.board.isInCheck() == false) {
-				int evaluationScore = Evaluate.evaluationFunction(Search.board);
+				int evaluationScore = Evaluate.evaluate(Search.board);
 				if (evaluationScore > alpha) {
 					if (evaluationScore >= beta) {
 						return beta;
